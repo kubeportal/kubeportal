@@ -15,7 +15,7 @@ Kubespider is a web application enabling a single-sign experience for Kubernetes
                                         |                                 |
                                         +-----------------------+         |
                                         |                       |         |  authn
-    +--> kubectl +----> API Server +--> | OICD AUTH PROVIDER    |         +--------->  LDAP
+    +--> kubectl +----> API Server +--> | WEBHOOK AUTH PROVIDER |         +--------->  LDAP
     |                                   |                       |         |
     +                                   +-----------------------+         |
                                         |                       |         |
