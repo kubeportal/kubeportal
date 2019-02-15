@@ -16,18 +16,6 @@ The intended design outcomes are:
   * Independent user administration is possible.
   * User administration does not mean to deal with YML files.
 
-## Who needs that?
-
-This project is intended to make the management of our own little cluster more comfortable.
-
-Serious environments already have their single sign-on frontends, and don't need that. 
-
-The Kubeportal functionality can also be achieved with a cascade of OAuth2 proxies, an LDAP server + UI and some stunts the get the API server changes being done.
-
-## Are you re-inventing DEX?
-
-Dex comes without a front-end for users and user management. It is mainly an authentication protocol converter.
-
 ```
 +-------+
 |       +-------------------------------------------------------------------------------------+
@@ -66,4 +54,16 @@ Dex comes without a front-end for users and user management. It is mainly an aut
 +-------+                        +---------------+
 
 ```
+
+## Who needs that?
+
+This project is intended to make the management of our own little cluster more comfortable.
+
+Serious environments already have their single sign-on frontends, and don't need that. 
+
+The Kubeportal functionality can also be achieved with a cascade of OAuth2 proxies, an LDAP server + UI and some stunts the get the API server changes being done.
+
+## Are you re-inventing DEX?
+
+Dex comes without a front-end for users and user management. It is mainly an authentication protocol converter.
 
