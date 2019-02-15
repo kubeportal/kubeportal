@@ -1,6 +1,6 @@
 # kubeportal
 
-Kubeportal is a web application for getting a single sign-on Kubernetes experience for end users:
+Kubeportal is a web application to get a single sign-on Kubernetes experience for cluster users:
 
   * Kubeportal manages a user database for the cluster.
   * Administrative users get an admin web UI for adding / deleting cluster users.
