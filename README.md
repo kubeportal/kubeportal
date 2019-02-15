@@ -2,7 +2,8 @@
 
 Kubeportal is a web application enabling a single-sign experience for Kubernetes clusters:
 
-  * Admin can manage Kubernetes users and their namespaces / services accounts / role bindings in a nice web UI.
+  * Admin can manage Kubernetes users in a nice web UI.
+  * The neccessary namespaces, service accounts and role bindings in Kubernetes are accordingly managed.
   * Users can download their kubectl config file in a nice web UI.
   * User passwords are checked against an authentication backend, such as LDAP.
   * OAuth web applications can use it as authentication provider.
