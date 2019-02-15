@@ -1,13 +1,16 @@
 # kubeportal
 
-Kubeportal is a web application enabling a single sign-on experience for Kubernetes clusters:
+Kubeportal is a web application for getting a single sign-on Kubernetes experience for end users:
 
-  * Admin can manage Kubernetes users in a nice web UI.
-  * The neccessary namespaces, service accounts and role bindings in Kubernetes are accordingly managed.
-  * Users can download their kubectl config file in a nice web UI.
-  * User passwords are checked against an authentication backend, such as LDAP.
-  * OAuth web applications can use it as authentication provider.
-  * Bearer auth web application can use it as reverse proxy.
+  * Kubeportal manages a user database for the cluster.
+  * Administrative users get an admin web UI for adding / deleting cluster users.
+  * Kubeportal makes sure that users have according namespaces and service accounts in Kubernetes, by talking to the API server whenever the administrative users changes something.
+  * Non-administrative users get a web UI for downloading their `kubectl` config file.
+  * Kubeportal acts as OAuth2 authentication provider. This enables applications with OAuth2 login support, such as Grafana, to use it as authentication frontend.
+  * Kubeportal acts as reverse proxy that adds Bearer tokens to HTTP requests. This enables applications with JWT login support, such as Kubernetes dashboard, to use it as authentication frontend.
+  * Kubeportal can delegate password checking to a backend entity, such as a LDAP server.
+  
+The intended outcome is that the cluster web login always looks the same, and that user administration no longer means to deal with YML files.  
 
 ```
 +-------+
@@ -22,7 +25,7 @@ Kubeportal is a web application enabling a single sign-on experience for Kuberne
 |       |      |              |                                        |                      |
 |       |      |              | +-------------------------+            |                      |
 |       |      |              | |                         |            |                      |
-|       +------+-------->  +----+  OAuth Provider         |            |                      |
+|       +------+-------->  +----+  OAuth2 Provider        |            |                      |
 |       | Web Login           | |                         |            |                      |
 |       | (name, password)    | +-------------------------+            |                      |
 |       |                     | |                         |            |                 +----v-----+
@@ -34,9 +37,9 @@ Kubeportal is a web application enabling a single sign-on experience for Kuberne
 |       +--------------->  +----+  Admin Backend          | |        | |
 |       | Web Login           | |                         | +--------+ |
 |       | (name, password)    | +-------------------------+            |                 +----------+
-|       |                     | |                         |            |     LDAP        |          |
-|       +--------------->  +----+  Auth Reverse Proxy     |            +---------------> | AuthN    |
-|       | Web Login           | |                         |            |                 | Provider |
+|       |                     | |                         |            |     AuthN       |          |
+|       +--------------->  +----+  Auth Reverse Proxy     |            +---------------> | LDAP,    |
+|       | Web Login           | |                         |            |                 | ...      |
 |       | (name, password)    | +---------+----------+--+-+            |                 |          |
 |       |                     |           |          |  |              |                 +----------+
 |       |                     |           |          |  |              |
