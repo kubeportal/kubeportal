@@ -22,21 +22,21 @@ Kubeportal is a web application enabling a single-sign experience for Kubernetes
 |       |      |              | +-------------------------+            |                      |
 |       |      |              | |                         |            |                      |
 |       +------+-------->  +----+  OAuth Provider         |            |                      |
-|       | Name / PW           | |                         |            |                      |
-|       |                     | +-------------------------+            |                      |
+|       | Web Login           | |                         |            |                      |
+|       | (name, password)    | +-------------------------+            |                      |
 |       |                     | |                         |            |                 +----v-----+
 | Human |                     | |  User Frontend          |            |     Sync        |          |
 |       +--------------->  +----+  (config file download) | +--------+ +---------------> |  API     |
-|       | Name / PW           | |                         | |        | | (Namespaces,    |  Server  |
-|       |                     | +-------------------------+ |User    | |  Svc Accounts,  |          |
+|       | Web Login           | |                         | |        | | (Namespaces,    |  Server  |
+|       | (name, password)    | +-------------------------+ |User    | |  Svc Accounts,  |          |
 |       |                     | |                         | |Database| |  Role Bindings) +----------+
 |       +--------------->  +----+  Admin Backend          | |        | |
-|       | Name / PW           | |                         | +--------+ |
-|       |                     | +-------------------------+            |                 +----------+
+|       | Web Login           | |                         | +--------+ |
+|       | (name, password)    | +-------------------------+            |                 +----------+
 |       |                     | |                         |            |     LDAP        |          |
 |       +--------------->  +----+  Auth Reverse Proxy     |            +---------------> | AuthN    |
-|       | Name / PW           | |                         |            |                 | Provider |
-|       |                     | +---------+----------+--+-+            |                 |          |
+|       | Web Login           | |                         |            |                 | Provider |
+|       | (name, password)    | +---------+----------+--+-+            |                 |          |
 |       |                     |           |          |  |              |                 +----------+
 |       |                     |           |          |  |              |
 |       |                     +----------------------------------------+
