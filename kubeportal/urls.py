@@ -15,11 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.contrib.auth.decorators import login_required
 
 from kubeportal import views
 
 urlpatterns = [
     path('', views.IndexView.as_view(), name="index"),
+    path('config', login_required(views.ConfigView.as_view(content_type='text/plain')), name='config'),
     path('social/', include('social_django.urls')),
     path('admin/', admin.site.urls),
 ]

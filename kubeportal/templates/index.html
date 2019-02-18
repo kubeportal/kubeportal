@@ -7,7 +7,10 @@
 {% endif %}</h1>
 
 {% if user.is_authenticated %}
-<a href="/admin/logout/?next=/">Logout</a>
+<ul>
+<li><a href="/admin/logout/?next=/">Logout</a>
+<li><a href="config">Download your .kube/config</a>
+</ul>  
 {% else %}
 <a href="{% url "social:begin" "username" %}?next=/">Login</a>
 {% endif %}
