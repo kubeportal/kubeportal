@@ -6,6 +6,9 @@ import kubeportal
 SECRETS_TEMPLATE = """\
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '{}'
+
+# FQDN of your AD domain
+ACTIVE_DIRECTORY_DOMAIN = ''
 """
 
 
