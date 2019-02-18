@@ -1,4 +1,5 @@
 {% load static %}
+{% load frontend_tags %}
 
 <!doctype html>
 <html lang="en">
@@ -12,6 +13,14 @@
 <body>
 	{% block content %}
 	{% endblock %}
+
+	<hr class="mt-5"/>
+    <footer class="footer">
+      <div class="container text-center">
+        <span class="text-muted">{% settings_value "BRANDING" %}</span>
+      </div>
+    </footer>
+
 	<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 
-{% load frontend_tags %}
 {% block content %}
 
 <div class="container d-flex flex-column mt-5 align-items-center">
@@ -15,8 +14,7 @@
     <label for="password" class="sr-only">Password</label>
     <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
   </div>
-  <input type="submit" value="Login">
+  <div class="text-center"><button type="submit" class="btn btn-primary">Login</button></div>
 </form>
-<p class="mt-5 mb-3 text-muted">{% settings_value "BRANDING" %}</p>
 </div>
 {% endblock %}
