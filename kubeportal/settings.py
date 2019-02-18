@@ -89,6 +89,12 @@ class Common(Configuration):
     USE_L10N = True
     USE_TZ = True
 
+    LOGIN_URL = 'index'
+    LOGIN_ERROR_URL = 'index'
+    LOGOUT_REDIRECT_URL = 'index'
+    LOGIN_REDIRECT_URL = 'dashboard'
+
+
 
 class Development(Common):
     DEBUG = True
