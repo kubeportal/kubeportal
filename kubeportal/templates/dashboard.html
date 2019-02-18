@@ -4,6 +4,20 @@
 
 <h1>Hello {{user.first_name}} {{user.last_name}}({{user.username}})</h1>
 
-<a href="{% url 'logout' %}">Logout</a>
+<div class="container d-flex mt-5 justify-content-around">
+
+       <div>
+	       <a href="{% url 'config' %}">
+            <h2>Download config file</h2>
+           </a>
+            <p>Bla bla copy this to bla bla ...</p>
+        </div>
+
+        <div>
+	       <a href="{% url 'logout' %}">
+            <h2>Logout</h2>
+           </a>
+        </div>
+</div>
 
 {% endblock %}
