@@ -1,19 +1,22 @@
 {% extends 'base.html' %}
 
+{% load frontend_tags %}
 {% block content %}
 
-<div class="container">
+<div class="container d-flex flex-column mt-5 align-items-center">
+  <h1 class="h3 font-weight-normal">Please sign in</h1>
   <form method="POST" action="/social/complete/username/">
   {% csrf_token %}
   <div class="form-group">
-    <label for="username">Username</label>
-    <input class="form-control" id="username" name="username" placeholder="Username">
+    <label for="username" class="sr-only">Username</label>
+    <input class="form-control" id="username" name="username" placeholder="Username" required autofocus>
   </div>
   <div class="form-group">
-    <label for="password">Password</label>
-    <input type="password" class="form-control" name="password" id="password" placeholder="Password">
+    <label for="password" class="sr-only">Password</label>
+    <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
   </div>
   <input type="submit" value="Login">
 </form>
+<p class="mt-5 mb-3 text-muted">{% settings_value "BRANDING" %}</p>
 </div>
 {% endblock %}

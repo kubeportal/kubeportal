@@ -93,7 +93,7 @@ class Common(Configuration):
     LOGIN_ERROR_URL = 'index'
     LOGOUT_REDIRECT_URL = 'index'
     LOGIN_REDIRECT_URL = 'dashboard'
-
+    STATIC_URL = '/static/'
 
 
 class Development(Common):
@@ -102,7 +102,7 @@ class Development(Common):
     ALLOWED_HOSTS = []
     LANGUAGE_CODE = 'en-us'
     TIME_ZONE = 'UTC'
-    STATIC_URL = '/static/'
+    BRANDING = "KubePortal project"
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
@@ -111,7 +111,9 @@ class Development(Common):
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
-
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, "static"),
+    ]
 
 class Production(Common):
     DEBUG = values.Value(False, environ_prefix='KUBEPORTAL')
@@ -119,7 +121,7 @@ class Production(Common):
     ALLOWED_HOSTS = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
-    STATIC_URL = '/static/'
+    BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
