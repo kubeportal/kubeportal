@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'bootstrap3',
     'social_django',
-    'kubeportal'
+    'kubeportal',
+    'test_pep8'
 ]
 
 MIDDLEWARE = [
@@ -140,6 +141,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+# test_pep8
+PROJECT_DIR = os.path.dirname(__file__)
+TEST_PEP8_DIRS = [os.path.dirname(PROJECT_DIR), ]
+TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
