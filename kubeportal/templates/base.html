@@ -1,14 +1,26 @@
-<html>
+{% load static %}
+{% load frontend_tags %}
+
+<!doctype html>
+<html lang="en">
+
 <head>
-{% load bootstrap3 %}
-{% bootstrap_css %}
-{% bootstrap_javascript %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
 </head>
 
 <body>
-{% bootstrap_messages %}
+	{% block content %}
+	{% endblock %}
 
-{% block content %}
-{% endblock %}
+	<hr class="mt-5"/>
+    <footer class="footer">
+      <div class="container text-center">
+        <span class="text-muted small">{% settings_value "BRANDING" %} - <a href="{% url 'admin:index'%}">Admin login</a> </span>
+      </div>
+    </footer>
+
+	<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

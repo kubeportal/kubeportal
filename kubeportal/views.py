@@ -1,18 +1,18 @@
-from django.views.generic.base import TemplateView, View
-from django.contrib.auth.decorators import login_required
+from django.views.generic.base import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .token import FernetToken
 
-class IndexView(TemplateView):
 
-    template_name = "index.html"
+class DashboardView(LoginRequiredMixin, TemplateView):
+    template_name = "dashboard.html"
 
 
 # XXX parameters to be configured:
 server_url = 'TBD'
 clustername = 'TBD'
 
-# Access is protected by login, per url configuration
-class ConfigView(TemplateView):
+
+class ConfigView(LoginRequiredMixin, TemplateView):
 
     template_name = 'config.txt'
 

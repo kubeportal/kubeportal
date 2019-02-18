@@ -1,7 +1,6 @@
 Django==2.1.7
 social-auth-app-django==3.1.0
-django-bootstrap3==11.0.0
-django-configurations==2.1
 ldap3==2.5.2
 cryptography==2.5
 django-test-pep8==0.1
+django-configurations==2.1

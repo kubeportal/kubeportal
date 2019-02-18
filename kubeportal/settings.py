@@ -13,7 +13,6 @@ class Common(Configuration):
         'bootstrap3',
         'social_django',
         'kubeportal',
-        'test_pep8',
     ]
 
     MIDDLEWARE = [
@@ -85,7 +84,6 @@ class Common(Configuration):
 
     SOCIAL_AUTH_USERNAME_FORM_URL = '/login-form/'
     SOCIAL_AUTH_USERNAME_FORM_HTML = 'login_form.html'
-    ACTIVE_DIRECTORY_DOMAIN = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     LOGIN_URL = '/social/login/username'
 
     USE_I18N = True
@@ -97,13 +95,21 @@ class Common(Configuration):
     TEST_PEP8_DIRS = [os.path.dirname(PROJECT_DIR), ]
     TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
+    LOGIN_URL = 'index'
+    LOGIN_ERROR_URL = 'index'
+    LOGOUT_REDIRECT_URL = 'index'
+    LOGIN_REDIRECT_URL = 'dashboard'
+    STATIC_URL = '/static/'
+
+
 class Development(Common):
     DEBUG = True
     SECRET_KEY = '4711'
     ALLOWED_HOSTS = []
     LANGUAGE_CODE = 'en-us'
     TIME_ZONE = 'UTC'
-    STATIC_URL = '/static/'
+    BRANDING = "KubePortal project"
+    ACTIVE_DIRECTORY_DOMAIN = values.Value("foobar", environ_prefix='KUBEPORTAL')
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
@@ -112,6 +118,11 @@ class Development(Common):
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, "static"),
+    ]
+
+    INSTALLED_APPS = Common.INSTALLED_APPS + ['test_pep8', ]
 
 
 class Production(Common):
@@ -120,7 +131,8 @@ class Production(Common):
     ALLOWED_HOSTS = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
-    STATIC_URL = '/static/'
+    BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
+    ACTIVE_DIRECTORY_DOMAIN = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {

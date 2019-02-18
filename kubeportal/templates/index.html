@@ -2,22 +2,19 @@
 
 {% block content %}
 
-<h1>Hello {% if user.is_authenticated %}
-{{user.first_name}} {{user.last_name}}({{user.username}})
-{% endif %}</h1>
-
-{% if user.is_authenticated %}
-<ul>
-<li><a href="/admin/logout/?next=/">Logout</a>
-<li><a href="config">Download your .kube/config</a>
-</ul>  
-{% else %}
-<a href="{% url "social:begin" "username" %}?next=/">Login</a>
-{% endif %}
-
-{# Display a form #}
-<form action="/url/to/submit/" method="post" class="form">
+<div class="container d-flex flex-column mt-5 align-items-center">
+  <h1 class="h3 font-weight-normal">Please sign in</h1>
+  <form method="POST" action="/social/complete/username/">
   {% csrf_token %}
+  <div class="form-group">
+    <label for="username" class="sr-only">Username</label>
+    <input class="form-control" id="username" name="username" placeholder="Username" required autofocus>
+  </div>
+  <div class="form-group">
+    <label for="password" class="sr-only">Password</label>
+    <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
+  </div>
+  <div class="text-center"><button type="submit" class="btn btn-primary">Login</button></div>
 </form>
-
+</div>
 {% endblock %}
