@@ -85,6 +85,7 @@ class Common(Configuration):
 
     SOCIAL_AUTH_USERNAME_FORM_URL = '/login-form/'
     SOCIAL_AUTH_USERNAME_FORM_HTML = 'login_form.html'
+    ACTIVE_DIRECTORY_DOMAIN = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
 
     USE_I18N = True
     USE_L10N = True
