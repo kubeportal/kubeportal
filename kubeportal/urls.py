@@ -12,4 +12,7 @@ urlpatterns = [
     path('logout', LogoutView.as_view(), name="logout"),
     path('social/', include('social_django.urls')),
     path('admin/', admin_site.urls),
+    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 ]
+
+print(urlpatterns)

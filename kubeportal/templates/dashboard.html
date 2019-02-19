@@ -21,10 +21,18 @@
         </div>
 
         <div>
+	       <a href="{% url 'oauth2_provider:list' %}">
+            <h2>OAuth Applications</h2>
+           </a>
+        </div>
+
+
+        <div>
 	       <a href="{% url 'logout' %}">
             <h2>Logout</h2>
            </a>
         </div>
+
 </div>
 
 {% endblock %}

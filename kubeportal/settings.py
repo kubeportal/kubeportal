@@ -10,12 +10,14 @@ class Common(Configuration):
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
-        'bootstrap3',
+        'oauth2_provider',
+        'corsheaders',
         'social_django',
         'kubeportal',
     ]
 
     MIDDLEWARE = [
+        'corsheaders.middleware.CorsMiddleware',
         'django.middleware.security.SecurityMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.common.CommonMiddleware',
@@ -100,6 +102,8 @@ class Common(Configuration):
     LOGOUT_REDIRECT_URL = 'index'
     LOGIN_REDIRECT_URL = 'dashboard'
     STATIC_URL = '/static/'
+
+    CORS_ORIGIN_ALLOW_ALL = True
 
 
 class Development(Common):
