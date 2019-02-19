@@ -1,6 +1,7 @@
 from django.test import TestCase
 from kubeportal.token import FernetToken
 
+
 class FernetTokenTest(TestCase):
     def test_roundtrip(self):
         username = 'kubeportal'

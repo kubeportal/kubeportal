@@ -1,11 +1,14 @@
 """Implementation of Bearer tokens"""
-import hashlib, base64
+import hashlib
+import base64
 from django.conf import settings
 import cryptography.fernet
 __all__ = ['FernetToken', 'InvalidToken']
 
+
 class InvalidToken(Exception):
     pass
+
 
 class FernetToken:
     '''Implementation of Fernet tokens for Kubernetes.
@@ -28,7 +31,7 @@ class FernetToken:
         return base64.urlsafe_b64encode(token).decode('ascii')
 
     def token_to_username(self, token):
-        '''Validate string token. 
+        '''Validate string token.
         Return username if valid, else raise InvalidToken.'''
         try:
             token = base64.urlsafe_b64decode(token.encode('ascii'))
@@ -39,4 +42,3 @@ class FernetToken:
     def extract_timestamp(self, token):
         token = base64.urlsafe_b64decode(token.encode('ascii'))
         return self.fernet.extract_timestamp(token)
-

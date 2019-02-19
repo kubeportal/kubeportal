@@ -14,7 +14,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         fernet = FernetToken()
         verify_msg = ''
         if token:
-            context['token'] = token # reinsert into form
+            context['token'] = token     # reinsert into form
             # handle form post for token verification
             try:
                 username = fernet.token_to_username(token)
@@ -24,13 +24,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 if username == self.request.user.username:
                     stamp = fernet.extract_timestamp(token)
                     stamp = time.ctime(stamp)
-                    verify_msg = 'This is your token, issued '+stamp
+                    verify_msg = 'This is your token, issued ' + stamp
                 else:
                     verify_msg = "This is the token of somebody else's token"
         context['verify_msg'] = verify_msg
         return self.render_to_response(context)
-
-
 
 # XXX parameters to be configured:
 server_url = 'TBD'
@@ -65,7 +63,7 @@ class ConfigView(LoginRequiredMixin, TemplateView):
         fernet = FernetToken()
         verify_msg = ''
         if token:
-            context['token'] = token # reinsert into form
+            context['token'] = token       # reinsert into form
             # handle form post for token verification
             try:
                 username = fernet.token_to_username(token)
@@ -75,7 +73,7 @@ class ConfigView(LoginRequiredMixin, TemplateView):
                 if username == self.request.user.username:
                     stamp = fernet.extract_timestamp(token)
                     stamp = time.ctime(stamp)
-                    verify_msg = 'This is your token, issued '+stamp
+                    verify_msg = 'This is your token, issued ' + stamp
                 else:
                     verify_msg = "This is the token of somebody else's token"
         context['verify_msg'] = verify_msg

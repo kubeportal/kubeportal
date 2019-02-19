@@ -19,9 +19,7 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
     # User Principal Name
     upn = "{}@{}".format(username, domainname)
     server = ldap3.Server(domainname, get_info=ldap3.DSA)
-    conn = ldap3.Connection(server,
-                            user=upn,
-                            password=password)
+    conn = ldap3.Connection(server, user=upn, password=password)
     conn.open()
     conn.start_tls()
     # validate password by binding
