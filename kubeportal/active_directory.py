@@ -2,7 +2,8 @@ import ldap3
 import social_core.exceptions
 from django.conf import settings
 
-def user_password(strategy, user,is_new=False, *args, details, backend, **kwargs):
+
+def user_password(strategy, user, is_new=False, *args, details, backend, **kwargs):
     if backend.name != 'username':
         return
 
@@ -19,8 +20,8 @@ def user_password(strategy, user,is_new=False, *args, details, backend, **kwargs
     upn = "{}@{}".format(username, domainname)
     server = ldap3.Server(domainname, get_info=ldap3.DSA)
     conn = ldap3.Connection(server,
-                                user=upn,
-                                password=password)
+                            user=upn,
+                            password=password)
     conn.open()
     conn.start_tls()
     # validate password by binding
@@ -30,8 +31,8 @@ def user_password(strategy, user,is_new=False, *args, details, backend, **kwargs
 
     # lookup user attributes by searching for the UPN
     ctx = server.info.other['defaultNamingContext'][0]
-    attributes = {'givenName':'first_name', 'sn':'last_name',
-                  'displayName':'fullname', 'mail':'email'}
+    attributes = {'givenName': 'first_name', 'sn': 'last_name',
+                  'displayName': 'fullname', 'mail': 'email'}
     res = conn.search(ctx, '(userPrincipalName={})'.format(upn),
                       attributes=list(attributes.keys()))
     if res:
