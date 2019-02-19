@@ -6,6 +6,9 @@ def user_password(strategy, user,is_new=False, *args, details, backend, **kwargs
     if backend.name != 'username':
         return
 
+    if not settings.ACTIVE_DIRECTORY_DOMAIN:
+        return
+
     # Connect to AD LDAP
     # Currently does not perform certificate check
     # Also, assume that all domain controllers support ldaps

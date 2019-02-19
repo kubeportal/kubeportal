@@ -113,7 +113,7 @@ class Development(Common):
     LANGUAGE_CODE = 'en-us'
     TIME_ZONE = 'UTC'
     BRANDING = "KubePortal project"
-    ACTIVE_DIRECTORY_DOMAIN = values.Value("foobar", environ_prefix='KUBEPORTAL')
+    ACTIVE_DIRECTORY_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
