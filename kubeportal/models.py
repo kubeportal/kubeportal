@@ -1,10 +1,7 @@
+from django.contrib.auth.models import User
 from django.db import models
 
-class Cluster(models.Model):
-    name = models.CharField(max_length=10)
-    url = models.CharField(max_length=100)
 
-    class Meta:
-        permissions = (
-            ('access', 'Can access cluster API'),
-            )
+class ServiceAccount(models.Model):
+    name = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
