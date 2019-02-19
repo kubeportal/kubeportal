@@ -10,7 +10,14 @@
 	       <a href="{% url 'config' %}">
             <h2>Download config file</h2>
            </a>
-            <p>Bla bla copy this to bla bla ...</p>
+	 <p>Verify token:
+	 <form method="POST">
+	 {% csrf_token %}
+	 <textarea name="token" rows="8" cols="40">{{token}}</textarea>
+	 <input type="submit" name="Validate token">
+	 </form>
+	 </p>
+	 <p>{{verify_msg}}</p>
         </div>
 
         <div>

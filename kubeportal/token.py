@@ -36,3 +36,7 @@ class FernetToken:
         except Exception:
             raise InvalidToken from None
 
+    def extract_timestamp(self, token):
+        token = base64.urlsafe_b64decode(token.encode('ascii'))
+        return self.fernet.extract_timestamp(token)
+
