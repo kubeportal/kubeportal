@@ -2,11 +2,6 @@
 {% load static %}
 {% load frontend_tags %}
 
-{% block extra_head %}
-<link href="{% static 'sb-admin/css/sb-admin.min.css' %}" rel="stylesheet">
-<link href="{% static 'fontawesome/css/all.min.css' %}" rel="stylesheet">
-{% endblock %}
-
 {% block content %}
   <nav class="navbar navbar-expand navbar-dark bg-dark static-top">
     <a class="navbar-brand mr-1" href="{% url 'index' %}">{% settings_value "BRANDING" %}</a>
@@ -19,13 +14,13 @@
 
     <!-- Sidebar -->
     <ul class="sidebar navbar-nav">
-      <li class="nav-item active">
+      <li class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
         <a class="nav-link" href="{% url 'dashboard' %}">
           <i class="fas fa-fw fa-columns"></i>
           <span>Welcome</span>
         </a>
       </li>
-      <li class="nav-item">
+      <li class="nav-item {% if request.resolver_match.url_name == 'config' %}active{% endif %}">
         <a class="nav-link" href="{% url 'config' %}">
           <i class="fas fa-fw fa-file-alt"></i>
           <span>Config file</span>
@@ -58,9 +53,3 @@
   </div>
   <!-- /#wrapper -->
 {% endblock %}
-
-{% block extra_script %}
-<script src="{% static 'sb-admin/js/sb-admin.min.js' %}"></script>
-{% endblock %}
-
-

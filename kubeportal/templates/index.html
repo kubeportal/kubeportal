@@ -1,20 +1,29 @@
 {% extends 'base.html' %}
+{% load frontend_tags %}
+
 
 {% block content %}
-
-<div class="container d-flex flex-column mt-5 align-items-center">
-  <h1 class="h3 font-weight-normal">Please sign in</h1>
-  <form method="POST" action="/social/complete/username/">
-  {% csrf_token %}
-  <div class="form-group">
-    <label for="username" class="sr-only">Username</label>
-    <input class="form-control" id="username" name="username" placeholder="Username" required autofocus>
+<div class="container">
+  <div class="card card-login mx-auto mt-5">
+    <div class="card-header">{% settings_value "BRANDING" %}</div>
+    <div class="card-body">
+      <form method="POST" action="/social/complete/username/">
+        {% csrf_token %}
+        <div class="form-group">
+          <div class="form-label-group">
+            <input type="text" id="username" name="username" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
+            <label for="username">User name</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label-group">
+            <input type="password" id="password" name="password" class="form-control" placeholder="Password" required="required">
+            <label for="password">Password</label>
+          </div>
+        </div>
+        <input type="submit" value="Login" class="btn btn-primary btn-block"/>
+      </form>
+    </div>
   </div>
-  <div class="form-group">
-    <label for="password" class="sr-only">Password</label>
-    <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
-  </div>
-  <div class="text-center"><button type="submit" class="btn btn-primary">Login</button></div>
-</form>
 </div>
 {% endblock %}

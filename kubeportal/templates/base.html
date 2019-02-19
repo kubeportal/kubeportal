@@ -1,5 +1,4 @@
 {% load static %}
-{% load frontend_tags %}
 
 <!doctype html>
 <html lang="en">
@@ -8,25 +7,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	  <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.min.css' %}">
-    {% block extra_head %}
-    {% endblock %}
+    <link rel="stylesheet" href="{% static 'sb-admin/css/sb-admin.min.css' %}">
+    <link rel="stylesheet" href="{% static 'fontawesome/css/all.min.css' %}">
 </head>
 
 <body>
 	{% block content %}
 	{% endblock %}
-
-	<hr class="mt-5"/>
-    <footer class="footer">
-      <div class="container text-center">
-        <span class="text-muted small">{% settings_value "BRANDING" %} - <a href="{% url 'admin:index'%}">Admin</a> </span>
-      </div>
-    </footer>
-
   <script src="{% static 'jquery/jquery-3.3.1.slim.min.js' %}"></script>
 	<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-
-  {% block extra_script %}
-  {% endblock %}
+  <script src="{% static 'sb-admin/js/sb-admin.min.js' %}"></script>
 </body>
 </html>

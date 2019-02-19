@@ -1,5 +1,18 @@
 {% extends 'dashboard_base.html' %}
 
 {% block dashboard_content %}
-<h1>Hello {{user.first_name}} {{user.last_name}}({{user.username}})</h1>
+
+<div class="card mb-3">
+  <div class="card-header">
+    <i class="fas fa-user"></i>
+    Hello {{user.get_short_name}}!
+  </div>
+  <div class="card-body">
+  	<p>Full name: {{user.get_full_name}}</p>
+  	<p>User name: {{user.get_username}}</p>
+  </div>
+</div>
+
+<h1></h1>
+
 {% endblock %}
