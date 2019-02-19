@@ -92,11 +92,6 @@ class Common(Configuration):
     USE_L10N = True
     USE_TZ = True
 
-    # test_pep8
-    PROJECT_DIR = os.path.dirname(__file__)
-    TEST_PEP8_DIRS = [os.path.dirname(PROJECT_DIR), ]
-    TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
-
     LOGIN_URL = 'index'
     LOGIN_ERROR_URL = 'index'
     LOGOUT_REDIRECT_URL = 'index'
@@ -127,6 +122,10 @@ class Development(Common):
     ]
 
     INSTALLED_APPS = Common.INSTALLED_APPS + ['test_pep8', ]
+    TEST_PEP8_IGNORE = ['E501', ]
+    PROJECT_DIR = os.path.dirname(__file__)
+    TEST_PEP8_DIRS = [os.path.dirname(PROJECT_DIR), ]
+    TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
 
 class Production(Common):
