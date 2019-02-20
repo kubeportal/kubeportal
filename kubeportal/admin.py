@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.conf import settings
+from django.urls import path
+from django.template.response import TemplateResponse
 from django.contrib.auth.models import User
 from .models import KubernetesServiceAccount, KubernetesNamespace, ClusterApplication
 
@@ -7,6 +9,14 @@ from .models import KubernetesServiceAccount, KubernetesNamespace, ClusterApplic
 class CustomAdminSite(admin.AdminSite):
     index_template = "admin/custom_index.html"
     site_header = settings.BRANDING
+
+    def get_urls(self):
+        urls = super().get_urls()
+        return urls + [path('sync', self.sync_view, name='sync'), ]
+
+    def sync_view(self, request):
+        context = dict(self.each_context(request))
+        return TemplateResponse(request, "admin/sync.html", context)
 
 
 class KubernetesServiceAccountAdmin(admin.ModelAdmin):
