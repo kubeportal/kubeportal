@@ -1,7 +1,12 @@
 from django.contrib import admin
 from django.conf import settings
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 from .models import KubernetesServiceAccount, KubernetesNamespace, ClusterApplication
+
+
+class CustomAdminSite(admin.AdminSite):
+    index_template = "admin/custom_index.html"
+    site_header = settings.BRANDING
 
 
 class KubernetesServiceAccountAdmin(admin.ModelAdmin):
@@ -26,10 +31,8 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
         return False
 
 
-admin_site = admin.AdminSite()
-admin_site.site_header = settings.BRANDING + ' - Administration'
+admin_site = CustomAdminSite()
 admin_site.register(User)
-admin_site.register(Group)
 admin_site.register(KubernetesServiceAccount, KubernetesServiceAccountAdmin)
 admin_site.register(KubernetesNamespace, KubernetesNamespaceAdmin)
 admin_site.register(ClusterApplication)
