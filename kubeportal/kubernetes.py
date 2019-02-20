@@ -15,23 +15,22 @@ import json
 from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount
 
 
-class StupidLogger:
-    logs = []
-
-    def info(self, msg):
-        self.logs.append(msg)
-
-    def error(self, msg):
-        self.logs.append(msg)
-
-    def reset(self):
+class MemoryLogger:
+    def __init__(self):
         self.logs = []
 
+    def info(self, msg):
+        self.logs.append({'severity': '', 'msg': msg})
 
-logger = StupidLogger()
+    def warning(self, msg):
+        self.logs.append({'severity': 'warning', 'msg': msg})
+
+    def error(self, msg):
+        self.logs.append({'severity': 'error', 'msg': msg})
 
 
-def sync_namespaces(v1):
+
+def sync_namespaces(v1, logger):
     # K8S namespaces -> portal namespaces
     k8s_ns_list = v1.list_namespace()
     k8s_ns_uids = []
@@ -43,11 +42,11 @@ def sync_namespaces(v1):
         portal_ns, created = KubernetesNamespace.objects.get_or_create(name=k8s_ns_name, uid=k8s_ns_uid)
         if created:
             # Create missing namespace record
-            logger.info("Creating portal record for Kubernetes namespace '{0}'".format(k8s_ns_name))
+            logger.info("Creating record for Kubernetes namespace '{0}'".format(k8s_ns_name))
             portal_ns.save()
         else:
             # No action needed
-            logger.info("Found existing portal record for Kubernetes namespace '{0}'".format(k8s_ns_name))
+            logger.info("Found existing record for Kubernetes namespace '{0}'".format(k8s_ns_name))
 
     # portal namespaces -> K8S namespaces
     for portal_ns in KubernetesNamespace.objects.all():
@@ -56,21 +55,21 @@ def sync_namespaces(v1):
             # stale und should be deleted
             if portal_ns.uid in k8s_ns_uids:
                 # No action needed
-                logger.info("Found existing Kubernetes namespace '{0}' for portal record".format(portal_ns.name))
+                logger.info("Found existing Kubernetes namespace '{0}' for record".format(portal_ns.name))
             else:
                 # Remove stale namespace record
-                logger.info("Removing stale portal record for Kubernetes namespace '{0}'".format(portal_ns.name))
+                logger.warning("Removing stale record for Kubernetes namespace '{0}'".format(portal_ns.name))
                 portal_ns.delete()
         else:
             # Portal namespaces without UID are new and should be created in K8S
             logger.info("Creating Kubernetes namespace '{0}'".format(portal_ns.name))
+            #TODO
             assert(False)
 
 
-def sync_svcaccounts(v1):
+def sync_svcaccounts(v1, logger):
     # K8S svc accounts -> portal svc accounts
     k8s_svca_list = v1.list_service_account_for_all_namespaces()
-    print(k8s_svca_list)
     for k8s_svca in k8s_svca_list.items:
         k8s_svca_name = k8s_svca.metadata.name
         k8s_svca_ns = k8s_svca.metadata.namespace
@@ -91,20 +90,18 @@ def sync_svcaccounts(v1):
         else:
             # No action needed
             logger.info("Found existing portal record for Kubernetes service account '{0}:{1}'".format(k8s_svca_ns, k8s_svca_name))
+    #TODO
 
 
 def sync():
-    logger.reset()
-    logger.info("Starting synchronization ...")
-    logger.info("Loading Kubernetes client configuration ...")
     try:
+        ns_logger = MemoryLogger()
+        svca_logger = MemoryLogger()
         config.load_kube_config()
         v1 = client.CoreV1Api()
-        logger.info("Checking namespaces ...")
-        sync_namespaces(v1)
-        logger.info("Checking service accounts ...")
-        sync_svcaccounts(v1)
+        sync_namespaces(v1, ns_logger)
+        sync_svcaccounts(v1, svca_logger)
     except client.rest.ApiException as e:
         msg = json.loads(e.body)
-        logger.error("Exception: {0}".format(msg['message']))
-    return logger.logs
+        ns_logger.error("Exception: {0}".format(msg['message']))
+    return (ns_logger.logs, svca_logger.logs)

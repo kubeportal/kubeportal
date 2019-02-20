@@ -17,9 +17,9 @@ class CustomAdminSite(admin.AdminSite):
         return urls + [path('sync', self.sync_view, name='sync'), ]
 
     def sync_view(self, request):
-        logs = sync()
+        ns_logs, svca_logs = sync()
         base_context = self.each_context(request)
-        add_context = {'logs': logs}
+        add_context = {'ns_logs': ns_logs, 'svca_logs': svca_logs}
         context = {**base_context, **add_context}
         return TemplateResponse(request, "admin/sync.html", context)
 
