@@ -31,13 +31,13 @@
       <div class="text-center">
           <div class="d-block small mt-3 text-secondary">
                   {% if ad_status_cached == "unconfigured" %}
-                    Status: Active Directory login <span class='text-warning'>not configured</span>
+                    Status: Active Directory <span class='text-warning'>not configured</span>
                   {% endif %}
                   {% if ad_status_cached == "available" %}
-                    Status: {% settings_value "ACTIVE_DIRECTORY_DOMAIN" %} login <span class='text-success'>available</span>
+                    Status: <i>{% settings_value "ACTIVE_DIRECTORY_DOMAIN" %}</i> login is <span class='text-success'>available</span>
                   {% endif %}
                   {% if ad_status_cached == "unavailable" %}
-                    Status: {% settings_value "ACTIVE_DIRECTORY_DOMAIN" %} login <span class='text-error'>unavailable</span>
+                    Status: <i>{% settings_value "ACTIVE_DIRECTORY_DOMAIN" %}</i> login is <span class='text-danger'>unavailable</span>
                   {% endif %}
           </div>      
       </div>
