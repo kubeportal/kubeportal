@@ -3,6 +3,18 @@ import social_core.exceptions
 from django.conf import settings
 
 
+def is_available():
+    domainname = settings.ACTIVE_DIRECTORY_DOMAIN
+    try:
+        server = ldap3.Server(domainname, connect_timeout=1)
+        conn = ldap3.Connection(server)
+        conn.open()
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
 def user_password(strategy, user, is_new=False, *args, details, backend, **kwargs):
     if backend.name != 'username':
         return
