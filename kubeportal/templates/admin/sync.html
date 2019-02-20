@@ -1,1 +1,6 @@
-Foo
+{% extends "admin/base_site.html" %}
+{% block content %}
+{% for log in logs %}
+	{{ log }}<br/>
+{% endfor %}
+{% endblock %}

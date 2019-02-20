@@ -5,6 +5,8 @@ from django.template.response import TemplateResponse
 from django.contrib.auth.models import User
 from .models import KubernetesServiceAccount, KubernetesNamespace, ClusterApplication
 
+from kubeportal.kubernetes import sync
+
 
 class CustomAdminSite(admin.AdminSite):
     index_template = "admin/custom_index.html"
@@ -15,7 +17,10 @@ class CustomAdminSite(admin.AdminSite):
         return urls + [path('sync', self.sync_view, name='sync'), ]
 
     def sync_view(self, request):
-        context = dict(self.each_context(request))
+        logs = sync()
+        base_context = self.each_context(request)
+        add_context = {'logs': logs}
+        context = {**base_context, **add_context}
         return TemplateResponse(request, "admin/sync.html", context)
 
 
