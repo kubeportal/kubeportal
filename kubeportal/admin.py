@@ -25,6 +25,8 @@ class CustomAdminSite(admin.AdminSite):
 
 
 class KubernetesServiceAccountAdmin(admin.ModelAdmin):
+    list_display = ['name', 'namespace']
+
     def has_change_permission(self, request, obj=None):
         return False
 
