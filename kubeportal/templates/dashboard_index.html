@@ -13,6 +13,25 @@
   </div>
 </div>
 
+
+{% for app in clusterapps %}
+<div class="card text-white bg-primary o-hidden h-100">
+  <div class="card-body">
+    <div class="card-body-icon">
+      <i class="fas fa-fw fa-external-link-alt"></i>
+    </div>
+    <div class="mr-5">{{ app.name }}</div>
+  </div>
+  <a class="card-footer text-white clearfix small z-1" target="_new" href="{{ app.url }}">
+    <span class="float-left">Enter ...</span>
+    <span class="float-right">
+      <i class="fas fa-angle-right"></i>
+    </span>
+  </a>
+</div>
+{% endfor %}
+
+
 <h1></h1>
 
 {% endblock %}

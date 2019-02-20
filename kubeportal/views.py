@@ -3,9 +3,15 @@ from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .token import FernetToken, InvalidToken
 
+from kubeportal.models import ClusterApplication
+
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = "dashboard_index.html"
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['clusterapps'] = ClusterApplication.objects.all()
 
     def post(self, request):
         context = self.get_context_data()
