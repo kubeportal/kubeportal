@@ -99,6 +99,8 @@ class Common(Configuration):
 
     CORS_ORIGIN_ALLOW_ALL = True
 
+    AUTH_USER_MODEL = 'kubeportal.User'
+
 
 class Development(Common):
     DEBUG = True

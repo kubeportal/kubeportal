@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.conf import settings
 from django.urls import path
+from django.contrib.auth.admin import UserAdmin
 from django.template.response import TemplateResponse
-from django.contrib.auth.models import User
-from .models import KubernetesServiceAccount, KubernetesNamespace, ClusterApplication
+from .models import KubernetesServiceAccount, KubernetesNamespace, ClusterApplication, User
 
 from kubeportal.kubernetes import sync
 
@@ -49,7 +49,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
 
 admin_site = CustomAdminSite()
-admin_site.register(User)
+admin_site.register(User, UserAdmin)
 admin_site.register(KubernetesServiceAccount, KubernetesServiceAccountAdmin)
 admin_site.register(KubernetesNamespace, KubernetesNamespaceAdmin)
 admin_site.register(ClusterApplication)
