@@ -1,7 +1,6 @@
 import time
 from django.views.generic.base import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
 from .token import FernetToken, InvalidToken
 
 
