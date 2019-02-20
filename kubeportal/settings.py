@@ -66,7 +66,6 @@ class Common(Configuration):
 
     AUTHENTICATION_BACKENDS = (
         'social_core.backends.username.UsernameAuth',
-        'social_core.backends.google.GoogleOAuth2',
         'django.contrib.auth.backends.ModelBackend',
     )
 

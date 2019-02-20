@@ -10,7 +10,7 @@ urlpatterns = [
     path('', LoginView.as_view(template_name='index.html', redirect_authenticated_user=True), name="index"),
     path('dashboard', views.DashboardView.as_view(), name="dashboard"),
     path('logout', LogoutView.as_view(), name="logout"),
-    path('social/', include('social_django.urls')),
+    path('social/', include('social_django.urls')),				# AD login, if available
     path('admin/', admin_site.urls),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 ]

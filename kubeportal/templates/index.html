@@ -1,13 +1,18 @@
 {% extends 'base.html' %}
 {% load frontend_tags %}
 
-
 {% block content %}
+
+{% ad_status as ad_status_cached %}
 <div class="container">
   <div class="card card-login mx-auto mt-5">
     <div class="card-header">{% settings_value "BRANDING" %}</div>
     <div class="card-body">
+      {% if ad_status_cached == "available" %}
       <form method="POST" action="/social/complete/username/">
+      {% else %}
+      <form method="POST" action="">
+      {% endif %}
         {% csrf_token %}
         <div class="form-group">
           <div class="form-label-group">
@@ -24,10 +29,20 @@
         <input type="submit" value="Login" class="btn btn-primary btn-block"/>
       </form>
       <div class="text-center">
-          <div class="d-block small mt-3 text-secondary">{% ad_status %}</div>      
+          <div class="d-block small mt-3 text-secondary">
+                  {% if ad_status_cached == "unconfigured" %}
+                    Status: Active Directory login <span class='text-warning'>not configured</span>
+                  {% endif %}
+                  {% if ad_status_cached == "available" %}
+                    Status: Active Directory login <span class='text-success'>available</span>
+                  {% endif %}
+                  {% if ad_status_cached == "unavailable" %}
+                    Status: Active Directory login <span class='text-error'>unavailable</span>
+                  {% endif %}
+          </div>      
       </div>
     </div>
   </div>
 </div>
-
 {% endblock %}
+

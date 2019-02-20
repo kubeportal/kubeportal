@@ -20,7 +20,7 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
         return
 
     if not settings.ACTIVE_DIRECTORY_DOMAIN:
-        return
+        raise social_core.exceptions.AuthUnreachableProvider(backend)
 
     # Connect to AD LDAP
     # Currently does not perform certificate check
@@ -30,9 +30,12 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
     password = strategy.request_data()['password']
     # User Principal Name
     upn = "{}@{}".format(username, domainname)
-    server = ldap3.Server(domainname, get_info=ldap3.DSA)
+    server = ldap3.Server(domainname, get_info=ldap3.DSA, connect_timeout=1)
     conn = ldap3.Connection(server, user=upn, password=password)
-    conn.open()
+    try:
+        conn.open()
+    except Exception:
+        raise social_core.exceptions.AuthUnreachableProvider(backend)
     conn.start_tls()
     # validate password by binding
     if not conn.bind():
