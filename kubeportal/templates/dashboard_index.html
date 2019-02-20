@@ -2,6 +2,8 @@
 
 {% block dashboard_content %}
 
+<div class="row">
+<div class="col">
 <div class="card mb-3">
   <div class="card-header">
     <i class="fas fa-user"></i>
@@ -12,10 +14,13 @@
   	<p>User name: {{user.get_username}}</p>
   </div>
 </div>
+</div>
+</div>
 
-
+<div class="row">
 {% for app in clusterapps %}
-<div class="card text-white bg-primary o-hidden h-100">
+<div class="col-6">
+<div class="card mb-3 text-white bg-{% cycle 'primary' 'success' 'warning' %}">
   <div class="card-body">
     <div class="card-body-icon">
       <i class="fas fa-fw fa-external-link-alt"></i>
@@ -23,15 +28,14 @@
     <div class="mr-5">{{ app.name }}</div>
   </div>
   <a class="card-footer text-white clearfix small z-1" target="_new" href="{{ app.url }}">
-    <span class="float-left">Enter ...</span>
+    <span class="float-left">Start</span>
     <span class="float-right">
       <i class="fas fa-angle-right"></i>
     </span>
   </a>
 </div>
+</div>
 {% endfor %}
-
-
-<h1></h1>
+</div>
 
 {% endblock %}
