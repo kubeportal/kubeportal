@@ -26,12 +26,14 @@
           <span>Config file</span>
         </a>
       </li>
+      {% if user.is_staff %}
       <li class="nav-item">
-        <a class="nav-link" href="{% url 'oauth2_provider:list' %}">
-          <i class="fas fa-fw fa-shield-alt"></i>
-          <span>OAuth</span>
+        <a class="nav-link" href="{% url 'admin:index' %}">
+          <i class="fas fa-fw fa-tools"></i>
+          <span>Administration</span>
         </a>
       </li>
+      {% endif %}
       <li class="nav-item">
         <a class="nav-link" href="{% url 'logout' %}">
           <i class="fas fa-fw fa-sign-out-alt"></i>
