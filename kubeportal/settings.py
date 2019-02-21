@@ -25,6 +25,7 @@ class Common(Configuration):
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        'kubeportal.middleware.AuthExceptionMiddleware'
     ]
 
     ROOT_URLCONF = 'kubeportal.urls'
@@ -85,22 +86,22 @@ class Common(Configuration):
 
     SOCIAL_AUTH_USERNAME_FORM_URL = '/login-form/'
     SOCIAL_AUTH_USERNAME_FORM_HTML = 'login_form.html'
-    LOGIN_URL = '/social/login/username'
+    SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/dashboard'
+    LOGIN_REDIRECT_URL = '/dashboard'
+    SOCIAL_AUTH_LOGIN_ERROR_URL = '/'
+    LOGIN_ERROR_URL = '/'
+    LOGIN_URL = 'index'
+    LOGOUT_REDIRECT_URL = 'index'
+    STATIC_URL = '/static/'
 
     USE_I18N = True
     USE_L10N = True
     USE_TZ = True
 
-    LOGIN_URL = 'index'
-    LOGIN_ERROR_URL = 'index'
-    LOGOUT_REDIRECT_URL = 'index'
-    LOGIN_REDIRECT_URL = 'dashboard'
-    STATIC_URL = '/static/'
-
     CORS_ORIGIN_ALLOW_ALL = True
 
     AUTH_USER_MODEL = 'kubeportal.User'
-
+    SOCIAL_AUTH_USER_MODEL = 'kubeportal.User'
 
 class Development(Common):
     DEBUG = True
