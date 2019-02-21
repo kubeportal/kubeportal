@@ -44,6 +44,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username','is_superuser']
+    list_display = ('username', 'first_name', 'last_name', 'is_staff', 'service_account')
     fieldsets = (
         (None, {
             'fields': ('username','first_name','last_name','service_account', 'is_staff', 'is_superuser'),
