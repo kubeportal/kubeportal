@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import Permission
 from django.db import models
 
 
@@ -19,14 +20,16 @@ class KubernetesServiceAccount(models.Model):
     '''
     name = models.CharField(max_length=100)
     uid = models.CharField(max_length=50, null=True, editable=False)
-    namespace = models.ForeignKey(KubernetesNamespace, on_delete=models.CASCADE)
+    namespace = models.ForeignKey(
+        KubernetesNamespace, on_delete=models.CASCADE)
 
     def __str__(self):
         return "{0} ({1})".format(self.name, self.namespace)
 
 
 class User(AbstractUser):
-    svcaccount = models.ForeignKey(KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True)
+    service_account = models.ForeignKey(
+        KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class ClusterApplication(models.Model):
