@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.conf import settings
 from django.urls import path
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import Group
 from django.template.response import TemplateResponse
 from .models import KubernetesServiceAccount, KubernetesNamespace, ClusterApplication, User
 
@@ -44,10 +43,10 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
 
 class PortalUserAdmin(UserAdmin):
-    readonly_fields = ['username',]
+    readonly_fields = ['username','is_superuser']
     fieldsets = (
         (None, {
-            'fields': ('username','first_name','last_name','service_account', 'is_staff'),
+            'fields': ('username','first_name','last_name','service_account', 'is_staff', 'is_superuser'),
         }),
     )
 
@@ -56,7 +55,6 @@ class PortalUserAdmin(UserAdmin):
 
 
 admin_site = CustomAdminSite()
-admin_site.register(Group)
 admin_site.register(User, PortalUserAdmin)
 admin_site.register(KubernetesServiceAccount, KubernetesServiceAccountAdmin)
 admin_site.register(KubernetesNamespace, KubernetesNamespaceAdmin)
