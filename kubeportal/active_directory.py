@@ -9,9 +9,8 @@ def is_available():
         server = ldap3.Server(domainname, connect_timeout=1)
         conn = ldap3.Connection(server)
         conn.open()
-        conn.close()
         return True
-    except Exception:
+    except Exception as e:
         return False
 
 
