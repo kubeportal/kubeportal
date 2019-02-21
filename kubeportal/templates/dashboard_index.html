@@ -12,11 +12,17 @@
   <div class="card-body">
   	<p>Full name: {{user.get_full_name}}</p>
   	<p>User name: {{user.get_username}}</p>
+    {% if user.svcaccount %}
+    <p>Kubernetes Service Account: {{user.svcaccount}}</p>
+    {% else %}
+    <p class="text-danger">Sorry, you have no access to the cluster. Please contact an administrator.</p>    
+    {% endif %}
   </div>
 </div>
 </div>
 </div>
 
+{% if user.svcaccount %}
 <div class="row">
 {% for app in clusterapps %}
 <div class="col-6">
@@ -37,5 +43,6 @@
 </div>
 {% endfor %}
 </div>
+{% endif %}
 
 {% endblock %}

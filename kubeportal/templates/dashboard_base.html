@@ -20,12 +20,14 @@
           <span>Welcome</span>
         </a>
       </li>
+      {% if user.svcaccount %}
       <li class="nav-item {% if request.resolver_match.url_name == 'config' %}active{% endif %}">
         <a class="nav-link" href="{% url 'config' %}">
           <i class="fas fa-fw fa-file-alt"></i>
           <span>Config file</span>
         </a>
       </li>
+      {% endif %}
       {% if user.is_staff %}
       <li class="nav-item">
         <a class="nav-link" href="{% url 'admin:index' %}">
