@@ -26,7 +26,7 @@ class KubernetesServiceAccount(models.Model):
 
 
 class User(AbstractUser):
-    svcaccount = models.ForeignKey(KubernetesServiceAccount, on_delete=models.SET_NULL, null=True)
+    svcaccount = models.ForeignKey(KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class ClusterApplication(models.Model):
