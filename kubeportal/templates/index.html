@@ -31,7 +31,7 @@
       <div class="text-center">
           <div class="d-block small mt-3 text-secondary">
                   {% if ad_status_cached == "unconfigured" %}
-                    Status: <span class='text-warning'>admin only</span>
+                    Status: <span class='text-warning'>Organizational login not configured</span>
                   {% endif %}
                   {% if ad_status_cached == "available" %}
                     Status: <i>{% settings_value "ACTIVE_DIRECTORY_DOMAIN" %}</i> login is <span class='text-success'>available</span>
