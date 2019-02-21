@@ -33,9 +33,6 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    def has_add_permission(self, request):
-        return False
-
 
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
@@ -44,12 +41,21 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
-    def has_add_permission(self, request):
+
+class PortalUserAdmin(UserAdmin):
+    readonly_fields = ['username',]
+    fieldsets = (
+        (None, {
+            'fields': ('username','first_name','last_name','svcaccount')
+        }),
+    )
+
+    def has_add_permission(self, request, obj=None):
         return False
 
 
 admin_site = CustomAdminSite()
-admin_site.register(User, UserAdmin)
+admin_site.register(User, PortalUserAdmin)
 admin_site.register(KubernetesServiceAccount, KubernetesServiceAccountAdmin)
 admin_site.register(KubernetesNamespace, KubernetesNamespaceAdmin)
 admin_site.register(ClusterApplication)

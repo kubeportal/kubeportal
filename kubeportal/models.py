@@ -7,7 +7,7 @@ class KubernetesNamespace(models.Model):
     A replication of namespaces known to the API server.
     '''
     name = models.CharField(max_length=100)
-    uid = models.CharField(max_length=50, null=True)
+    uid = models.CharField(max_length=50, null=True, editable=False)
 
     def __str__(self):
         return self.name
@@ -18,11 +18,11 @@ class KubernetesServiceAccount(models.Model):
     A replication of service accounts known to the API server.
     '''
     name = models.CharField(max_length=100)
-    uid = models.CharField(max_length=50, null=True)
+    uid = models.CharField(max_length=50, null=True, editable=False)
     namespace = models.ForeignKey(KubernetesNamespace, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.name
+        return "{0} ({1})".format(self.name, self.namespace)
 
 
 class User(AbstractUser):
