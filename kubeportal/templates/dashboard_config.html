@@ -7,14 +7,14 @@
 	<div class="card">
 		<div class="card-header">config (<a href="{% url 'config_download' %}">Download</a>)</div>
 		<div class="card-body">
-			<pre><code>{% include 'config.txt'%}</code></pre>
+			<code><pre>{% include 'config.txt'%}</pre></code>
 		</div>
     </div>
   </div>
   <div class="col-sm-6">
   	<h1 class="h4"><code>kubectl</code></h1>
   	<p>
-  	The <code>kubectl</code> command-line tool uses this config file to find the information it needs to connect to the cluster.
+  	The <code>kubectl</code> command-line tool uses this config file to connect to the cluster.
     </p>
   	<h2 class="h5">Windows</h2>
   	<ul>

@@ -18,4 +18,4 @@ preferences: {}
 users:
 - name: {{ user.username }}
   user:
-    token: {{token}}
+    token: {{ user.token }}

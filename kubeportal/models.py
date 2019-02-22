@@ -30,6 +30,10 @@ class User(AbstractUser):
     service_account = models.ForeignKey(
         KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True)
 
+    def token(self):
+        from kubeportal.kubernetes import get_token
+        return get_token(self.service_account)
+
 
 class ClusterApplication(models.Model):
     '''
