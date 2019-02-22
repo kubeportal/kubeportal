@@ -2,13 +2,39 @@
 
 {% block dashboard_content %}
 
-<div class="card w-50">
-<div class="card-header">config (<a href="{% url 'config_download' %}">Download</a>)</div>
-<div class="card-body">
-<pre><code>
-{% include 'config.txt'%}
-</code></pre>
-</div>
+<div class="row">
+  <div class="col-sm-6">
+	<div class="card">
+		<div class="card-header">config (<a href="{% url 'config_download' %}">Download</a>)</div>
+		<div class="card-body">
+			<pre><code>{% include 'config.txt'%}</code></pre>
+		</div>
+    </div>
+  </div>
+  <div class="col-sm-6">
+  	<h1 class="h4"><code>kubectl</code></h1>
+  	<p>
+  	The <code>kubectl</code> command-line tool uses this config file to find the information it needs to connect to the cluster.
+    </p>
+  	<h2 class="h5">Windows</h2>
+  	<ul>
+  		<li>Install <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-on-windows-using-chocolatey-or-scoop">kubectl</a> for Windows</li>
+  		<li>Navigate to your home directory: <code>cd %USERPROFILE%</code></li>
+  		<li>Create the <code>.kube</code> directory: <code>mkdir .kube</code></li>
+  		<li>Save the <a href="{% url 'config_download' %}">config file</a> in this directory</li>
+  	</ul>
+
+  	<h2 class="h5">MacOS X / Linux / Unix</h2>
+  	<ul>
+  		<li>Install <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">kubectl</a> with your favourite package manager</li>
+  		<li>Navigate to your home directory: <code>cd ~</code></li>
+  		<li>Create the <code>.kube</code> directory: <code>mkdir .kube</code></li>
+  		<li>Save the <a href="{% url 'config_download' %}">config file</a> in this directory</li>
+  	</ul>
+
+  	<p>You can test your installation by calling <code>kubectl cluster-info</code>.</p>
+
+  </div>
 </div>
 
 
