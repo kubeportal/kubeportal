@@ -60,7 +60,7 @@ def _sync_namespaces(v1, logger):
                 if portal_ns.uid in k8s_ns_uids:
                     # No action needed
                     logger.info(
-                        "Found existing Kubernetes namespace '{0}' for record".format(portal_ns.name))
+                        "Found existing Kubernetes namespace for record '{0}'".format(portal_ns.name))
                 else:
                     # Remove stale namespace record
                     logger.warning(
@@ -89,7 +89,7 @@ def _sync_svcaccounts(v1, logger):
             try:
                 portal_ns = KubernetesNamespace.objects.get(name=k8s_svca_ns)
             except Exception:
-                logger.error("Skipping {0}:{1}, namespace does not exist.".format(
+                logger.warning("Skipping Kubernetes service account {0}:{1}, namespace does not exist.".format(
                     k8s_svca_ns, k8s_svca_name))
                 continue
             k8s_svca_uid = k8s_svca.metadata.uid
@@ -97,12 +97,12 @@ def _sync_svcaccounts(v1, logger):
                 name=k8s_svca_name, uid=k8s_svca_uid, namespace=portal_ns)
             if created:
                 # Create missing service account record
-                logger.info("Creating portal record for Kubernetes service account '{0}:{1}'".format(
+                logger.info("Creating record for Kubernetes service account '{0}:{1}'".format(
                     k8s_svca_ns, k8s_svca_name))
                 portal_svca.save()
             else:
                 # No action needed
-                logger.info("Found existing portal record for Kubernetes service account '{0}:{1}'".format(
+                logger.info("Found existing record for Kubernetes service account '{0}:{1}'".format(
                     k8s_svca_ns, k8s_svca_name))
         # TODO
     except Exception as e:
