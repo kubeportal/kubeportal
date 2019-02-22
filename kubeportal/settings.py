@@ -103,15 +103,8 @@ class Common(Configuration):
     AUTH_USER_MODEL = 'kubeportal.User'
     SOCIAL_AUTH_USER_MODEL = 'kubeportal.User'
 
-class Development(Common):
-    DEBUG = True
-    SECRET_KEY = '4711'
-    ALLOWED_HOSTS = []
-    LANGUAGE_CODE = 'en-us'
-    TIME_ZONE = 'UTC'
-    BRANDING = "KubePortal"
-    ACTIVE_DIRECTORY_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
 
+class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
         'default': {
@@ -129,15 +122,27 @@ class Development(Common):
     TEST_PEP8_DIRS = [os.path.dirname(PROJECT_DIR), ]
     TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
+    ACTIVE_DIRECTORY_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
+    ALLOWED_HOSTS = []
+    BRANDING = "KubePortal"
+    CLUSTER_API_SERVER = values.Value("#missing setting#", environ_prefix='KUBEPORTAL')
+    CLUSTER_NAME = "dev_cluster"
+    DEBUG = True
+    LANGUAGE_CODE = 'en-us'
+    SECRET_KEY = '4711'
+    TIME_ZONE = 'UTC'
+
 
 class Production(Common):
-    DEBUG = values.Value(False, environ_prefix='KUBEPORTAL')
-    SECRET_KEY = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
-    ALLOWED_HOSTS = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
-    LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
-    TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
-    BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     ACTIVE_DIRECTORY_DOMAIN = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
+    ALLOWED_HOSTS = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
+    BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
+    CLUSTER_API_SERVER = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
+    CLUSTER_NAME = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
+    DEBUG = values.Value(False, environ_prefix='KUBEPORTAL')
+    LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
+    SECRET_KEY = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
+    TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
