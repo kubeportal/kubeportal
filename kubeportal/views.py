@@ -1,9 +1,10 @@
 import time
 from django.views.generic.base import TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .token import FernetToken, InvalidToken
 
 from kubeportal.models import ClusterApplication
+
 
 
 class FernetTokenView(LoginRequiredMixin, TemplateView):
@@ -41,7 +42,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class ConfigDownloadView(LoginRequiredMixin, TemplateView):
+class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'config.txt'
 
     def get_context_data(self, **kwargs):
@@ -55,6 +56,12 @@ class ConfigDownloadView(LoginRequiredMixin, TemplateView):
         response['Content-Disposition'] = 'attachment; filename=config;'
         return response
 
+    def test_func(self):
+        return self.request.user.service_account != None
 
-class ConfigView(LoginRequiredMixin, TemplateView):
+
+class ConfigView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "dashboard_config.html"
+
+    def test_func(self):
+        return self.request.user.service_account != None

@@ -1,4 +1,3 @@
-{% if perms.kubeportal.access %}
 apiVersion: v1
 clusters:
 - cluster:
@@ -18,6 +17,3 @@ users:
 - name: {{username}}
   user:
     token: {{token}}
-{% else %}
-You have no permission to access this cluster
-{% endif %}
