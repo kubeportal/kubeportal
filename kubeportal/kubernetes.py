@@ -10,6 +10,7 @@
 '''
 
 from kubernetes import client, config
+from base64 import b64decode
 import json
 
 from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount
@@ -131,4 +132,5 @@ def get_token(kubeportal_service_account):
     secret_name = service_account.secrets[0].name
     secret = v1.read_namespaced_secret(
         name=secret_name, namespace=kubeportal_service_account.namespace.name)
-    return secret.data['token']
+    encoded_token = secret.data['token']
+    return b64decode(encoded_token).decode()
