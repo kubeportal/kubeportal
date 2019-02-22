@@ -7,7 +7,7 @@ clusters:
 contexts:
 - context:
     cluster: {{clustername}}
-    namespace: {{username}}
+    namespace: {{user.service_account.namespace}}
     user: {{username}}
   name: {{username}}
 current-context: {{username}}
