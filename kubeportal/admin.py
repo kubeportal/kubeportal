@@ -9,7 +9,6 @@ from kubeportal.kubernetes import sync
 
 
 class CustomAdminSite(admin.AdminSite):
-    index_template = "admin/custom_index.html"
     site_header = settings.BRANDING
 
     def get_urls(self):
