@@ -2,7 +2,16 @@
 
 {% block dashboard_content %}
 
-<a href="{% url 'config_download' %}">Download config file</a>
+<div class="card w-50">
+<div class="card-header">config (<a href="{% url 'config_download' %}">Download</a>)</div>
+<div class="card-body">
+<pre><code>
+{% include 'config.txt'%}
+</code></pre>
+</div>
+</div>
+
+
 
 
 {% endblock %}
