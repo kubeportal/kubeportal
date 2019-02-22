@@ -35,10 +35,13 @@ def create_permission_groups(sender, instance, **kwargs):
     try:
         for perm_name in ['Can add user',
                           'Can change user',
+                          'Can delete user',
                           'Can add kubernetes namespace',
                           'Can view kubernetes namespace',
+                          'Can delete kubernetes namespace',
                           'Can add kubernetes service account',
                           'Can view kubernetes service account',
+                          'Can delete kubernetes service account',
                           'Can add cluster application',
                           'Can change cluster application',
                           'Can delete cluster application',
