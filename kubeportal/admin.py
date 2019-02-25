@@ -29,12 +29,18 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return False
 
- 
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username','is_superuser']
     list_display = ('username', 'first_name', 'last_name', 'is_staff', 'service_account')
