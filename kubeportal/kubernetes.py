@@ -70,8 +70,12 @@ def _sync_namespaces(v1, logger):
                 # Portal namespaces without UID are new and should be created in K8S
                 logger.info(
                     "Creating Kubernetes namespace '{0}'".format(portal_ns.name))
-                # TODO
-                assert(False)
+                k8s_ns = client.V1Namespace(api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=portal_ns.name))
+                v1.create_namespace(k8s_ns)
+                # Fetch UID and store it in portal record
+                created_k8s_ns = v1.read_namespace(name=portal_ns.name)
+                portal_ns.uid = created_k8s_ns.metadata.uid
+                portal_ns.save()
     except Exception as e:
         logger.error("Exception: {0}".format(e))
 
