@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.conf import settings
 from django.urls import path
 from django.shortcuts import redirect
@@ -59,6 +59,14 @@ class PortalUserAdmin(UserAdmin):
 
     def has_add_permission(self, request, obj=None):
         return False
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        messages.warning(request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
+
+    def delete_queryset(self, request, queryset):
+        super().delete_queryset(request, queryset)
+        messages.warning(request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
 
 
 admin_site = CustomAdminSite()
