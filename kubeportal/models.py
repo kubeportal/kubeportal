@@ -27,6 +27,9 @@ class KubernetesServiceAccount(models.Model):
 
 
 class User(AbstractUser):
+    '''
+    A Django user, extended by some fields.
+    '''
     service_account = models.ForeignKey(
         KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True)
 
