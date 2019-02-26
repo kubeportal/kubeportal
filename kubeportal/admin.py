@@ -3,8 +3,7 @@ from django.conf import settings
 from django.urls import path
 from django.shortcuts import redirect
 from django.contrib.auth.admin import UserAdmin
-from .models import KubernetesServiceAccount, KubernetesNamespace, ClusterApplication, User
-
+from . import models
 from kubeportal.kubernetes import sync
 
 
@@ -69,8 +68,19 @@ class PortalUserAdmin(UserAdmin):
         messages.warning(request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
 
 
+class OAuth2ApplicationAdmin(admin.ModelAdmin):
+    list_display = ['name', 'client_id', 'client_secret']
+
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'redirect_uris', 'client_id', 'client_secret'),
+        }),
+    )
+
+
 admin_site = CustomAdminSite()
-admin_site.register(User, PortalUserAdmin)
-admin_site.register(KubernetesServiceAccount, KubernetesServiceAccountAdmin)
-admin_site.register(KubernetesNamespace, KubernetesNamespaceAdmin)
-admin_site.register(ClusterApplication)
+admin_site.register(models.User, PortalUserAdmin)
+admin_site.register(models.KubernetesServiceAccount, KubernetesServiceAccountAdmin)
+admin_site.register(models.KubernetesNamespace, KubernetesNamespaceAdmin)
+admin_site.register(models.ClusterApplication)
+admin_site.register(models.OAuth2Application, OAuth2ApplicationAdmin)
