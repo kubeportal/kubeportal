@@ -42,8 +42,8 @@ class ClusterApplication(models.Model):
     '''
     Cluster applications to be shown in the frontend.
     '''
-    name = models.CharField(max_length=100)
-    url = models.URLField()
+    name = models.CharField(help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
+    url = models.URLField(help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
 
     def __str__(self):
         return self.name
