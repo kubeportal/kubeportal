@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.conf import settings
 from django.urls import path
+from django.shortcuts import redirect
 from django.contrib.auth.admin import UserAdmin
-from django.template.response import TemplateResponse
 from .models import KubernetesServiceAccount, KubernetesNamespace, ClusterApplication, User
 
 from kubeportal.kubernetes import sync
@@ -17,11 +17,8 @@ class CustomAdminSite(admin.AdminSite):
         return urls + [path('sync', self.sync_view, name='sync'), ]
 
     def sync_view(self, request):
-        ns_logs, svca_logs = sync()
-        base_context = self.each_context(request)
-        add_context = {'ns_logs': ns_logs, 'svca_logs': svca_logs}
-        context = {**base_context, **add_context}
-        return TemplateResponse(request, "admin/sync.html", context)
+        sync(request)
+        return redirect('admin:index')
 
 
 class KubernetesServiceAccountAdmin(admin.ModelAdmin):
@@ -33,6 +30,10 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        sync(request)
+
 
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
@@ -41,13 +42,18 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        sync(request)
+
 
 class PortalUserAdmin(UserAdmin):
-    readonly_fields = ['username','is_superuser']
-    list_display = ('username', 'first_name', 'last_name', 'is_staff', 'service_account')
+    readonly_fields = ['username', 'is_superuser']
+    list_display = ('username', 'first_name', 'last_name',
+                    'is_staff', 'service_account')
     fieldsets = (
         (None, {
-            'fields': ('username','first_name','last_name','service_account', 'is_staff', 'is_superuser'),
+            'fields': ('username', 'first_name', 'last_name', 'service_account', 'is_staff', 'is_superuser'),
         }),
     )
 
