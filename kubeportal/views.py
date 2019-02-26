@@ -1,9 +1,13 @@
 import time
-from django.views.generic.base import TemplateView
+from django.views.generic.base import TemplateView, View
+from django.http.response import HttpResponseForbidden, HttpResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .token import FernetToken, InvalidToken
+import logging
 
 from kubeportal.models import ClusterApplication
+
+logger = logging.getLogger('KubePortal')
 
 
 class FernetTokenView(LoginRequiredMixin, TemplateView):
@@ -39,6 +43,23 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(*args, **kwargs)
         context['clusterapps'] = ClusterApplication.objects.all()
         return context
+
+
+class SubrequestAuthView(View):
+    http_method_names = ['get']
+
+    def get(self, request, *args, **kwargs):
+        if (not request.user) or (not request.user.is_authenticated):
+            logger.debug("Rejecting authorization through subrequest, user is not authenticated.")
+            return HttpResponseForbidden()
+        elif not request.user.service_account:
+            logger.debug("Rejecting authorization through subrequest, user {0} has no service account.".format(request.user))
+            return HttpResponseForbidden()
+        else:
+            logger.debug("Allowing authorization through subrequest for user {0} with service account '{1}:{2}'.".format(request.user, request.user.service_account.namespace.name, request.user.service_account.name))
+            response = HttpResponse()
+            response['Authorization'] = 'Bearer ' + request.user.token()
+            return response
 
 
 class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
