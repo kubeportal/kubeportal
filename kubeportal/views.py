@@ -6,7 +6,6 @@ from .token import FernetToken, InvalidToken
 from kubeportal.models import ClusterApplication
 
 
-
 class FernetTokenView(LoginRequiredMixin, TemplateView):
     template_name = "dashboard_fernet.html"
 
@@ -57,11 +56,17 @@ class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return response
 
     def test_func(self):
-        return self.request.user.service_account != None
+        '''
+        Allow config download only if a K8S service account is set.
+        '''
+        return self.request.user.service_account is not None
 
 
 class ConfigView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "dashboard_config.html"
 
     def test_func(self):
-        return self.request.user.service_account != None
+        '''
+        Allow config view only if a K8S service account is set.
+        '''
+        return self.request.user.service_account is not None
