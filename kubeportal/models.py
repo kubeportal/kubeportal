@@ -19,6 +19,9 @@ class OAuth2Application(AbstractApplication):
         choices=AbstractApplication.CLIENT_TYPES,
         default=AbstractApplication.CLIENT_CONFIDENTIAL)
 
+    class Meta:
+        verbose_name = "OAuth2 Application"
+
 
 class KubernetesNamespace(models.Model):
     '''
@@ -56,9 +59,9 @@ class User(AbstractUser):
         return get_token(self.service_account)
 
 
-class ClusterApplication(models.Model):
+class Link(models.Model):
     '''
-    Cluster applications to be shown in the frontend.
+    Links to be shown in the frontend.
     '''
     name = models.CharField(
         help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)

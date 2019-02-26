@@ -17,6 +17,10 @@ class Migration(migrations.Migration):
         ('auth', '0009_alter_user_last_name_max_length'),
     ]
 
+    run_before = [
+        ('oauth2_provider', '0001_initial'),
+    ]
+
     operations = [
         migrations.CreateModel(
             name='User',
@@ -44,7 +48,7 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='ClusterApplication',
+            name='Link',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)),

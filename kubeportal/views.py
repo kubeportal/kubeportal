@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .token import FernetToken, InvalidToken
 import logging
 
-from kubeportal.models import ClusterApplication
+from kubeportal.models import Link
 
 logger = logging.getLogger('KubePortal')
 
@@ -41,7 +41,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['clusterapps'] = ClusterApplication.objects.all()
+        context['clusterapps'] = Link.objects.all()
         return context
 
 
