@@ -27,6 +27,7 @@
         {% csrf_token %}
         <div class="form-group">
           <div class="form-label-group">
+            <input type="hidden" name="next" value="{{ next }}" />
             <input type="text" id="username" name="username" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
             <label for="username">User name</label>
           </div>
