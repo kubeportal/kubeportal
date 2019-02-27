@@ -33,10 +33,37 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         sync(request)
 
+    def get_queryset(self, request):
+        '''
+        Show service accounts in namespaces being marked as non-visible
+        only for superusers.
+        '''
+        qs = self.model.objects.get_queryset().order_by('namespace__name')
+        if not request.user.is_superuser:
+            qs = qs.filter(namespace__visible=True)
+        return qs
+
 
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
-    readonly_fields = ['name', ]
     list_display = ['name', 'visible']
+
+    def get_readonly_fields(self, request, obj=None):
+        '''
+        The name of the namespace can only be configured on
+        creation, but is fixed after the first sync.
+
+        Only superusers can change the visibility flag.
+        '''
+        if request.user.is_superuser:
+            if obj:
+                if obj.is_synced():
+                    return ['name', ]
+            return []
+        else:
+            if obj:
+                if obj.is_synced():
+                    return ['name', 'visible']
+            return ['visible', ]
 
     def has_delete_permission(self, request, obj=None):
         return False
