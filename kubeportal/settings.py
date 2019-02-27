@@ -1,8 +1,12 @@
 import os
 from configurations import Configuration, values
 
+from kubeportal.secret import get_secret_key
+
 
 class Common(Configuration):
+    SECRET_KEY = get_secret_key()
+
     INSTALLED_APPS = [
         'django.contrib.admin',
         'django.contrib.auth',
@@ -188,7 +192,6 @@ class Development(Common):
     CLUSTER_API_SERVER = values.Value("#missing setting#", environ_prefix='KUBEPORTAL')
     DEBUG = True
     LANGUAGE_CODE = 'en-us'
-    SECRET_KEY = '4711'
     TIME_ZONE = 'UTC'
 
 
@@ -199,7 +202,6 @@ class Production(Common):
     CLUSTER_API_SERVER = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     DEBUG = values.Value(False, environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
-    SECRET_KEY = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
 
     DATABASES = {}
