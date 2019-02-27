@@ -104,10 +104,10 @@ class Common(Configuration):
 
     CORS_ORIGIN_ALLOW_ALL = True
 
+    ALLOWED_HOSTS = ['*']
+
     AUTH_USER_MODEL = 'kubeportal.User'
     SOCIAL_AUTH_USER_MODEL = 'kubeportal.User'
-
-    LOG_FILE = values.Value("/tmp/kubeportal.log", environ_prefix='KUBEPORTAL')
 
     LOGGING = {
         'version': 1,
@@ -131,34 +131,27 @@ class Common(Configuration):
         'handlers': {
             'mail_admins': {
                 'level': 'ERROR',
-                'filters': ['require_debug_false'],
+                'filters': ['require_debug_false', ],
                 'class': 'django.utils.log.AdminEmailHandler'
             },
             'console': {
                 'level': 'DEBUG',
-                'filters': ['require_debug_true'],
                 'class': 'logging.StreamHandler'
             },
-            'file': {
-                'level': 'DEBUG',
-                'class': 'logging.FileHandler',
-                'formatter': 'verbose',
-                'filename': str(LOG_FILE)
-            }
         },
         'loggers': {
             'django.request': {
-                'handlers': ['mail_admins', 'file'],
+                'handlers': ['mail_admins', 'console'],
                 'level': 'ERROR',
                 'propagate': True,
             },
             'KubePortal': {
-                'handlers': ['console', 'file'],
+                'handlers': ['console', ],
                 'level': 'DEBUG',
                 'propagate': True,
             },
             'social': {
-                'handlers': ['console', 'file'],
+                'handlers': ['console', ],
                 'level': 'DEBUG',
                 'propagate': True,
             },
@@ -187,7 +180,6 @@ class Development(Common):
     TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
     ACTIVE_DIRECTORY_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
-    ALLOWED_HOSTS = []
     BRANDING = "KubePortal"
     CLUSTER_API_SERVER = values.Value("#missing setting#", environ_prefix='KUBEPORTAL')
     DEBUG = True
@@ -197,12 +189,10 @@ class Development(Common):
 
 class Production(Common):
     ACTIVE_DIRECTORY_DOMAIN = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
-    ALLOWED_HOSTS = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     CLUSTER_API_SERVER = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     DEBUG = values.Value(False, environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
 
-    DATABASES = {}
-    DATABASES['default'] = values.DatabaseURLValue('sqlite:////tmp/kubeportal.sqlite3', environ_prefix='KUBEPORTAL')
+    DATABASES = values.DatabaseURLValue('sqlite:////tmp/kubeportal.sqlite3', environ_prefix='KUBEPORTAL')
