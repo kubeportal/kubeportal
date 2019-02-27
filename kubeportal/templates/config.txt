@@ -5,10 +5,10 @@ clusters:
 - cluster:
     insecure-skip-tls-verify: true
     server: {% settings_value 'CLUSTER_API_SERVER' %}
-  name: {% settings_value 'CLUSTER_NAME' %}
+  name: {% settings_value_normalized 'BRANDING' %}
 contexts:
 - context:
-    cluster: {% settings_value 'CLUSTER_NAME' %}
+    cluster: {% settings_value_normalized 'BRANDING' %}
     namespace: {{user.service_account.namespace}}
     user: {{ user.username }}
   name: {{ user.username }}

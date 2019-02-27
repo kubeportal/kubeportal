@@ -186,7 +186,6 @@ class Development(Common):
     ALLOWED_HOSTS = []
     BRANDING = "KubePortal"
     CLUSTER_API_SERVER = values.Value("#missing setting#", environ_prefix='KUBEPORTAL')
-    CLUSTER_NAME = "dev_cluster"
     DEBUG = True
     LANGUAGE_CODE = 'en-us'
     SECRET_KEY = '4711'
@@ -198,16 +197,14 @@ class Production(Common):
     ALLOWED_HOSTS = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     CLUSTER_API_SERVER = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
-    CLUSTER_NAME = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     DEBUG = values.Value(False, environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     SECRET_KEY = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
 
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            'NAME': values.Value(environ_required=True, environ_name='DB_NAME', environ_prefix='KUBEPORTAL'),
         }
     }

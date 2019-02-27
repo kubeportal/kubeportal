@@ -22,6 +22,12 @@ def settings_value(name):
     return getattr(settings, name, "")
 
 
+@register.simple_tag
+def settings_value_normalized(name):
+    val = getattr(settings, name, "")
+    return val.lower().replace(' ', '_')
+
+
 @register.simple_tag(takes_context=True)
 def placeholder_replace(context, text):
     with_ns = text.replace("{{namespace}}", context.request.user.service_account.namespace.name)
