@@ -23,22 +23,25 @@ class CustomAdminSite(admin.AdminSite):
 class KubernetesServiceAccountAdmin(admin.ModelAdmin):
     list_display = ['name', 'namespace']
 
-    def get_readonly_fields(self, request, obj=None):
+    def has_change_permission(self, request, obj=None):
         '''
         The name and namespace of the service account can only be configured on
         creation, but is fixed after the first sync.
         '''
-        if obj:
-            if obj.is_synced():
-                return ['name', 'namespace']
-        return []
-
-    def has_delete_permission(self, request, obj=None):
-        return False
+        if obj and obj.is_synced():
+            return False
+        else:
+            return True
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         sync(request)
+
+    def has_delete_permission(self, request, obj=None):
+        '''
+        Disable deletion, even for superusers.
+        '''
+        return False
 
     def get_queryset(self, request):
         '''
@@ -54,25 +57,38 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
     list_display = ['name', 'visible']
 
+    def has_change_permission(self, request, obj=None):
+        '''
+        When everything is read-only, the view is no longer a change view
+        '''
+        if obj and obj.is_synced() and not request.user.is_superuser:
+            return False
+        else:
+            return True
+
     def get_readonly_fields(self, request, obj=None):
         '''
         The name of the namespace can only be configured on
         creation, but is fixed after the first sync.
 
-        Only superusers can change the visibility flag.
+        Only superusers can change the visibility flag, all the time.
         '''
-        if request.user.is_superuser:
-            if obj:
-                if obj.is_synced():
-                    return ['name', ]
-            return []
+        if obj:
+            if request.user.is_superuser:
+                return ['name', ]
+            else:
+                # Case as above in has_change_permission()
+                return ['name', 'visible', ]
         else:
-            if obj:
-                if obj.is_synced():
-                    return ['name', 'visible']
-            return ['visible', ]
+            if request.user.is_superuser:
+                return []
+            else:
+                return ['visible', ]
 
     def has_delete_permission(self, request, obj=None):
+        '''
+        Disable deletion, even for superusers.
+        '''
         return False
 
     def save_model(self, request, obj, form, change):
