@@ -29,6 +29,7 @@ class KubernetesNamespace(models.Model):
     '''
     name = models.CharField(max_length=100)
     uid = models.CharField(max_length=50, null=True, editable=False)
+    visible = models.BooleanField(default=True, help_text='Visibility of the namespace in admin interface')
 
     def __str__(self):
         return self.name

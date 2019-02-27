@@ -21,6 +21,9 @@ from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount
 logger = logging.getLogger('KubePortal')
 
 
+HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
+
+
 def _sync_namespaces(request, v1):
     try:
         # K8S namespaces -> portal namespaces
@@ -38,6 +41,10 @@ def _sync_namespaces(request, v1):
                 # Create missing namespace record
                 logger.info(
                     "Creating record for Kubernetes namespace '{0}'".format(k8s_ns_name))
+                if k8s_ns_name in HIDDEN_NAMESPACES:
+                    portal_ns.visible = False
+                else:
+                    portal_ns.visible = True
                 portal_ns.save()
                 messages.info(request,
                               "Found new Kubernetes namespace '{0}'.".format(k8s_ns_name))

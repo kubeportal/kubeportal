@@ -35,8 +35,8 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
 
 
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
-    def has_change_permission(self, request, obj=None):
-        return False
+    readonly_fields = ['name', ]
+    list_display = ['name', 'visible']
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -44,6 +44,24 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         sync(request)
+
+    def get_queryset(self, request):
+        '''
+        Show namespaces being marked as non-visible
+        only for superusers.
+        '''
+        qs = self.model.objects.get_queryset().order_by('name')
+        if not request.user.is_superuser:
+            qs = qs.filter(visible=True)
+        return qs
+
+    def render_change_form(self, request, context, *args, **kwargs):
+        qs = models.KubernetesNamespace.objects.order_by('name')
+        if not request.user.is_superuser:
+            qs = qs.filter(visible=True)
+        context['adminform'].form.fields['namespace'].queryset = qs
+        return super().render_change_form(request, context, *args, **kwargs)
+
 
 
 class PortalUserAdmin(UserAdmin):
@@ -61,11 +79,13 @@ class PortalUserAdmin(UserAdmin):
 
     def delete_model(self, request, obj):
         super().delete_model(request, obj)
-        messages.warning(request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
+        messages.warning(
+            request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
 
     def delete_queryset(self, request, queryset):
         super().delete_queryset(request, queryset)
-        messages.warning(request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
+        messages.warning(
+            request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
 
 
 class OAuth2ApplicationAdmin(admin.ModelAdmin):
@@ -80,7 +100,8 @@ class OAuth2ApplicationAdmin(admin.ModelAdmin):
 
 admin_site = CustomAdminSite()
 admin_site.register(models.User, PortalUserAdmin)
-admin_site.register(models.KubernetesServiceAccount, KubernetesServiceAccountAdmin)
+admin_site.register(models.KubernetesServiceAccount,
+                    KubernetesServiceAccountAdmin)
 admin_site.register(models.KubernetesNamespace, KubernetesNamespaceAdmin)
 admin_site.register(models.Link)
 admin_site.register(models.OAuth2Application, OAuth2ApplicationAdmin)
