@@ -23,8 +23,15 @@ class CustomAdminSite(admin.AdminSite):
 class KubernetesServiceAccountAdmin(admin.ModelAdmin):
     list_display = ['name', 'namespace']
 
-    def has_change_permission(self, request, obj=None):
-        return False
+    def get_readonly_fields(self, request, obj=None):
+        '''
+        The name and namespace of the service account can only be configured on
+        creation, but is fixed after the first sync.
+        '''
+        if obj:
+            if obj.is_synced():
+                return ['name', 'namespace']
+        return []
 
     def has_delete_permission(self, request, obj=None):
         return False

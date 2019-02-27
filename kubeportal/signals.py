@@ -40,6 +40,7 @@ def create_permission_groups(sender, instance, **kwargs):
                           'Can change kubernetes namespace',
                           'Can view kubernetes namespace',
                           'Can add kubernetes service account',
+                          'Can change kubernetes service account',
                           'Can view kubernetes service account',
                           'Can add link',
                           'Can change link',

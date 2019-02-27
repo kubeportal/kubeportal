@@ -50,6 +50,9 @@ class KubernetesServiceAccount(models.Model):
     def __str__(self):
         return "{1}:{0}".format(self.name, self.namespace)
 
+    def is_synced(self):
+        return self.uid is not None
+
 
 class User(AbstractUser):
     '''
