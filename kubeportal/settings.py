@@ -202,9 +202,5 @@ class Production(Common):
     SECRET_KEY = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
 
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': values.Value(environ_required=True, environ_name='DB_NAME', environ_prefix='KUBEPORTAL'),
-        }
-    }
+    DATABASES = {}
+    DATABASES['default'] = values.DatabaseURLValue('sqlite:////tmp/kubeportal.sqlite3', environ_prefix='KUBEPORTAL')
