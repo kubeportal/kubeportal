@@ -2,11 +2,9 @@
 
 Kubeportal is a web application to get a single sign-on Kubernetes experience. It operates as synchronizing entity between a portal user base and Kubernetes service accounts resp. namespaces.
 
-After portal login, the users can download their their `kubectl` config file directly from the web site. Service accounts and namespaces for users are automatically created on first login of the user. 
+After portal login, users can download their `kubectl` config file directly from the web site. Their service accounts and namespaces are configured by administrative users in the backend. 
 
-The portal user password checking can be delegated to external entities, such as Active Directory. This allows the integration into existing operational environments.
-
-Kubeportal acts as OAuth2 and WebHook authentication provider. This enables other web applications to use it as single sign-on backend for themselves.
+Kubeportal acts as OAuth2 and WebHook authentication provider. This enables other web applications to use it as authorization service.
   
 
 ```
