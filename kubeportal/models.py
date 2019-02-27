@@ -59,7 +59,7 @@ class User(AbstractUser):
     A Django user, extended by some fields.
     '''
     service_account = models.ForeignKey(
-        KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True)
+        KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True, help_text="The security token of this service account is provided for the user.")
 
     def token(self):
         from kubeportal.kubernetes import get_token
