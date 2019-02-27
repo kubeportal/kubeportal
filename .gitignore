@@ -55,7 +55,7 @@ coverage.xml
 *.log
 local_settings.py
 db.sqlite3
-kubeportal/secrets.py
+kubeportal/secret_key.txt
 
 # Flask stuff:
 instance/

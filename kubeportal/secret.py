@@ -1,3 +1,7 @@
+'''
+Generation / retrieval of the value for DJANGO_SECRET_KEY.
+'''
+
 import os
 
 from django.core.management.utils import get_random_secret_key
