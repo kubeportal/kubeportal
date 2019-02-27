@@ -40,10 +40,10 @@ def create_permission_groups(sender, instance, **kwargs):
                           'Can view kubernetes namespace',
                           'Can add kubernetes service account',
                           'Can view kubernetes service account',
-                          'Can add cluster application',
-                          'Can change cluster application',
-                          'Can delete cluster application',
-                          'Can view cluster application']:
+                          'Can add link',
+                          'Can change link',
+                          'Can delete link',
+                          'Can view link']:
             perm = Permission.objects.get(name=perm_name)
             admin_group.permissions.add(perm)
         admin_group.save()

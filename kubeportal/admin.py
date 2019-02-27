@@ -55,14 +55,6 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
             qs = qs.filter(visible=True)
         return qs
 
-    def render_change_form(self, request, context, *args, **kwargs):
-        qs = models.KubernetesNamespace.objects.order_by('name')
-        if not request.user.is_superuser:
-            qs = qs.filter(visible=True)
-        context['adminform'].form.fields['namespace'].queryset = qs
-        return super().render_change_form(request, context, *args, **kwargs)
-
-
 
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username', 'is_superuser']
@@ -86,6 +78,12 @@ class PortalUserAdmin(UserAdmin):
         super().delete_queryset(request, queryset)
         messages.warning(
             request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
+
+    def render_change_form(self, request, context, *args, **kwargs):
+         context['adminform'].form.fields['service_account'].queryset = models.KubernetesServiceAccount.objects.filter(namespace__visible=True)
+         return super().render_change_form(request, context, *args, **kwargs)
+
+
 
 
 class OAuth2ApplicationAdmin(admin.ModelAdmin):
