@@ -188,11 +188,14 @@ class Development(Common):
 
 
 class Production(Common):
-    ACTIVE_DIRECTORY_DOMAIN = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
+    ACTIVE_DIRECTORY_DOMAIN = values.Value('', environ_prefix='KUBEPORTAL')
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
-    CLUSTER_API_SERVER = values.Value(environ_required=True, environ_prefix='KUBEPORTAL')
+    CLUSTER_API_SERVER = values.Value('', environ_prefix='KUBEPORTAL')
     DEBUG = values.Value(False, environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
 
-    DATABASES = values.DatabaseURLValue('sqlite:////tmp/kubeportal.sqlite3', environ_prefix='KUBEPORTAL')
+    DATABASES = values.DatabaseURLValue('sqlite:////data/kubeportal.sqlite3', environ_prefix='KUBEPORTAL')
+
+    STATIC_ROOT = values.Value('', environ_prefix='KUBEPORTAL')
+    STATICFILES_DIRS = values.TupleValue('', environ_prefix='KUBEPORTAL')

@@ -30,10 +30,9 @@ docker:
 docker-run:
 	docker run -it \
 	    -p 8000:8000 \
-		-e KUBEPORTAL_ACTIVE_DIRECTORY_DOMAIN=example.com \
-		-e KUBEPORTAL_CLUSTER_API_SERVER=https://example.com/api \
-		-e KUBEPORTAL_DATABASE_URL=sqlite:////tmp/kubeportal.sqlite3 \
-        troeger/kubeportal:$(VERSION)
+		-e KUBEPORTAL_SUPERUSER_NAME=admin \
+		-e KUBEPORTAL_SUPERUSER_PASSWORD=admin \
+		troeger/kubeportal:$(VERSION)
 
 # Re-create docker images and upload into registry
 docker-push: docker
