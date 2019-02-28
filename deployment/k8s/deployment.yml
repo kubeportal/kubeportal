@@ -19,7 +19,7 @@ spec:
       - name: kubeportal
         image: troeger/kubeportal:0.1.2
         ports:
-        - containerPort: 80
+        - containerPort: 8000
         envFrom:
         - configMapRef:
             name: config
