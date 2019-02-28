@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: kubeportal
-        image: troeger/kubeportal:0.1.1
+        image: troeger/kubeportal:0.1.2
         ports:
         - containerPort: 80
         envFrom:
