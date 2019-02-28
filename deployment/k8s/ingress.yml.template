@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: kubeportal
+  namespace: kubeportal
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    certmanager.k8s.io/cluster-issuer: letsencrypt
+spec:
+  tls:
+  - secretName: <Name of the TLS secret>
+    hosts:
+    - <Host name where the portal is available>
+  rules:
+  - host: <Host name where the portal is available>
+    http: 
+      paths: 
+      - path: <Host path where the portal is available>
+        backend:
+          serviceName: kubeportal
+          servicePort: 8000
