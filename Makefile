@@ -28,9 +28,7 @@ docker:
 	docker build -t troeger/kubeportal:$(VERSION) .
 
 docker-run:
-	docker run -it \
-	    -p 8000:8000 \
-		troeger/kubeportal:$(VERSION)
+	docker run -it -p 8000:8000 troeger/kubeportal:$(VERSION)
 
 # Re-create docker images and upload into registry
 docker-push: docker

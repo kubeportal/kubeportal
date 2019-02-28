@@ -1,5 +1,4 @@
-#!/bin/bash
-set -e
+#!/bin/sh
 
 /code/manage.py migrate --configuration=Production
 /code/manage.py ensure_root --configuration=Production

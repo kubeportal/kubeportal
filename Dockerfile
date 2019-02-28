@@ -21,5 +21,5 @@ RUN /code/manage.py collectstatic --noinput --configuration=Production
 
 EXPOSE 8000
 
-CMD ["/bin/sh", /code/deployment/docker/docker-entry.sh"]
+CMD ["/bin/sh", "/code/deployment/docker/docker-entry.sh"]
 
