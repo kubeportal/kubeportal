@@ -30,8 +30,6 @@ docker:
 docker-run:
 	docker run -it \
 	    -p 8000:8000 \
-		-e KUBEPORTAL_SUPERUSER_NAME=admin \
-		-e KUBEPORTAL_SUPERUSER_PASSWORD=admin \
 		troeger/kubeportal:$(VERSION)
 
 # Re-create docker images and upload into registry
