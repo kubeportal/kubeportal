@@ -1,9 +1,8 @@
 #!/bin/bash
 set -e
 
-touch /tmp/kubeportal.log
-chmod ugo+rw /tmp/kubeportal.log
-/code/manage.py migrate
+/code/manage.py migrate --configuration=Production
+
 /usr/local/bin/uwsgi --http-auto-chunked \
                      --http-keepalive \
                      --wsgi-file /code/kubeportal/wsgi.py \
@@ -12,4 +11,5 @@ chmod ugo+rw /tmp/kubeportal.log
                      --uid 1000 \
                      --gid 1000 \
                      --threads 4 \
-                     --http 0.0.0.0:8000
+                     --http 0.0.0.0:8000 \
+                     --static-map /static=/code/static-collected
