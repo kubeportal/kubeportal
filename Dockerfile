@@ -4,14 +4,8 @@ COPY requirements.txt /tmp/
 
 RUN apk --no-cache add gcc make libc-dev musl-dev libffi-dev openssl-dev pcre-dev && \
     pip install --no-cache-dir -r /tmp/requirements.txt uwsgi && \
-    addgroup -g 1000 kubeportal && \ 
-    adduser -D -u 1000 -G kubeportal kubeportal && \
     mkdir /code/ && \
-    mkdir /data/ && \
-    chown 1000:1000 /code && \
-    chown 1000:1000 /data
-
-USER kubeportal
+    mkdir /data/
 
 COPY . /code/
 
