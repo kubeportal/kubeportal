@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubeportal
+  namespace: kubeportal
   labels:
     app.kubernetes.io/name: kubeportal
 spec:
