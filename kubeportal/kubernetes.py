@@ -132,7 +132,7 @@ def _sync_svcaccounts(request, v1):
                 logger.info("Found existing record for Kubernetes service account '{0}:{1}'".format(
                     k8s_svca.metadata.namespace, k8s_svca.metadata.name))
                 success_count_pull += 1
-        if ignored_missing_ns is not []:
+        if len(ignored_missing_ns) > 0:
             names = ["{0}:{1}".format(a, b)
                      for a, b in ignored_missing_ns]
             messages.warning(
