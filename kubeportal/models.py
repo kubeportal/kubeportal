@@ -40,6 +40,7 @@ class User(AbstractUser):
     service_account = models.ForeignKey(
         KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True, help_text="The security token of this service account is provided for the user.")
 
+    @property
     def token(self):
         from kubeportal.kubernetes import get_token
         return get_token(self.service_account)
