@@ -11,7 +11,7 @@ logger = logging.getLogger('KubePortal')
 
 
 class FernetTokenView(LoginRequiredMixin, TemplateView):
-    template_name = "dashboard_fernet.html"
+    template_name = "portal_fernet.html"
 
     def post(self, request):
         context = self.get_context_data()
@@ -36,8 +36,8 @@ class FernetTokenView(LoginRequiredMixin, TemplateView):
         return self.render_to_response(context)
 
 
-class DashboardView(LoginRequiredMixin, TemplateView):
-    template_name = "dashboard_index.html"
+class WelcomeView(LoginRequiredMixin, TemplateView):
+    template_name = "portal_welcome.html"
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
@@ -84,7 +84,7 @@ class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
 
 class ConfigView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    template_name = "dashboard_config.html"
+    template_name = "portal_config.html"
 
     def test_func(self):
         '''

@@ -9,7 +9,7 @@ urlpatterns = [
     path('subreqauth', views.SubrequestAuthView.as_view(), name='subreqauth'),
     path('config/download', views.ConfigDownloadView.as_view(content_type='text/plain'), name='config_download'),
     path('', LoginView.as_view(template_name='index.html', redirect_authenticated_user=True), name="index"),
-    path('dashboard', views.DashboardView.as_view(), name="dashboard"),
+    path('welcome', views.WelcomeView.as_view(), name="welcome"),
     path('logout', LogoutView.as_view(), name="logout"),
     path('social/', include('social_django.urls')),				# AD login, if available
     path('admin/', admin_site.urls),

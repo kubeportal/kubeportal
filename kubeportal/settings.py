@@ -90,8 +90,8 @@ class Common(Configuration):
 
     SOCIAL_AUTH_USERNAME_FORM_URL = '/login-form/'
     SOCIAL_AUTH_USERNAME_FORM_HTML = 'login_form.html'
-    SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/dashboard'
-    LOGIN_REDIRECT_URL = '/dashboard'
+    SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/welcome'
+    LOGIN_REDIRECT_URL = '/welcome'
     SOCIAL_AUTH_LOGIN_ERROR_URL = '/'
     LOGIN_ERROR_URL = '/'
     LOGIN_URL = 'index'

@@ -41,13 +41,13 @@ class LoggedInTestCase(TestCase):
 
     def test_index_view(self):
         self.login_admin()
-        # User is already logged in, expecting dashboard redirect
+        # User is already logged in, expecting welcome redirect
         response = self.c.get('/')
         self.assertEqual(response.status_code, 302)
 
-    def test_dashboard_view(self):
+    def test_welcome_view(self):
         self.login_admin()
-        response = self.c.get('/dashboard')
+        response = self.c.get('/welcome')
         self.assertEqual(response.status_code, 200)
 
     def test_logout_view(self):
