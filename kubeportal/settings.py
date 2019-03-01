@@ -180,6 +180,7 @@ class Development(Common):
     TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
     ACTIVE_DIRECTORY_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
+    ACTIVE_DIRECTORY_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     BRANDING = "KubePortal"
     CLUSTER_API_SERVER = values.Value("#missing setting#", environ_prefix='KUBEPORTAL')
     DEBUG = True
@@ -189,6 +190,7 @@ class Development(Common):
 
 class Production(Common):
     ACTIVE_DIRECTORY_DOMAIN = values.Value('', environ_prefix='KUBEPORTAL')
+    ACTIVE_DIRECTORY_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     CLUSTER_API_SERVER = values.Value('', environ_prefix='KUBEPORTAL')
     DEBUG = values.Value(False, environ_prefix='KUBEPORTAL')

@@ -3,10 +3,13 @@ import social_core.exceptions
 from django.conf import settings
 
 
+domainname = settings.ACTIVE_DIRECTORY_DOMAIN
+server_adr = settings.ACTIVE_DIRECTORY_SERVER if settings.ACTIVE_DIRECTORY_SERVER else settings.ACTIVE_DIRECTORY_DOMAIN
+
+
 def is_available():
-    domainname = settings.ACTIVE_DIRECTORY_DOMAIN
     try:
-        server = ldap3.Server(domainname, connect_timeout=1)
+        server = ldap3.Server(server_adr, connect_timeout=1)
         conn = ldap3.Connection(server)
         conn.open()
         return True
@@ -21,15 +24,15 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
     if not settings.ACTIVE_DIRECTORY_DOMAIN:
         raise social_core.exceptions.AuthUnreachableProvider(backend)
 
+
     # Connect to AD LDAP
     # Currently does not perform certificate check
     # Also, assume that all domain controllers support ldaps
-    domainname = settings.ACTIVE_DIRECTORY_DOMAIN
     username = strategy.request_data()['username']
     password = strategy.request_data()['password']
     # User Principal Name
     upn = "{}@{}".format(username, domainname)
-    server = ldap3.Server(domainname, get_info=ldap3.DSA, connect_timeout=1)
+    server = ldap3.Server(server_adr, get_info=ldap3.DSA, connect_timeout=1)
     conn = ldap3.Connection(server, user=upn, password=password)
     try:
         conn.open()
