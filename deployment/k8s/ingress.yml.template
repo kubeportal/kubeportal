@@ -8,14 +8,14 @@ metadata:
     certmanager.k8s.io/cluster-issuer: letsencrypt
 spec:
   tls:
-  - secretName: <Name of the TLS secret>
+  - secretName: kubeportal-tls
     hosts:
     - <Host name where the portal is available>
   rules:
   - host: <Host name where the portal is available>
     http: 
       paths: 
-      - path: <Host path where the portal is available>
+      - path: 
         backend:
           serviceName: kubeportal
           servicePort: 8000
