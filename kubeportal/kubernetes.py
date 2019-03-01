@@ -183,9 +183,21 @@ def _sync_svcaccounts(request, v1):
             request, "Error while synchronizing service accounts: {0}.".format(e))
 
 
-def sync(request):
+def _load_config():
     try:
-        config.load_kube_config()
+        # Production mode
+        config.load_incluster_config()
+        return
+    except Exception:
+        # Dev mode
+        pass
+    # Let it fail without being in a nested exception handling
+    config.load_kube_config()
+
+
+def sync(request):
+    _load_config()
+    try:
         v1 = client.CoreV1Api()
         _sync_namespaces(request, v1)
         _sync_svcaccounts(request, v1)
