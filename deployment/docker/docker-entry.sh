@@ -1,6 +1,7 @@
 #!/bin/sh
 
 /code/manage.py migrate --configuration=Production
+/code/manage.py creatersakey --configuration=Production
 /code/manage.py ensure_root --configuration=Production
 
 /usr/local/bin/uwsgi --http-auto-chunked \

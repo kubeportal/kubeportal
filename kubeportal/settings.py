@@ -15,7 +15,7 @@ class Common(Configuration):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'oauth2_provider',
-        'corsheaders',
+        'oidc_provider',
         'social_django',
         'kubeportal',
     ]
@@ -94,7 +94,7 @@ class Common(Configuration):
     LOGIN_REDIRECT_URL = '/welcome'
     SOCIAL_AUTH_LOGIN_ERROR_URL = '/'
     LOGIN_ERROR_URL = '/'
-    LOGIN_URL = 'index'
+    LOGIN_URL = '/'
     LOGOUT_REDIRECT_URL = 'index'
     STATIC_URL = '/static/'
 
@@ -158,10 +158,10 @@ class Common(Configuration):
         }
     }
 
-    OAUTH2_PROVIDER_APPLICATION_MODEL = "kubeportal.OAuth2Application"
-
-    OAUTH2_PROVIDER = {
-        'SCOPES': {'read': 'Read scope', 'write': 'Write scope'}
+    OIDC_USERINFO = 'kubeportal.oidc.userinfo'
+    OIDC_TEMPLATES = {
+        'authorize': 'oidc_authorize.html',
+        'error': 'oidc_error.html'
     }
 
 

@@ -13,5 +13,6 @@ urlpatterns = [
     path('logout', LogoutView.as_view(), name="logout"),
     path('social/', include('social_django.urls')),				# AD login, if available
     path('admin/', admin_site.urls),
-    path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    # Note: The OpenID Connect URL is /oidc/authorize
+    path('oidc/', include('oidc_provider.urls', namespace='oidc_provider'))
 ]

@@ -1,26 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from oauth2_provider.models import AbstractApplication
-
-
-class OAuth2Application(AbstractApplication):
-    '''
-    A tailored version of the OAuth2 application config.
-    '''
-    skip_authorization = models.BooleanField(
-        default=True,
-        help_text='Skip separate authorization page after successful login?')
-    authorization_grant_type = models.CharField(
-        max_length=32,
-        choices=AbstractApplication.GRANT_TYPES,
-        default=AbstractApplication.GRANT_AUTHORIZATION_CODE)
-    client_type = models.CharField(
-        max_length=32,
-        choices=AbstractApplication.CLIENT_TYPES,
-        default=AbstractApplication.CLIENT_CONFIDENTIAL)
-
-    class Meta:
-        verbose_name = "OAuth2 Application"
 
 
 class KubernetesNamespace(models.Model):

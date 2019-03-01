@@ -3,6 +3,8 @@ from django.conf import settings
 from django.urls import path
 from django.shortcuts import redirect
 from django.contrib.auth.admin import UserAdmin
+import oidc_provider
+
 from . import models
 from kubeportal.kubernetes import sync
 
@@ -130,20 +132,9 @@ class PortalUserAdmin(UserAdmin):
             request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
 
     def render_change_form(self, request, context, *args, **kwargs):
-         context['adminform'].form.fields['service_account'].queryset = models.KubernetesServiceAccount.objects.filter(namespace__visible=True)
-         return super().render_change_form(request, context, *args, **kwargs)
-
-
-
-
-class OAuth2ApplicationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'client_id', 'client_secret']
-
-    fieldsets = (
-        (None, {
-            'fields': ('name', 'redirect_uris', 'client_id', 'client_secret'),
-        }),
-    )
+        context['adminform'].form.fields['service_account'].queryset = models.KubernetesServiceAccount.objects.filter(
+            namespace__visible=True)
+        return super().render_change_form(request, context, *args, **kwargs)
 
 
 admin_site = CustomAdminSite()
@@ -152,4 +143,7 @@ admin_site.register(models.KubernetesServiceAccount,
                     KubernetesServiceAccountAdmin)
 admin_site.register(models.KubernetesNamespace, KubernetesNamespaceAdmin)
 admin_site.register(models.Link)
-admin_site.register(models.OAuth2Application, OAuth2ApplicationAdmin)
+admin_site.register(oidc_provider.models.Client)
+admin_site.register(oidc_provider.models.UserConsent)
+
+
