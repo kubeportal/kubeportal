@@ -163,7 +163,7 @@ class Common(Configuration):
         'authorize': 'oidc_authorize.html',
         'error': 'oidc_error.html'
     }
-
+    OIDC_IDTOKEN_INCLUDE_CLAIMS = True
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
