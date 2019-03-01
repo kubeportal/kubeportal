@@ -160,6 +160,10 @@ class Common(Configuration):
 
     OAUTH2_PROVIDER_APPLICATION_MODEL = "kubeportal.OAuth2Application"
 
+    OAUTH2_PROVIDER = {
+        'SCOPES': {'read': 'Read scope', 'write': 'Write scope'}
+    }
+
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
