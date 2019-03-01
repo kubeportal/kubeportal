@@ -210,7 +210,7 @@ def sync(request):
 
 
 def get_token(kubeportal_service_account):
-    config.load_kube_config()
+    _load_config()
     v1 = client.CoreV1Api()
     service_account = v1.read_namespaced_service_account(
         name=kubeportal_service_account.name,
