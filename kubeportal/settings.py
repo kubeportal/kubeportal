@@ -163,7 +163,9 @@ class Common(Configuration):
         'authorize': 'oidc_authorize.html',
         'error': 'oidc_error.html'
     }
-    OIDC_IDTOKEN_INCLUDE_CLAIMS = True
+    OIDC_IDTOKEN_INCLUDE_CLAIMS = True  # include user email etc. in token
+    SESSION_COOKIE_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
+
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -197,7 +199,7 @@ class Production(Common):
     ACTIVE_DIRECTORY_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     CLUSTER_API_SERVER = values.Value('', environ_prefix='KUBEPORTAL')
-    DEBUG = values.Value(False, environ_prefix='KUBEPORTAL')
+    DEBUG = False
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
 
