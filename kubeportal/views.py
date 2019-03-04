@@ -93,7 +93,7 @@ class SubAuthRequestView(View):
             logger.debug("Allowing authorization through subrequest for user {0} with service account '{1}:{2}'.".format(
                 request.user, request.user.service_account.namespace.name, request.user.service_account.name))
             response = HttpResponse()
-            response['Authorization'] = 'Bearer ' + request.user.token()
+            response['Authorization'] = 'Bearer ' + request.user.token
             return response
 
 
