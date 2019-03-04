@@ -11,27 +11,7 @@ from kubeportal.models import Link
 logger = logging.getLogger('KubePortal')
 
 
-class KubeportalLoginRequiredMixin(LoginRequiredMixin):
-    def dispatch(self, request, *args, **kwargs):
-        # add support for "rd" GET parameter as alternative to "next",
-        # so that ingress-nginx works out of the box
-        if 'rd' in request.GET:
-            request.GET = request.GET.copy()
-            request.GET['next'] = request.GET['rd']
-        return super().dispatch(request, *args, **kwargs)
-
-
-class KubeportalLoginView(LoginView):
-    def dispatch(self, request, *args, **kwargs):
-        # add support for "rd" GET parameter as alternative to "next",
-        # so that ingress-nginx works out of the box
-        if 'rd' in request.GET:
-            request.GET = request.GET.copy()
-            request.GET['next'] = request.GET['rd']
-        return super().dispatch(request, *args, **kwargs)
-
-
-class FernetTokenView(KubeportalLoginRequiredMixin, TemplateView):
+class FernetTokenView(LoginRequiredMixin, TemplateView):
     template_name = "portal_fernet.html"
 
     def post(self, request):
@@ -57,12 +37,20 @@ class FernetTokenView(KubeportalLoginRequiredMixin, TemplateView):
         return self.render_to_response(context)
 
 
-class IndexView(KubeportalLoginView):
+class IndexView(LoginView):
     template_name = 'index.html'
     redirect_authenticated_user = True
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if 'rd' in self.request.GET:
+            context.update({
+                self.redirect_field_name: self.request.GET['rd'],
+            })
+        return context
 
-class WelcomeView(KubeportalLoginRequiredMixin, TemplateView):
+
+class WelcomeView(LoginRequiredMixin, TemplateView):
     template_name = "portal_welcome.html"
 
     def get_context_data(self, *args, **kwargs):
@@ -101,7 +89,7 @@ class SubAuthRequestView(View):
             return response
 
 
-class ConfigDownloadView(KubeportalLoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'config.txt'
 
     def get_context_data(self, **kwargs):
@@ -122,7 +110,7 @@ class ConfigDownloadView(KubeportalLoginRequiredMixin, UserPassesTestMixin, Temp
         return self.request.user.service_account is not None
 
 
-class ConfigView(KubeportalLoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ConfigView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "portal_config.html"
 
     def test_func(self):
