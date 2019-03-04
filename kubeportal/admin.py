@@ -145,5 +145,3 @@ admin_site.register(models.KubernetesNamespace, KubernetesNamespaceAdmin)
 admin_site.register(models.Link)
 admin_site.register(oidc_provider.models.Client)
 admin_site.register(oidc_provider.models.UserConsent)
-
-

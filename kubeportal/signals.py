@@ -49,7 +49,10 @@ def create_permission_groups(sender, instance, **kwargs):
                           'Can add link',
                           'Can change link',
                           'Can delete link',
-                          'Can view link']:
+                          'Can add Client',
+                          'Can change Client',
+                          'Can delete Client',
+                          'Can view Client']:
             perm = Permission.objects.get(name=perm_name)
             admin_group.permissions.add(perm)
         admin_group.save()
