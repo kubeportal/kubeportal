@@ -54,6 +54,16 @@ class LoggedInNoKubernetesTestCase(TestCase):
         response = self.c.get('/welcome')
         self.assertEqual(response.status_code, 200)
 
+    def test_root_redirect_with_next_param(self):
+        self.login_admin()
+        response = self.c.get('/?next=/config')
+        self.assertEqual(response.status_code, 302)
+
+    def test_root_redirect_with_rd_param(self):
+        self.login_admin()
+        response = self.c.get('/?next=/config')
+        self.assertEqual(response.status_code, 302)
+
     def test_subauth_view(self):
         self.login_admin()
         response = self.c.get('/subauthreq')

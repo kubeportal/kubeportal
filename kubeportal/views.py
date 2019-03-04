@@ -1,6 +1,7 @@
 import time
 from django.views.generic.base import TemplateView, View
-from django.http.response import HttpResponseForbidden, HttpResponse
+from django.contrib.auth.views import LoginView
+from django.http.response import HttpResponse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .token import FernetToken, InvalidToken
 import logging
@@ -10,7 +11,27 @@ from kubeportal.models import Link
 logger = logging.getLogger('KubePortal')
 
 
-class FernetTokenView(LoginRequiredMixin, TemplateView):
+class KubeportalLoginRequiredMixin(LoginRequiredMixin):
+    def dispatch(self, request, *args, **kwargs):
+        # add support for "rd" GET parameter as alternative to "next",
+        # so that ingress-nginx works out of the box
+        if 'rd' in request.GET:
+            request.GET = request.GET.copy()
+            request.GET['next'] = request.GET['rd']
+        return super().dispatch(request, *args, **kwargs)
+
+
+class KubeportalLoginView(LoginView):
+    def dispatch(self, request, *args, **kwargs):
+        # add support for "rd" GET parameter as alternative to "next",
+        # so that ingress-nginx works out of the box
+        if 'rd' in request.GET:
+            request.GET = request.GET.copy()
+            request.GET['next'] = request.GET['rd']
+        return super().dispatch(request, *args, **kwargs)
+
+
+class FernetTokenView(KubeportalLoginRequiredMixin, TemplateView):
     template_name = "portal_fernet.html"
 
     def post(self, request):
@@ -36,7 +57,12 @@ class FernetTokenView(LoginRequiredMixin, TemplateView):
         return self.render_to_response(context)
 
 
-class WelcomeView(LoginRequiredMixin, TemplateView):
+class IndexView(KubeportalLoginView):
+    template_name = 'index.html'
+    redirect_authenticated_user = True
+
+
+class WelcomeView(KubeportalLoginRequiredMixin, TemplateView):
     template_name = "portal_welcome.html"
 
     def get_context_data(self, *args, **kwargs):
@@ -57,21 +83,25 @@ class SubAuthRequestView(View):
 
     def get(self, request, *args, **kwargs):
         if (not request.user) or (not request.user.is_authenticated):
-            logger.debug("Rejecting authorization through subrequest, user is not authenticated.")
+            logger.debug(
+                "Rejecting authorization through subrequest, user is not authenticated.")
             self._dump_request_info(request)
-            return HttpResponse(status=401)   # 401 is the expected fail code in ingress-nginx
+            # 401 is the expected fail code in ingress-nginx
+            return HttpResponse(status=401)
         elif not request.user.service_account:
-            logger.debug("Rejecting authorization through subrequest, user {0} has no service account.".format(request.user))
+            logger.debug(
+                "Rejecting authorization through subrequest, user {0} has no service account.".format(request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         else:
-            logger.debug("Allowing authorization through subrequest for user {0} with service account '{1}:{2}'.".format(request.user, request.user.service_account.namespace.name, request.user.service_account.name))
+            logger.debug("Allowing authorization through subrequest for user {0} with service account '{1}:{2}'.".format(
+                request.user, request.user.service_account.namespace.name, request.user.service_account.name))
             response = HttpResponse()
             response['Authorization'] = 'Bearer ' + request.user.token()
             return response
 
 
-class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ConfigDownloadView(KubeportalLoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'config.txt'
 
     def get_context_data(self, **kwargs):
@@ -92,7 +122,7 @@ class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         return self.request.user.service_account is not None
 
 
-class ConfigView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ConfigView(KubeportalLoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = "portal_config.html"
 
     def test_func(self):
