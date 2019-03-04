@@ -165,6 +165,7 @@ class Common(Configuration):
     }
     OIDC_IDTOKEN_INCLUDE_CLAIMS = True  # include user email etc. in token
     SESSION_COOKIE_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
+    REDIRECT_HOSTS = values.TupleValue(None, environ_prefix='KUBEPORTAL')
 
 
 class Development(Common):

@@ -38,6 +38,17 @@ class AnonTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class LoginRedirectTestCase(TestCase):
+    def setUp(self):
+        self.c = client.Client()
+        self.c.login(username=admin_data['username'],
+                     password=admin_clear_password)
+
+    def test_local_next_param(self):
+        response = self.c.get('/?next=/config')
+        self.assertRedirects(response, '/config')
+
+
 class LoggedInNoKubernetesTestCase(TestCase):
 
     def setUp(self):

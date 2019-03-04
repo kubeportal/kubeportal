@@ -2,7 +2,9 @@ import time
 from django.views.generic.base import TemplateView, View
 from django.contrib.auth.views import LoginView
 from django.http.response import HttpResponse
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+
 from .token import FernetToken, InvalidToken
 import logging
 
@@ -48,6 +50,12 @@ class IndexView(LoginView):
                 self.redirect_field_name: self.request.GET['rd'],
             })
         return context
+
+    def get_success_url_allowed_hosts(self):
+        if settings.REDIRECT_HOSTS:
+            return settings.REDIRECT_HOSTS
+        else:
+            return super().get_success_url_allowed_hosts()
 
 
 class WelcomeView(LoginRequiredMixin, TemplateView):
