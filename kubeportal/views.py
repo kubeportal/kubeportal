@@ -45,10 +45,10 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class SubrequestAuthView(View):
+class SubAuthRequestView(View):
     http_method_names = ['get']
 
-    def _dump_request_info(self,request):
+    def _dump_request_info(self, request):
         logger.debug("Request details:")
         logger.debug("  Cookies: " + str(request.COOKIES))
         logger.debug("  Meta: " + str(request.META))
@@ -59,11 +59,11 @@ class SubrequestAuthView(View):
         if (not request.user) or (not request.user.is_authenticated):
             logger.debug("Rejecting authorization through subrequest, user is not authenticated.")
             self._dump_request_info(request)
-            return HttpResponseForbidden()
+            return HttpResponse(status=401)   # 401 is the expected fail code in ingress-nginx
         elif not request.user.service_account:
             logger.debug("Rejecting authorization through subrequest, user {0} has no service account.".format(request.user))
             self._dump_request_info(request)
-            return HttpResponseForbidden()
+            return HttpResponse(status=401)
         else:
             logger.debug("Allowing authorization through subrequest for user {0} with service account '{1}:{2}'.".format(request.user, request.user.service_account.namespace.name, request.user.service_account.name))
             response = HttpResponse()

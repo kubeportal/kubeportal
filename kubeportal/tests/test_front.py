@@ -17,8 +17,12 @@ class AnonTestCase(TestCase):
         response = self.c.get('/admin/')
         self.assertEqual(response.status_code, 200)
 
+    def test_subauth_view(self):
+        response = self.c.get('/subauthreq')
+        self.assertEqual(response.status_code, 401)
 
-class LoggedInTestCase(TestCase):
+
+class LoggedInNoKubernetesTestCase(TestCase):
     admin_clear_password = 'adminäö&%/1`'
 
     admin_data = {
@@ -50,10 +54,14 @@ class LoggedInTestCase(TestCase):
         response = self.c.get('/welcome')
         self.assertEqual(response.status_code, 200)
 
+    def test_subauth_view(self):
+        self.login_admin()
+        response = self.c.get('/subauthreq')
+        self.assertEqual(response.status_code, 401)
+
     def test_logout_view(self):
         self.login_admin()
         # User is already logged in, expecting redirect
         response = self.c.get('/logout')
         self.assertEqual(response.status_code, 302)
-
 
