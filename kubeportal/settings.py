@@ -165,7 +165,6 @@ class Common(Configuration):
     }
     OIDC_IDTOKEN_INCLUDE_CLAIMS = True  # include user email etc. in token
     SESSION_COOKIE_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
-    REDIRECT_HOSTS = values.TupleValue(None, environ_prefix='KUBEPORTAL')
 
 
 class Development(Common):
@@ -194,6 +193,9 @@ class Development(Common):
     LANGUAGE_CODE = 'en-us'
     TIME_ZONE = 'UTC'
 
+    SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
+    REDIRECT_HOSTS = ['localhost', '127.0.0.1']
+
 
 class Production(Common):
     ACTIVE_DIRECTORY_DOMAIN = values.Value('', environ_prefix='KUBEPORTAL')
@@ -208,3 +210,6 @@ class Production(Common):
 
     STATIC_ROOT = values.Value('', environ_prefix='KUBEPORTAL')
     STATICFILES_DIRS = values.TupleValue('', environ_prefix='KUBEPORTAL')
+
+    SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
+    REDIRECT_HOSTS = values.TupleValue(None, environ_prefix='KUBEPORTAL')

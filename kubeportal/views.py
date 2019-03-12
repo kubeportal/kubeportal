@@ -43,19 +43,8 @@ class IndexView(LoginView):
     template_name = 'index.html'
     redirect_authenticated_user = True
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if 'rd' in self.request.GET:
-            context.update({
-                self.redirect_field_name: self.request.GET['rd'],
-            })
-        return context
-
     def get_success_url_allowed_hosts(self):
-        if settings.REDIRECT_HOSTS:
-            return settings.REDIRECT_HOSTS
-        else:
-            return super().get_success_url_allowed_hosts()
+        return settings.REDIRECT_HOSTS
 
 
 class WelcomeView(LoginRequiredMixin, TemplateView):

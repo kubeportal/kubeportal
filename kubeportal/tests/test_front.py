@@ -48,6 +48,12 @@ class LoginRedirectTestCase(TestCase):
         response = self.c.get('/?next=/config')
         self.assertRedirects(response, '/config')
 
+    # TODO:
+    # /?next=/config
+    # /?rd=/config
+    # /?next=https://www.heise.de 
+    # /?rd=https://www.heise.de
+    # All of the above with REDIRECT_HOSTS set and not set
 
 class LoggedInNoKubernetesTestCase(TestCase):
 

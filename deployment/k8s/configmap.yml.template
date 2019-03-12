@@ -8,6 +8,8 @@ data:
   KUBEPORTAL_ACTIVE_DIRECTORY_DOMAIN: <DNS name of your Active Directory>
   KUBEPORTAL_CLUSTER_API_SERVER: <URL of your Kubernetes API server>
   KUBEPORTAL_DATABASE_URL: sqlite:////data/kubeportal.sqlite3
+  KUBEPORTAL_SESSION_COOKIE_DOMAIN: <domain portion where the login is valid, e.g. .example.com>
+  KUBEPORTAL_REDIRECT_HOSTS: <list of hosts to which redirects are ok, e.g. app1.example.com,app2.example.com>
   # Optional settings, you can also delete them
   KUBEPORTAL_BRANDING: <Title of your cluster>
   KUBEPORTAL_TIME_ZONE: <Timezone, e.g. Europe/Berlin>
