@@ -25,12 +25,18 @@ HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 
 
 def _sync_namespaces(request, v1):
+    # K8S namespaces -> portal namespaces
+    success_count_pull = 0
+    k8s_ns_list = None
     try:
-        # K8S namespaces -> portal namespaces
-        success_count_pull = 0
         k8s_ns_list = v1.list_namespace()
-        k8s_ns_uids = []
-        for k8s_ns in k8s_ns_list.items:
+    except Exception as e:
+        logger.error("Exception: {0}".format(e))
+        messages.error(request, "Sync failed, error while fetching list of namespaces: {0}.".format(e))
+        return
+    k8s_ns_uids = []
+    for k8s_ns in k8s_ns_list.items:
+        try:
             k8s_ns_name = k8s_ns.metadata.name
             k8s_ns_uid = k8s_ns.metadata.uid
             # remember for later use
@@ -53,10 +59,14 @@ def _sync_namespaces(request, v1):
                 logger.debug(
                     "Found existing record for Kubernetes namespace '{0}'".format(k8s_ns_name))
                 success_count_pull += 1
+        except Exception as e:
+            logger.error("Exception: {0}".format(e))
+            messages.error(request, "Sync from Kubernetes for namespace {0} failed: {1}.".format(k8s_ns_name, e))
 
-        # portal namespaces -> K8S namespaces
-        success_count_push = 0
-        for portal_ns in KubernetesNamespace.objects.all():
+    # portal namespaces -> K8S namespaces
+    success_count_push = 0
+    for portal_ns in KubernetesNamespace.objects.all():
+        try:
             if portal_ns.uid:
                 # Portal namespace records with UID must be given in K8S, or they are
                 # stale und should be deleted
@@ -85,25 +95,29 @@ def _sync_namespaces(request, v1):
                 portal_ns.save()
                 messages.success(
                     request, "Created namespace '{0}' in Kubernetes.".format(portal_ns.name))
+        except Exception as e:
+            logger.error("Exception: {0}".format(e))
+            messages.error(request, "Sync to Kubernetes for namespace {0} failed: {1}.".format(portal_ns, e))
 
-        if success_count_push == success_count_pull:
-            messages.success(
-                request, "All valid namespaces are in sync.")
-
-    except Exception as e:
-        logger.error("Exception: {0}".format(e))
-        messages.error(
-            request, "Error while synchronizing namespaces: {0}.".format(e))
+    if success_count_push == success_count_pull:
+        messages.success(
+            request, "All valid namespaces are in sync.")
 
 
 def _sync_svcaccounts(request, v1):
+    # K8S svc accounts -> portal svc accounts
+    success_count_pull = 0
+    ignored_missing_ns = []
+    k8s_svca_uids = []
+    k8s_svca_list = None
     try:
-        # K8S svc accounts -> portal svc accounts
-        success_count_pull = 0
-        ignored_missing_ns = []
-        k8s_svca_uids = []
         k8s_svca_list = v1.list_service_account_for_all_namespaces()
-        for k8s_svca in k8s_svca_list.items:
+    except Exception as e:
+        logger.error("Exception: {0}".format(e))
+        messages.error(request, "Sync failed, error while fetching list of service accounts: {0}.".format(e))
+        return
+    for k8s_svca in k8s_svca_list.items:
+        try:
             # remember for later use
             k8s_svca_uids.append(k8s_svca.metadata.uid)
             # Not finding the namespace record for this namespace name
@@ -132,15 +146,20 @@ def _sync_svcaccounts(request, v1):
                 logger.info("Found existing record for Kubernetes service account '{0}:{1}'".format(
                     k8s_svca.metadata.namespace, k8s_svca.metadata.name))
                 success_count_pull += 1
-        if len(ignored_missing_ns) > 0:
-            names = ["{0}:{1}".format(a, b)
-                     for a, b in ignored_missing_ns]
-            messages.warning(
-                request, "Skipping service accounts with non-existent namespaces: {0}".format(names))
+        except Exception as e:
+            logger.error("Exception: {0}".format(e))
+            messages.error(request, "Sync from Kubernetes for service account {0} failed: {1}.".format(k8s_svca.metadata.name, e))
 
-        # portal service accounts -> K8S service accounts
-        success_count_push = 0
-        for portal_svca in KubernetesServiceAccount.objects.all():
+    if len(ignored_missing_ns) > 0:
+        names = ["{0}:{1}".format(a, b)
+                 for a, b in ignored_missing_ns]
+        messages.warning(
+            request, "Skipping service accounts with non-existent namespaces: {0}".format(names))
+
+    # portal service accounts -> K8S service accounts
+    success_count_push = 0
+    for portal_svca in KubernetesServiceAccount.objects.all():
+        try:
             portal_ns = portal_svca.namespace
             if portal_svca.uid:
                 # Portal service account records with UID must be given in K8S, or they are
@@ -172,15 +191,13 @@ def _sync_svcaccounts(request, v1):
                 portal_svca.save()
                 messages.success(request, "Created service account '{0}:{1}' in Kubernetes.".format(
                     portal_ns.name, portal_svca.name))
+        except Exception as e:
+            logger.error("Exception: {0}".format(e))
+            messages.error(request, "Sync to Kubernetes for service account {0} failed: {1}.".format(portal_ns.name, e))
 
-        if success_count_push == success_count_pull:
-            messages.success(
-                request, "All valid service accounts are in sync.")
-
-    except Exception as e:
-        logger.error("Exception: {0}".format(e))
-        messages.error(
-            request, "Error while synchronizing service accounts: {0}.".format(e))
+    if success_count_push == success_count_pull:
+        messages.success(
+            request, "All valid service accounts are in sync.")
 
 
 def _load_config():
