@@ -14,3 +14,5 @@ data:
   KUBEPORTAL_BRANDING: <Title of your cluster>
   KUBEPORTAL_TIME_ZONE: <Timezone, e.g. Europe/Berlin>
   KUBEPORTAL_ACTIVE_DIRECTORY_SERVER: <Active Directory server IP, if not resolvable through DNS>
+  KUBEPORTAL_NAMESPACE_CLUSTERROLES: <comma-separated list of ClusterRole names>
+  

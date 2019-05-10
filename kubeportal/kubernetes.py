@@ -11,6 +11,7 @@
 '''
 
 from django.contrib import messages
+from django.conf import settings
 from kubernetes import client, config
 from base64 import b64decode
 import json
@@ -24,12 +25,12 @@ logger = logging.getLogger('KubePortal')
 HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 
 
-def _sync_namespaces(request, v1):
+def _sync_namespaces(request, core_v1, rbac_v1):
     # K8S namespaces -> portal namespaces
     success_count_pull = 0
     k8s_ns_list = None
     try:
-        k8s_ns_list = v1.list_namespace()
+        k8s_ns_list = core_v1.list_namespace()
     except Exception as e:
         logger.error("Exception: {0}".format(e))
         messages.error(request, "Sync failed, error while fetching list of namespaces: {0}.".format(e))
@@ -88,9 +89,9 @@ def _sync_namespaces(request, v1):
                     "Creating Kubernetes namespace '{0}'".format(portal_ns.name))
                 k8s_ns = client.V1Namespace(
                     api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=portal_ns.name))
-                v1.create_namespace(k8s_ns)
+                core_v1.create_namespace(k8s_ns)
                 # Fetch UID and store it in portal record
-                created_k8s_ns = v1.read_namespace(name=portal_ns.name)
+                created_k8s_ns = core_v1.read_namespace(name=portal_ns.name)
                 portal_ns.uid = created_k8s_ns.metadata.uid
                 portal_ns.save()
                 messages.success(
@@ -102,6 +103,37 @@ def _sync_namespaces(request, v1):
     if success_count_push == success_count_pull:
         messages.success(
             request, "All valid namespaces are in sync.")
+
+    # check role bindings of namespaces
+    # We only consider visible namespaces here, to prevent hitting
+    # special namespaces and giving them (most likely unneccessary)
+    # additional role bindings
+    for portal_ns in KubernetesNamespace.objects.filter(visible=True):
+        # Get role bindings in the current namespace
+        try:
+            rolebindings = rbac_v1.list_namespaced_role_binding(portal_ns.name)
+        except Exception as e:
+            logger.error("Exception: {0}".format(e))
+            messages.error(request, "Could not fetch role bindings for namespace '{0}': {1}.".format(portal_ns, e))
+            continue
+        # Get all cluster roles this namespace is currently bound to
+        clusterroles_active = [rolebinding.role_ref.name for rolebinding in rolebindings.items if rolebinding.role_ref.kind == 'ClusterRole']
+        logger.debug("Namespace '{0}' is bound to cluster roles {1}".format(portal_ns, clusterroles_active))
+        # Check list of default cluster roles from settings
+        for clusterrole in settings.NAMESPACE_CLUSTERROLES:
+            if clusterrole not in clusterroles_active:
+                try:
+                    logger.info("Namespace '{0}' is not bound to cluster role '{1}', fixing this ...".format(portal_ns, clusterrole))
+                    role_ref = client.V1RoleRef(name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
+                    # Subject for the cluster role are all service accounts in the namespace
+                    subject = client.V1Subject(name="system:serviceaccounts:" + portal_ns.name, kind="Group", api_group="rbac.authorization.k8s.io")
+                    metadata = client.V1ObjectMeta(name=clusterrole)
+                    new_rolebinding = client.V1RoleBinding(role_ref=role_ref, metadata=metadata, subjects=[subject, ])
+                    rbac_v1.create_namespaced_role_binding(portal_ns.name, new_rolebinding)
+                except Exception as e:
+                    logger.exception(e)
+                    messages.error(request, "Could not create binding of namespace '{0}' to cluster role '{1}': {2}.".format(portal_ns.name, clusterrole, e))
+                    continue
 
 
 def _sync_svcaccounts(request, v1):
@@ -215,9 +247,10 @@ def _load_config():
 def sync(request):
     _load_config()
     try:
-        v1 = client.CoreV1Api()
-        _sync_namespaces(request, v1)
-        _sync_svcaccounts(request, v1)
+        core_v1 = client.CoreV1Api()
+        rbac_v1 = client.RbacAuthorizationV1Api()
+        _sync_namespaces(request, core_v1, rbac_v1)
+        _sync_svcaccounts(request, core_v1)
     except client.rest.ApiException as e:
         msg = json.loads(e.body)['message']
         logger.error(
