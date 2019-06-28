@@ -68,14 +68,14 @@
           </div>
         {% endif %}  
         <hr/>
-        <div class="text-center">
+        <div class="d-flex justify-content-around">
         {% if auth_twitter_key %}
-          <a style="color: white" id="twitter-button" class="btn btn-primary">
+          <a href="{% url 'social:begin' 'twitter' %}?next={{ next }}" style="color: white" id="twitter-button" class="btn btn-sm btn-primary">
             <i class="fab fa-twitter"></i> Sign in with Twitter
           </a>
         {% endif %}
         {% if auth_google_key %}
-          <a style="color: white" id="google-button" class="mt-3 btn btn-primary">
+          <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ request.path }}" style="color: white" id="google-button" class="btn btn-sm btn-primary">
             <i class="fab fa-google"></i> Sign in with Google
           </a>
         {% endif %}
@@ -86,4 +86,3 @@
   </div>
 </div>
 {% endblock %}
-
