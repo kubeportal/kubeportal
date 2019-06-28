@@ -8,7 +8,7 @@ register = template.Library()
 
 @register.simple_tag
 def ad_status():
-    if settings.ACTIVE_DIRECTORY_DOMAIN:
+    if settings.AUTH_AD_DOMAIN:
         if is_available():
             return "available"
         else:

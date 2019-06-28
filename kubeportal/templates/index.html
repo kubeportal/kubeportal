@@ -3,7 +3,11 @@
 
 {% block content %}
 
-{% ad_status as ad_status_cached %}
+{% settings_value "AUTH_AD_DOMAIN" as auth_ad_domain %}
+{% settings_value "AUTH_TWITTER_KEY" as auth_twitter_key %}
+{% settings_value "AUTH_GOOGLE_KEY" as auth_google_key %}
+
+
 <div class="container">
   {% if messages %}
   {% for message in messages %}
@@ -16,46 +20,67 @@
   {% endfor %}
   {% endif %}
 
-  <div class="card card-login mx-auto mt-5">
+  <div class="card card-login mx-auto mt-5 mb-5">
     <div class="card-header">{% settings_value "BRANDING" %}</div>
     <div class="card-body">
-      {% if ad_status_cached == "available" %}
-      <form method="POST" action="/social/complete/username/">
+      {%if not auth_ad_domain and not auth_twitter_key and not auth_google_key %}
+        <p style="text-align: center">Installation error: There is not authentication method configured.</p>
       {% else %}
-      <form method="POST" action="">
+        {% if auth_ad_domain %}
+          {% ad_status as ad_status_cached %}
+          {% if ad_status_cached == "available" %}
+            <form method="POST" action="/social/complete/username/">
+          {% else %}
+            <form method="POST" action="">
+          {% endif %}
+          {% csrf_token %}
+          <div class="form-group">
+            <div class="form-label-group">
+              {% if 'next' in request.GET %}
+                <input type="hidden" name="next" value="{{ request.GET.next }}" />
+              {% elif 'rd' in request.GET %}
+                <input type="hidden" name="next" value="{{ request.GET.rd }}" />
+              {% endif %}
+              <input type="text" id="username" name="username" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
+              <label for="username">User name</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label-group">
+              <input type="password" id="password" name="password" class="form-control" placeholder="Password" required="required">
+              <label for="password">Password</label>
+            </div>
+          </div>
+          <input type="submit" value="Sign In" class="btn btn-primary btn-block"/>
+          </form>
+          <div class="text-center">
+            <div class="d-block small mt-3 text-secondary">
+                    {% if ad_status_cached == "unconfigured" %}
+                      Status: <span class='text-warning'>Organizational login not configured</span>
+                    {% endif %}
+                    {% if ad_status_cached == "available" %}
+                      Status: <i>{{ auth_ad_domain }}</i> login is <span class='text-success'>available</span>
+                    {% endif %}
+                    {% if ad_status_cached == "unavailable" %}
+                      Status: <i>{{ auth_ad_domain }}</i> login is <span class='text-danger'>unavailable</span>
+                    {% endif %}
+            </div> 
+          </div>
+        {% endif %}  
+        <hr/>
+        <div class="text-center">
+        {% if auth_twitter_key %}
+          <a style="color: white" id="twitter-button" class="btn btn-primary">
+            <i class="fab fa-twitter"></i> Sign in with Twitter
+          </a>
+        {% endif %}
+        {% if auth_google_key %}
+          <a style="color: white" id="google-button" class="mt-3 btn btn-primary">
+            <i class="fab fa-google"></i> Sign in with Google
+          </a>
+        {% endif %}
+        </div>
       {% endif %}
-        {% csrf_token %}
-        <div class="form-group">
-          <div class="form-label-group">
-            {% if 'next' in request.GET %}
-              <input type="hidden" name="next" value="{{ request.GET.next }}" />
-            {% elif 'rd' in request.GET %}
-              <input type="hidden" name="next" value="{{ request.GET.rd }}" />
-            {% endif %}
-            <input type="text" id="username" name="username" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
-            <label for="username">User name</label>
-          </div>
-        </div>
-        <div class="form-group">
-          <div class="form-label-group">
-            <input type="password" id="password" name="password" class="form-control" placeholder="Password" required="required">
-            <label for="password">Password</label>
-          </div>
-        </div>
-        <input type="submit" value="Login" class="btn btn-primary btn-block"/>
-      </form>
-      <div class="text-center">
-          <div class="d-block small mt-3 text-secondary">
-                  {% if ad_status_cached == "unconfigured" %}
-                    Status: <span class='text-warning'>Organizational login not configured</span>
-                  {% endif %}
-                  {% if ad_status_cached == "available" %}
-                    Status: <i>{% settings_value "ACTIVE_DIRECTORY_DOMAIN" %}</i> login is <span class='text-success'>available</span>
-                  {% endif %}
-                  {% if ad_status_cached == "unavailable" %}
-                    Status: <i>{% settings_value "ACTIVE_DIRECTORY_DOMAIN" %}</i> login is <span class='text-danger'>unavailable</span>
-                  {% endif %}
-          </div>      
       </div>
     </div>
   </div>

@@ -3,8 +3,8 @@ import social_core.exceptions
 from django.conf import settings
 
 
-domainname = settings.ACTIVE_DIRECTORY_DOMAIN
-server_adr = settings.ACTIVE_DIRECTORY_SERVER if settings.ACTIVE_DIRECTORY_SERVER else settings.ACTIVE_DIRECTORY_DOMAIN
+domainname = settings.AUTH_AD_DOMAIN
+server_adr = settings.AUTH_AD_SERVER if settings.AUTH_AD_SERVER else settings.AUTH_AD_DOMAIN
 
 
 def is_available():
@@ -21,7 +21,7 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
     if backend.name != 'username':
         return
 
-    if not settings.ACTIVE_DIRECTORY_DOMAIN:
+    if not settings.AUTH_AD_DOMAIN:
         raise social_core.exceptions.AuthUnreachableProvider(backend)
 
 

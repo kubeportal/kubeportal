@@ -167,6 +167,13 @@ class Common(Configuration):
     SESSION_COOKIE_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     NAMESPACE_CLUSTERROLES = values.ListValue([], environ_prefix='KUBEPORTAL')
 
+    AUTH_TWITTER_KEY = values.Value(None, environ_prefix='KUBEPORTAL')
+    AUTH_TWITTER_SECRET = values.Value(None, environ_prefix='KUBEPORTAL')
+    AUTH_GOOGLE_KEY = values.Value(None, environ_prefix='KUBEPORTAL')
+    AUTH_GOOGLE_SECRET = values.Value(None, environ_prefix='KUBEPORTAL')
+    AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
+    AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
+
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -186,8 +193,6 @@ class Development(Common):
     TEST_PEP8_DIRS = [os.path.dirname(PROJECT_DIR), ]
     TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
-    ACTIVE_DIRECTORY_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
-    ACTIVE_DIRECTORY_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     BRANDING = "KubePortal"
     CLUSTER_API_SERVER = values.Value("#missing setting#", environ_prefix='KUBEPORTAL')
     DEBUG = True
@@ -199,8 +204,6 @@ class Development(Common):
 
 
 class Production(Common):
-    ACTIVE_DIRECTORY_DOMAIN = values.Value('', environ_prefix='KUBEPORTAL')
-    ACTIVE_DIRECTORY_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     CLUSTER_API_SERVER = values.Value('', environ_prefix='KUBEPORTAL')
     DEBUG = False
