@@ -112,7 +112,7 @@ def reject(modeladmin, request, queryset):
     for user in queryset:
         if user.reject(request):
             user.save()
-reject.short_description = "Reject access for selected users"
+reject.short_description = "Reject access request for selected users"
 
 
 class PortalUserAdmin(UserAdmin):

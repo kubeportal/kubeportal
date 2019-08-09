@@ -49,7 +49,7 @@ class KubernetesServiceAccount(models.Model):
 
 
 class UserState():
-    NEW = 'new'
+    NEW = 'not requested'
     ACCESS_REQUESTED = 'requested'
     ACCESS_REJECTED = 'rejected'
     ACCESS_APPROVED = 'approved'
@@ -60,7 +60,7 @@ class User(AbstractUser):
     A portal user.
     '''
 
-    state = FSMField(default=UserState.NEW, help_text="The state of the cluster access approval workflow.")
+    state = FSMField(default=UserState.NEW, verbose_name="Cluster access", help_text="The state of the cluster access approval workflow.")
     approval_id = models.UUIDField(default=uuid.uuid4, editable=False)
 
     service_account = models.ForeignKey(
