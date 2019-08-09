@@ -14,6 +14,7 @@ class Common(Configuration):
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
+        'django_extensions',
         'oauth2_provider',
         'oidc_provider',
         'social_django',
