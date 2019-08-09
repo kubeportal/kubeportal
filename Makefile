@@ -24,6 +24,9 @@ tests: check-venv
 bumpversion:
 	bumpversion --verbose patch
 
+dev-ssl: check-venv
+	python ./manage.py runserver_plus --cert-file /tmp/cert.crt
+
 docker:
 	docker build -t troeger/kubeportal:$(VERSION) .
 
