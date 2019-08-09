@@ -120,8 +120,8 @@ class PortalUserAdmin(UserAdmin):
     list_display = ('username', 'first_name', 'last_name',
                     'is_staff', 'state', 'service_account')
     fieldsets = (
-        (None, {'fields': ('username', 'first_name', 'last_name', 'service_account', 'is_staff')}),
-        (None, {'fields': ('state', 'is_superuser')})
+        (None, {'fields': ('username', 'first_name', 'last_name', 'is_staff')}),
+        (None, {'fields': ('state', 'service_account', 'is_superuser')})
     )
     actions = [reject]
 
