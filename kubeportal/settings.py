@@ -72,6 +72,8 @@ class Common(Configuration):
     AUTHENTICATION_BACKENDS = (
         'social_core.backends.username.UsernameAuth',
         'django.contrib.auth.backends.ModelBackend',
+        'social_core.backends.twitter.TwitterOAuth',
+        'social_core.backends.google.GoogleOAuth2'
     )
 
     SOCIAL_AUTH_PIPELINE = (
@@ -167,12 +169,25 @@ class Common(Configuration):
     SESSION_COOKIE_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     NAMESPACE_CLUSTERROLES = values.ListValue([], environ_prefix='KUBEPORTAL')
 
-    AUTH_TWITTER_KEY = values.Value(None, environ_prefix='KUBEPORTAL')
-    AUTH_TWITTER_SECRET = values.Value(None, environ_prefix='KUBEPORTAL')
-    AUTH_GOOGLE_KEY = values.Value(None, environ_prefix='KUBEPORTAL')
-    AUTH_GOOGLE_SECRET = values.Value(None, environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_TWITTER_KEY = values.Value(
+        None, environ_name='AUTH_TWITTER_KEY', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_TWITTER_SECRET = values.Value(
+        None, environ_name='AUTH_TWITTER_SECRET', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = values.Value(
+        None, environ_name='AUTH_GOOGLE_KEY', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = values.Value(
+        None, environ_name='AUTH_GOOGLE_SECRET', environ_prefix='KUBEPORTAL')
     AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
+
+    BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
+    LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
+    TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
+
+    ADMIN_NAME = values.Value(environ_prefix='KUBEPORTAL')
+    ADMIN_EMAIL = values.Value(environ_prefix='KUBEPORTAL')
+    ADMINS = [(ADMIN_NAME, ADMIN_EMAIL), ]
 
 
 class Development(Common):
@@ -193,27 +208,23 @@ class Development(Common):
     TEST_PEP8_DIRS = [os.path.dirname(PROJECT_DIR), ]
     TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
-    BRANDING = "KubePortal"
-    CLUSTER_API_SERVER = values.Value("#missing setting#", environ_prefix='KUBEPORTAL')
+    CLUSTER_API_SERVER = values.Value(
+        "#missing setting#", environ_prefix='KUBEPORTAL')
     DEBUG = True
-    LANGUAGE_CODE = 'en-us'
-    TIME_ZONE = 'UTC'
 
-    SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
     REDIRECT_HOSTS = ['localhost', '127.0.0.1']
+
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
 class Production(Common):
-    BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     CLUSTER_API_SERVER = values.Value('', environ_prefix='KUBEPORTAL')
     DEBUG = False
-    LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
-    TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
 
-    DATABASES = values.DatabaseURLValue('sqlite:////data/kubeportal.sqlite3', environ_prefix='KUBEPORTAL')
+    DATABASES = values.DatabaseURLValue(
+        'sqlite:////data/kubeportal.sqlite3', environ_prefix='KUBEPORTAL')
 
     STATIC_ROOT = values.Value('', environ_prefix='KUBEPORTAL')
     STATICFILES_DIRS = values.TupleValue('', environ_prefix='KUBEPORTAL')
 
-    SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
     REDIRECT_HOSTS = values.TupleValue(None, environ_prefix='KUBEPORTAL')

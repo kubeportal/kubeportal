@@ -5,12 +5,15 @@ from kubeportal import views
 from kubeportal.admin import admin_site
 
 urlpatterns = [
-    path('config', views.ConfigView.as_view(), name='config'),
-    path('subauthreq', views.SubAuthRequestView.as_view(), name='subauthreq'),
-    path('config/download', views.ConfigDownloadView.as_view(content_type='text/plain'), name='config_download'),
+    path('config/', views.ConfigView.as_view(), name='config'),
+    path('subauthreq/', views.SubAuthRequestView.as_view(), name='subauthreq'),
+    path('config/download/', views.ConfigDownloadView.as_view(content_type='text/plain'), name='config_download'),
     path('', views.IndexView.as_view(), name="index"),
-    path('welcome', views.WelcomeView.as_view(), name="welcome"),
-    path('logout', LogoutView.as_view(), name="logout"),
+    path('welcome/', views.WelcomeView.as_view(), name="welcome"),
+    path('access/request/', views.AccessRequestView.as_view(), name="access_request"),
+    path('access/approve/<uuid:approval_id>/', views.AccessApproveView.as_view(), name="access_approve"),
+    path('access/deny/<uuid:approval_id>/', views.AccessDenyView.as_view(), name="access_deny"),
+    path('logout/', LogoutView.as_view(), name="logout"),
     path('social/', include('social_django.urls')),				# AD login, if available
     path('admin/', admin_site.urls),
     # Note: The OpenID Connect URL is /oidc/authorize

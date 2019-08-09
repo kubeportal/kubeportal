@@ -1,9 +1,11 @@
 import time
-from django.views.generic.base import TemplateView, View
+from django.views.generic.base import TemplateView, View, RedirectView
 from django.contrib.auth.views import LoginView
 from django.http.response import HttpResponse
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib import messages
+from django.contrib.auth.models import User
 
 from .token import FernetToken, InvalidToken
 import logging
@@ -56,6 +58,48 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class AccessRequestView(LoginRequiredMixin, RedirectView):
+    pattern_name = 'welcome'
+
+    def get_redirect_url(self, *args, **kwargs):
+        if self.request.user.send_access_request(self.request):
+            self.request.user.save()
+            messages.add_message(self.request, messages.INFO,
+                                 'Your request was sent.')
+        else:
+            messages.add_message(self.request, messages.ERROR,
+                                 'Sorry, something went wrong. Your request could not be sent.')
+        return super().get_redirect_url(*args, **kwargs)
+
+
+class AccessApproveView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
+    pattern_name = 'welcome'
+
+    def test_func(self):
+        '''
+        Allow approval and denial only for backend admins.
+        Called by the UserPassesTestMixin.
+        '''
+        return self.request.user.is_staff
+
+
+class AccessDenyView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
+    pattern_name = 'welcome'
+
+    def get_redirect_url(self, *args, **kwargs):
+        user = User.objects.get(approval_id=kwargs['approval_id'])
+        messages.add_message(self.request, messages.INFO,
+                             'Access for {0} denied, user informed by email.'.format(user))
+        return super().get_redirect_url()
+
+    def test_func(self):
+        '''
+        Allow approval and denial only for backend admins.
+        Called by the UserPassesTestMixin.
+        '''
+        return self.request.user.is_staff
+
+
 class SubAuthRequestView(View):
     http_method_names = ['get']
 
@@ -103,6 +147,7 @@ class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     def test_func(self):
         '''
         Allow config download only if a K8S service account is set.
+        Called by the UserPassesTestMixin.
         '''
         return self.request.user.service_account is not None
 

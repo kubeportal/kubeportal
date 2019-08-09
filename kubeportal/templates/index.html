@@ -4,14 +4,14 @@
 {% block content %}
 
 {% settings_value "AUTH_AD_DOMAIN" as auth_ad_domain %}
-{% settings_value "AUTH_TWITTER_KEY" as auth_twitter_key %}
-{% settings_value "AUTH_GOOGLE_KEY" as auth_google_key %}
+{% settings_value "SOCIAL_AUTH_TWITTER_KEY" as auth_twitter_key %}
+{% settings_value "SOCIAL_AUTH_GOOGLE_OAUTH2_KEY" as auth_google_key %}
 
 
 <div class="container">
   {% if messages %}
   {% for message in messages %}
-  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+  <div class="alert alert-info alert-dismissible fade show" role="alert">
     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
       <span aria-hidden="true">&times;</span>
     </button>
@@ -66,8 +66,8 @@
                     {% endif %}
             </div> 
           </div>
+          <hr/>
         {% endif %}  
-        <hr/>
         <div class="d-flex justify-content-around">
         {% if auth_twitter_key %}
           <a href="{% url 'social:begin' 'twitter' %}?next={{ next }}" style="color: white" id="twitter-button" class="btn btn-sm btn-primary">
