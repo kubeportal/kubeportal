@@ -59,11 +59,11 @@ class User(AbstractUser):
     A Django user, extended by some fields.
     '''
 
-    state = FSMField(default=UserState.NEW)
+    state = FSMField(default=UserState.NEW, help_text="The state of the cluster access approval workflow.")
     approval_id = models.UUIDField(default=uuid.uuid4, editable=False)
 
     service_account = models.ForeignKey(
-        KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True, help_text="The security token of this service account is provided for the user.")
+        KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
 
     def has_access_approved(self):
         return self.state == UserState.ACCESS_APPROVED and self.service_account

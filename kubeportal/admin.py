@@ -109,13 +109,12 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
 
 class PortalUserAdmin(UserAdmin):
-    readonly_fields = ['username', 'is_superuser']
+    readonly_fields = ['username', 'is_superuser', 'state']
     list_display = ('username', 'first_name', 'last_name',
-                    'is_staff', 'service_account')
+                    'is_staff', 'state', 'service_account')
     fieldsets = (
-        (None, {
-            'fields': ('username', 'first_name', 'last_name', 'service_account', 'is_staff', 'is_superuser'),
-        }),
+        (None, {'fields': ('username', 'first_name', 'last_name', 'service_account', 'is_staff')}),
+        (None, {'fields': ('state', 'is_superuser')})
     )
 
     def has_add_permission(self, request, obj=None):
