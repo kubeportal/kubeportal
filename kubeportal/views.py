@@ -5,7 +5,7 @@ from django.http.response import HttpResponse
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
 from .token import FernetToken, InvalidToken
 import logging
@@ -13,6 +13,7 @@ import logging
 from kubeportal.models import Link
 
 logger = logging.getLogger('KubePortal')
+User = get_user_model()
 
 
 class FernetTokenView(LoginRequiredMixin, TemplateView):
@@ -84,10 +85,12 @@ class AccessApproveView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
 
 
 class AccessDenyView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
-    pattern_name = 'welcome'
+    pattern_name = 'admin:kubeportal_user_changelist'
 
     def get_redirect_url(self, *args, **kwargs):
         user = User.objects.get(approval_id=kwargs['approval_id'])
+        user.deny()
+        user.save()
         messages.add_message(self.request, messages.INFO,
                              'Access for {0} denied, user informed by email.'.format(user))
         return super().get_redirect_url()
