@@ -86,7 +86,7 @@ class User(AbstractUser):
                                                                   })
 
         text_mail = strip_tags(html_mail)
-        subject = 'Request for access to {0} Kubernetes Cluster'.format(settings.BRANDING)
+        subject = 'Request for access to the {0} Kubernetes Cluster'.format(settings.BRANDING)
 
         cluster_admins = User.objects.filter(
             is_staff=True).values_list('email', flat=True)
@@ -103,6 +103,30 @@ class User(AbstractUser):
 
     @transition(field=state, source='*', target=UserState.ACCESS_REJECTED)
     def deny(self):
+        '''
+        Answers a cluster access request from this user with "denied".
+        The state transition happens automatically, an additional information
+        is send by mail to the denied user.
+        '''
+
+        html_mail = render_to_string('mail_access_denied.html', {'branding': settings.BRANDING,
+                                                                 'user': str(self),
+                                                                 })
+
+        text_mail = strip_tags(html_mail)
+        subject = 'Your request for access to the {0} Kubernetes Cluster'.format(settings.BRANDING)
+
+        try:
+            if self.email:
+                send_mail(subject, text_mail, settings.ADMIN_EMAIL, [self.email, ], html_message=html_mail, fail_silently=False)
+                logger.debug(
+                    "Sent email to user '{0}' about access request denial".format(self))
+            return True
+        except Exception:
+            logger.exception(
+                "Problem while sending email to user '{0}' about access request denial".format(self))
+            return False
+
         pass
 
     @transition(field=state, source='*', target=UserState.ACCESS_APPROVED)

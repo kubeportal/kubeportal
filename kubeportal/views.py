@@ -92,7 +92,8 @@ class AccessDenyView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
         user.deny()
         user.save()
         messages.add_message(self.request, messages.INFO,
-                             'Access for {0} denied, user informed by email.'.format(user))
+                             "Access request for '{0}' was rejected.".format(user))
+        logger.info("Access for user '{0}' was rejected by user '{1}'.".format(user, self.request.user))
         return super().get_redirect_url()
 
     def test_func(self):
