@@ -23,13 +23,11 @@ class AnonTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def admin_index_view(self):
-        response = self.c.get('/admin')
-        self.assertEqual(response.status_code, 200)
         response = self.c.get('/admin/')
         self.assertEqual(response.status_code, 200)
 
     def test_subauth_view(self):
-        response = self.c.get('/subauthreq')
+        response = self.c.get('/subauthreq/')
         self.assertEqual(response.status_code, 401)
 
     def test_admin_login(self):
@@ -37,23 +35,6 @@ class AnonTestCase(TestCase):
             '/', {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
 
-
-class LoginRedirectTestCase(TestCase):
-    def setUp(self):
-        self.c = client.Client()
-        self.c.login(username=admin_data['username'],
-                     password=admin_clear_password)
-
-    def test_local_next_param(self):
-        response = self.c.get('/?next=/config')
-        self.assertRedirects(response, '/config')
-
-    # TODO:
-    # /?next=/config
-    # /?rd=/config
-    # /?next=https://www.heise.de 
-    # /?rd=https://www.heise.de
-    # All of the above with REDIRECT_HOSTS set and not set
 
 class LoggedInNoKubernetesTestCase(TestCase):
 
@@ -75,7 +56,7 @@ class LoggedInNoKubernetesTestCase(TestCase):
 
     def test_welcome_view(self):
         self.login_admin()
-        response = self.c.get('/welcome')
+        response = self.c.get('/welcome/')
         self.assertEqual(response.status_code, 200)
 
     def test_root_redirect_with_next_param(self):
@@ -90,11 +71,18 @@ class LoggedInNoKubernetesTestCase(TestCase):
 
     def test_subauth_view(self):
         self.login_admin()
-        response = self.c.get('/subauthreq')
+        response = self.c.get('/subauthreq/')
         self.assertEqual(response.status_code, 401)
 
     def test_logout_view(self):
         self.login_admin()
         # User is already logged in, expecting redirect
-        response = self.c.get('/logout')
+        response = self.c.get('/logout/')
         self.assertEqual(response.status_code, 302)
+
+    def test_acess_request_view(self):
+        self.login_admin()
+        response = self.c.get('/access/request/')
+        self.assertRedirects(response, '/welcome/')
+
+
