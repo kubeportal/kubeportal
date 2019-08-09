@@ -78,27 +78,24 @@ class AccessApproveView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
 
     def test_func(self):
         '''
-        Allow approval and denial only for backend admins.
+        Allow approval and rejection only for backend admins.
         Called by the UserPassesTestMixin.
         '''
         return self.request.user.is_staff
 
 
-class AccessDenyView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
+class AccessRejectView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
     pattern_name = 'admin:kubeportal_user_changelist'
 
     def get_redirect_url(self, *args, **kwargs):
         user = User.objects.get(approval_id=kwargs['approval_id'])
-        user.deny()
-        user.save()
-        messages.add_message(self.request, messages.INFO,
-                             "Access request for '{0}' was rejected.".format(user))
-        logger.info("Access for user '{0}' was rejected by user '{1}'.".format(user, self.request.user))
+        if user.reject(self.request):
+            user.save()
         return super().get_redirect_url()
 
     def test_func(self):
         '''
-        Allow approval and denial only for backend admins.
+        Allow approval and rejection only for backend admins.
         Called by the UserPassesTestMixin.
         '''
         return self.request.user.is_staff

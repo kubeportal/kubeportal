@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib import messages
 from django.db import models
 from django_fsm import FSMField, transition
 from django.core.mail import send_mail
@@ -56,7 +57,7 @@ class UserState():
 
 class User(AbstractUser):
     '''
-    A Django user, extended by some fields.
+    A portal user.
     '''
 
     state = FSMField(default=UserState.NEW, help_text="The state of the cluster access approval workflow.")
@@ -74,15 +75,17 @@ class User(AbstractUser):
     @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
     def send_access_request(self, request):
         '''
-        Sends mail about approval request to all backend admins.
+        Requests approval for cluster access.
+
+        Note: The user object must be saved by the caller, to reflect the state change,
+              when this method returns "True".
         '''
         self.approval_id = uuid.uuid4()
-        self.save()
 
         html_mail = render_to_string('mail_access_request.html', {'branding': settings.BRANDING,
                                                                   'user': str(self),
                                                                   'approve_url': request.build_absolute_uri(reverse('access_approve', kwargs={'approval_id': self.approval_id})),
-                                                                  'deny_url': request.build_absolute_uri(reverse('access_deny', kwargs={'approval_id': self.approval_id}))
+                                                                  'deny_url': request.build_absolute_uri(reverse('access_reject', kwargs={'approval_id': self.approval_id}))
                                                                   })
 
         text_mail = strip_tags(html_mail)
@@ -102,16 +105,24 @@ class User(AbstractUser):
             return False
 
     @transition(field=state, source='*', target=UserState.ACCESS_REJECTED)
-    def deny(self):
+    def reject(self, request):
         '''
-        Answers a cluster access request from this user with "denied".
+        Answers a approval request with "rejected".
         The state transition happens automatically, an additional information
-        is send by mail to the denied user.
-        '''
+        is send to the denied user by email.
 
-        html_mail = render_to_string('mail_access_denied.html', {'branding': settings.BRANDING,
-                                                                 'user': str(self),
-                                                                 })
+        Note: The user object must be saved by the caller, to reflect the state change,
+              when this method returns "True".
+        '''
+        if self.state != UserState.ACCESS_REQUESTED:
+            return False
+        messages.add_message(request, messages.INFO,
+                             "Access request for '{0}' was rejected.".format(self))
+        logger.info("Access for user '{0}' was rejected by user '{1}'.".format(self, request.user))
+
+        html_mail = render_to_string('mail_access_rejected.html', {'branding': settings.BRANDING,
+                                                                   'user': str(self),
+                                                                   })
 
         text_mail = strip_tags(html_mail)
         subject = 'Your request for access to the {0} Kubernetes Cluster'.format(settings.BRANDING)
@@ -120,17 +131,16 @@ class User(AbstractUser):
             if self.email:
                 send_mail(subject, text_mail, settings.ADMIN_EMAIL, [self.email, ], html_message=html_mail, fail_silently=False)
                 logger.debug(
-                    "Sent email to user '{0}' about access request denial".format(self))
-            return True
+                    "Sent email to user '{0}' about access request rejection".format(self))
         except Exception:
             logger.exception(
-                "Problem while sending email to user '{0}' about access request denial".format(self))
-            return False
+                "Problem while sending email to user '{0}' about access request rejection".format(self))
 
-        pass
+        self.service_account = None   # overwrite old approval, if URL is used again by the admins
+        return True
 
     @transition(field=state, source='*', target=UserState.ACCESS_APPROVED)
-    def allow(self):
+    def approve(self):
         pass
 
     @property
