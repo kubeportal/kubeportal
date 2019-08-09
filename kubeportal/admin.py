@@ -108,6 +108,13 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
         return qs
 
 
+def reject(modeladmin, request, queryset):
+    for user in queryset:
+        if user.reject(request):
+            user.save()
+reject.short_description = "Reject access for selected users"
+
+
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username', 'is_superuser', 'state']
     list_display = ('username', 'first_name', 'last_name',
@@ -116,6 +123,7 @@ class PortalUserAdmin(UserAdmin):
         (None, {'fields': ('username', 'first_name', 'last_name', 'service_account', 'is_staff')}),
         (None, {'fields': ('state', 'is_superuser')})
     )
+    actions = [reject]
 
     def has_add_permission(self, request, obj=None):
         return False
