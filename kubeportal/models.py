@@ -89,7 +89,7 @@ class User(AbstractUser):
                                                                   })
 
         text_mail = strip_tags(html_mail)
-        subject = 'Request for access to the {0} Kubernetes Cluster'.format(settings.BRANDING)
+        subject = 'Request for access to "{0}"'.format(settings.BRANDING)
 
         cluster_admins = User.objects.filter(
             is_staff=True).values_list('email', flat=True)
@@ -123,7 +123,7 @@ class User(AbstractUser):
                                                                    })
 
         text_mail = strip_tags(html_mail)
-        subject = 'Your request for access to the {0} Kubernetes Cluster'.format(settings.BRANDING)
+        subject = 'Your request for access to "{0}"'.format(settings.BRANDING)
 
         try:
             if self.email:
