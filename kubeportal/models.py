@@ -195,9 +195,9 @@ class Link(models.Model):
     '''
     Links to be shown in the frontend.
     '''
-    name=models.CharField(
+    name = models.CharField(
         help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
-    url=models.URLField(
+    url = models.URLField(
         help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
 
     def __str__(self):
