@@ -5,7 +5,6 @@ from django.http.response import HttpResponse
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from django.contrib.auth import get_user_model
 
 from .token import FernetToken, InvalidToken
 import logging
@@ -13,7 +12,6 @@ import logging
 from kubeportal.models import Link
 
 logger = logging.getLogger('KubePortal')
-User = get_user_model()
 
 
 class FernetTokenView(LoginRequiredMixin, TemplateView):
@@ -71,34 +69,6 @@ class AccessRequestView(LoginRequiredMixin, RedirectView):
             messages.add_message(self.request, messages.ERROR,
                                  'Sorry, something went wrong. Your request could not be sent.')
         return super().get_redirect_url(*args, **kwargs)
-
-
-class AccessApproveView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
-    pattern_name = 'welcome'
-
-    def test_func(self):
-        '''
-        Allow approval and rejection only for backend admins.
-        Called by the UserPassesTestMixin.
-        '''
-        return self.request.user.is_staff
-
-
-class AccessRejectView(LoginRequiredMixin, UserPassesTestMixin, RedirectView):
-    pattern_name = 'admin:kubeportal_user_changelist'
-
-    def get_redirect_url(self, *args, **kwargs):
-        user = User.objects.get(approval_id=kwargs['approval_id'])
-        if user.reject(self.request):
-            user.save()
-        return super().get_redirect_url()
-
-    def test_func(self):
-        '''
-        Allow approval and rejection only for backend admins.
-        Called by the UserPassesTestMixin.
-        '''
-        return self.request.user.is_staff
 
 
 class SubAuthRequestView(View):

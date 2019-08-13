@@ -11,8 +11,6 @@ urlpatterns = [
     path('', views.IndexView.as_view(), name="index"),
     path('welcome/', views.WelcomeView.as_view(), name="welcome"),
     path('access/request/', views.AccessRequestView.as_view(), name="access_request"),
-    path('access/approve/<uuid:approval_id>/', views.AccessApproveView.as_view(), name="access_approve"),
-    path('access/deny/<uuid:approval_id>/', views.AccessRejectView.as_view(), name="access_reject"),
     path('logout/', LogoutView.as_view(), name="logout"),
     path('social/', include('social_django.urls')),				# AD login, if available
     path('admin/', admin_site.urls),

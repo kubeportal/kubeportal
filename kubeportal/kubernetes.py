@@ -245,18 +245,24 @@ def _load_config():
 
 
 def sync(request):
+    '''
+    Synchronizes the local shallow copy of Kubernetes data.
+    Returns True on success.
+    '''
     _load_config()
     try:
         core_v1 = client.CoreV1Api()
         rbac_v1 = client.RbacAuthorizationV1Api()
         _sync_namespaces(request, core_v1, rbac_v1)
         _sync_svcaccounts(request, core_v1)
+        return True
     except client.rest.ApiException as e:
         msg = json.loads(e.body)['message']
         logger.error(
             "API server exception during synchronization: {0}".format(msg))
         messages.error(
             request, "Kubernetes returned an error during synchronization: {0}".format(msg))
+        return False
 
 
 def get_token(kubeportal_service_account):

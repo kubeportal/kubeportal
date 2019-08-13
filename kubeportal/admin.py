@@ -1,12 +1,18 @@
-from django.contrib import admin, messages
 from django.conf import settings
 from django.urls import path
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth import get_user_model
+from django.template.response import TemplateResponse
 import oidc_provider
-
+import logging
 from . import models
 from kubeportal.kubernetes import sync
+
+
+logger = logging.getLogger('KubePortal')
+User = get_user_model()
 
 
 class CustomAdminSite(admin.AdminSite):
@@ -15,7 +21,7 @@ class CustomAdminSite(admin.AdminSite):
 
     def get_urls(self):
         urls = super().get_urls()
-        return urls + [path('sync', self.sync_view, name='sync'), ]
+        return urls + [path('sync/', self.admin_view(self.sync_view), name='sync'), ]
 
     def sync_view(self, request):
         sync(request)
@@ -112,13 +118,15 @@ def reject(modeladmin, request, queryset):
     for user in queryset:
         if user.reject(request):
             user.save()
+
+
 reject.short_description = "Reject access request for selected users"
 
 
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username', 'is_superuser', 'state']
     list_display = ('username', 'first_name', 'last_name',
-                    'is_staff', 'state', 'service_account')
+                    'is_staff', 'state', 'approved_by', 'service_account', 'approve_link')
     fieldsets = (
         (None, {'fields': ('username', 'first_name', 'last_name', 'is_staff')}),
         (None, {'fields': ('state', 'service_account', 'is_superuser')})
@@ -142,6 +150,50 @@ class PortalUserAdmin(UserAdmin):
         context['adminform'].form.fields['service_account'].queryset = models.KubernetesServiceAccount.objects.filter(
             namespace__visible=True)
         return super().render_change_form(request, context, *args, **kwargs)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        # The admin_view() wrapper ensures access protection
+        return [path('<uuid:approval_id>/approve/', self.admin_site.admin_view(self.approve_view), name='access_approve'),
+                path('<uuid:approval_id>/reject/', self.admin_site.admin_view(self.reject_view), name='access_reject')] + urls
+
+    def approve_view(self, request, approval_id):
+        user = get_object_or_404(User, approval_id=approval_id)
+        current_ns = user.service_account.namespace if user.service_account else None
+
+        context = dict(
+            self.admin_site.each_context(request),
+            user=user,
+            all_namespaces=models.KubernetesNamespace.objects.all(),
+            current_ns=current_ns
+        )
+        if request.method == 'POST':
+            if request.POST['choice'] == "approve_choose":
+                new_ns = get_object_or_404(models.KubernetesNamespace, name=request.POST['approve_choose_name'])
+                new_svc = get_object_or_404(models.KubernetesServiceAccount, namespace=new_ns, name="default")
+                if user.approve(request, new_svc):
+                    user.save()
+            if request.POST['choice'] == "approve_create":
+                new_ns = models.KubernetesNamespace(name=request.POST['approve_create_name'])
+                new_ns.save()
+                if sync(request):  # creates "default" service account automatically
+                    new_svc = get_object_or_404(models.KubernetesServiceAccount, namespace=new_ns, name="default")
+                    if user.approve(request, new_svc):
+                        user.save()
+                    else:
+                        new_ns.delete()
+            if request.POST['choice'] == "reject":
+                if user.reject(request):
+                    user.save()
+            return redirect('admin:kubeportal_user_changelist')
+        else:
+            return TemplateResponse(request, "admin/approve.html", context)
+
+    def reject_view(self, request, approval_id):
+        user = User.objects.get(approval_id=approval_id)
+        if user.reject(request):
+            user.save()
+        return redirect('admin:kubeportal_user_changelist')
 
 
 admin_site = CustomAdminSite()
