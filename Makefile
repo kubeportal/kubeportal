@@ -1,5 +1,5 @@
 SHELL = /bin/bash
-VERSION = 0.1.17
+VERSION = 0.1.18
 
 .PHONY: check-venv
 
