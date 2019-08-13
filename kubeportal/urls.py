@@ -14,6 +14,7 @@ urlpatterns = [
     path('access/request/', views.AccessRequestView.as_view(), name="access_request"),
     path('logout/', LogoutView.as_view(), name="logout"),
     path('social/', include('social_django.urls')),				# AD login, if available
+    path('admin/login/', views.RedirectView.as_view(url='/', permanent=True, query_string=True)),
     path('admin/', admin_site.urls),
     # Note: The OpenID Connect URL is /oidc/authorize
     path('oidc/', include('oidc_provider.urls', namespace='oidc_provider'))
