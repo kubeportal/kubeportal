@@ -8,8 +8,8 @@ sys.path.insert(0, os.path.abspath('../executor/'))
 source_suffix = '.rst'
 master_doc = 'index'
 project = 'KubePortal'
-version = '0.2.0'
-release = '0.2.0'
+version = '0.1.20'
+release = '0.1.20'
 copyright = u'2019, Peter Tröger'
 author = u'Peter Tröger'
 language = "en"
