@@ -49,3 +49,8 @@ clean-docker:
 	docker volume prune
 	docker system prune
 
+# Build the HTML documentation from the sources.
+docs: check-venv
+	pushd docs; make html; popd
+
+
