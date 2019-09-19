@@ -105,9 +105,12 @@ class UserExportView(View):
 
     def get(self, request, *args, **kwargs):
         from django.http import JsonResponse
-        #users = list(User.objects.filter(state=UserState.ACCESS_APPROVED))
-        users = list(User.objects.all())
-        return JsonResponse({'users' : users})
+        import json
+        user_list = []
+        for user in User.objects.filter(state=UserState.ACCESS_APPROVED):
+            user_list.append(user.username)
+
+        return JsonResponse(json.dumps(user_list), safe=False)
 
 class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'config.txt'
