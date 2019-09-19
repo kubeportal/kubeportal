@@ -9,7 +9,7 @@ from django.contrib import messages
 from .token import FernetToken, InvalidToken
 import logging
 
-from kubeportal.models import Link
+from kubeportal.models import Link, UserState, User
 
 logger = logging.getLogger('KubePortal')
 
@@ -100,6 +100,14 @@ class SubAuthRequestView(View):
             response['Authorization'] = 'Bearer ' + request.user.token
             return response
 
+class UserExportView(View):
+    http_method_names = ['get']
+
+    def get(self, request, *args, **kwargs):
+        from django.http import JsonResponse
+        #users = list(User.objects.filter(state=UserState.ACCESS_APPROVED))
+        users = list(User.objects.all())
+        return JsonResponse({'users' : users})
 
 class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'config.txt'

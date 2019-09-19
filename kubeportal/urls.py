@@ -17,5 +17,6 @@ urlpatterns = [
     path('admin/login/', views.RedirectView.as_view(url='/', permanent=True, query_string=True)),
     path('admin/', admin_site.urls),
     # Note: The OpenID Connect URL is /oidc/authorize
-    path('oidc/', include('oidc_provider.urls', namespace='oidc_provider'))
+    path('oidc/', include('oidc_provider.urls', namespace='oidc_provider')),
+    path('users/', views.UserExportView.as_view())
 ]
