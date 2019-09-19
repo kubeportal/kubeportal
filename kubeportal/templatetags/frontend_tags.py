@@ -1,20 +1,14 @@
 from django import template
 from django.conf import settings
 
-from kubeportal.active_directory import is_available
+from kubeportal.social.ad_ldap import ActiveDirectoryLdapAuth
 
 register = template.Library()
 
 
 @register.simple_tag
 def ad_status():
-    if settings.AUTH_AD_DOMAIN:
-        if is_available():
-            return "available"
-        else:
-            return "unavailable"
-    else:
-        return "unconfigured"
+    return ActiveDirectoryLdapAuth.ad_text_status()
 
 
 @register.simple_tag
