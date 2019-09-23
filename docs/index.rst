@@ -1,12 +1,12 @@
-.. KubePortal documentation master file, created by
-   sphinx-quickstart on Wed Sep 18 15:25:20 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+KubePortal Documentation
+########################
 
-Welcome to KubePortal's documentation!
-======================================
+.. warning::
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   The manuals are work in progress and therefore incomplete. Feel free to help us with a `pull request on GitHub <https://github.com/troeger/kubeportal>`_.
 
+.. _index:
+
+.. toctree::   
+   administrator
+   changelog
