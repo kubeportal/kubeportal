@@ -242,8 +242,9 @@ class Production(Common):
     CLUSTER_API_SERVER = values.Value('', environ_prefix='KUBEPORTAL')
     DEBUG = False
 
-    DATABASES = values.DatabaseURLValue(
+    DATABASE_URL = values.DatabaseURLValue(
         'sqlite:////data/kubeportal.sqlite3', environ_prefix='KUBEPORTAL')
+    DATABASES = DATABASE_URL
 
     STATIC_ROOT = values.Value('', environ_prefix='KUBEPORTAL')
     STATICFILES_DIRS = values.TupleValue('', environ_prefix='KUBEPORTAL')
