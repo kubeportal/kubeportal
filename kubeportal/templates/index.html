@@ -29,7 +29,7 @@
         {% if auth_ad_domain %}
           {% ad_status as ad_status_cached %}
           {% if ad_status_cached == "available" %}
-            <form method="POST" action="/social/complete/username/">
+            <form method="POST" action="/social/complete/ad_ldap/">
           {% else %}
             <form method="POST" action="">
           {% endif %}

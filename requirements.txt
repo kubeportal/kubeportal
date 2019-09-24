@@ -20,3 +20,5 @@ django-extensions
 pyOpenSSL
 Werkzeug
 bumpversion
+sphinx_rtd_theme
+sphinx

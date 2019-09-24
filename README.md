@@ -47,6 +47,7 @@ Kubeportal acts as OAuth2 and WebHook authentication provider. This enables othe
 +-------+                                  
 
 ```
+The official documenation is available here: https://kubeportal.readthedocs.io/en/latest/
 
 ## Who needs that?
 

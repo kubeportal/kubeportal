@@ -26,6 +26,13 @@
 </table>
 </p>
 
+{% if answered_by != None %}
+<p>
+	Sorry, you are too late ... {{ answered_by }} already {{ answered_decision }} this request.
+</p>
+
+{% else %}
+
 <h3>Please choose an option:</h3>
 
 <p>
@@ -50,5 +57,7 @@
     <input type="submit" value="Submit">
 </form>
 </p>
+
+{% endif %}
 
 {% endblock %}

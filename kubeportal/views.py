@@ -10,10 +10,10 @@ from django.http import JsonResponse
 import json
 
 from .token import FernetToken, InvalidToken
-import logging
 
 from kubeportal.models import Link, UserState, User
 
+import logging
 logger = logging.getLogger('KubePortal')
 
 

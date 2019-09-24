@@ -61,13 +61,16 @@ class User(AbstractUser):
     '''
     state = FSMField(default=UserState.NEW, verbose_name="Cluster access", help_text="The state of the cluster access approval workflow.")
     approval_id = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
-    approved_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
+    answered_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
 
     service_account = models.ForeignKey(
         KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
 
     def has_access_approved(self):
         return self.state == UserState.ACCESS_APPROVED and self.service_account
+
+    def has_access_rejected(self):
+        return self.state == UserState.ACCESS_REJECTED
 
     def has_access_requested(self):
         return self.state == UserState.ACCESS_REQUESTED and self.approval_id
@@ -135,8 +138,7 @@ class User(AbstractUser):
                 "Problem while sending email to user '{0}' about access request rejection".format(self))
 
         self.service_account = None   # overwrite old approval, if URL is used again by the admins
-        self.approved_by = None
-        self.approval_id = None
+        self.answered_by = request.user
         return True
 
     @transition(field=state, source='*', target=UserState.ACCESS_APPROVED)
@@ -149,8 +151,7 @@ class User(AbstractUser):
               when this method returns "True".
         '''
         self.service_account = new_svc
-        self.approved_by = request.user
-        self.approval_id = None
+        self.answered_by = request.user
         messages.info(
             request, "User '{0}' is now assigned to existing Kubernetes namespace '{1}'.".format(self, new_svc.namespace))
         logger.info(

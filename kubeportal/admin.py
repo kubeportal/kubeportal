@@ -126,7 +126,7 @@ reject.short_description = "Reject access request for selected users"
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username', 'is_superuser', 'state']
     list_display = ('username', 'first_name', 'last_name',
-                    'is_staff', 'state', 'approved_by', 'service_account', 'approve_link')
+                    'is_staff', 'state', 'answered_by', 'service_account', 'approve_link')
     fieldsets = (
         (None, {'fields': ('username', 'first_name', 'last_name', 'is_staff')}),
         (None, {'fields': ('state', 'service_account', 'is_superuser')})
@@ -187,6 +187,9 @@ class PortalUserAdmin(UserAdmin):
                     user.save()
             return redirect('admin:kubeportal_user_changelist')
         else:
+            if user.has_access_approved or user.has_access_rejected:
+                context['answered_decision'] = user.state
+                context['answered_by'] = user.answered_by
             return TemplateResponse(request, "admin/approve.html", context)
 
     def reject_view(self, request, approval_id):

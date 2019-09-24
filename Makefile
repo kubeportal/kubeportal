@@ -1,5 +1,5 @@
 SHELL = /bin/bash
-VERSION = 0.1.19
+VERSION = 0.1.20
 
 .PHONY: check-venv
 
@@ -51,4 +51,9 @@ clean-docker:
 	docker container prune
 	docker volume prune
 	docker system prune
+
+# Build the HTML documentation from the sources.
+docs: check-venv
+	pushd docs; make html; popd
+
 
