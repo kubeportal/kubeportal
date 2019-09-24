@@ -6,9 +6,6 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 
-from django.http import JsonResponse
-import json
-
 from .token import FernetToken, InvalidToken
 
 from kubeportal.models import Link, UserState, User
@@ -103,18 +100,6 @@ class SubAuthRequestView(View):
             response['Authorization'] = 'Bearer ' + request.user.token
             return response
 
-'''
-Creates a list of approved users and responds with a JSON object containing them
-'''
-class UserExportView(View):
-    http_method_names = ['get']
-
-    def get(self, request, *args, **kwargs):
-        user_list = []
-        for user in User.objects.filter(state=UserState.ACCESS_APPROVED):
-            user_list.append(user.username)
-
-        return JsonResponse(json.dumps(user_list), safe=False)
 
 class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'config.txt'
