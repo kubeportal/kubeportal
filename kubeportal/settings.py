@@ -19,6 +19,7 @@ class Common(Configuration):
         'oidc_provider',
         'social_django',
         'rest_framework',
+        'rest_framework.authtoken',
         'kubeportal',
     ]
 

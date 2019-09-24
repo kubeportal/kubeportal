@@ -6,9 +6,6 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 
-from django.http import JsonResponse
-import json
-
 from .token import FernetToken, InvalidToken
 import logging
 
