@@ -18,6 +18,7 @@ class Common(Configuration):
         'oauth2_provider',
         'oidc_provider',
         'social_django',
+        'rest_framework',
         'kubeportal',
     ]
 
@@ -52,6 +53,15 @@ class Common(Configuration):
             },
         },
     ]
+
+    REST_FRAMEWORK = {
+            'DEFAULT_AUTHENTICATION_CLASSES': [
+                'rest_framework.authentication.TokenAuthentication',
+                ],
+            'DEFAULT_PERMISSION_CLASSES': [
+                'rest_framework.permissions.IsAuthenticated',
+                ]
+            }
 
     WSGI_APPLICATION = 'kubeportal.wsgi.application'
 
