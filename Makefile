@@ -36,6 +36,13 @@ docker-run:
 run: venv
 	source .env.sh && venv/bin/python3 manage.py runserver
 
+api-user: venv
+	source .env.sh && venv/bin/python3 manage.py createsuperuser --username api
+
+
+api-token: venv
+	source .env.sh && venv/bin/python3 manage.py drf_create_token api
+
 # Re-create docker images and upload into registry
 docker-push: docker
 	docker login --username=troeger
