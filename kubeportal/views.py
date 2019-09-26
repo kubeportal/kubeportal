@@ -8,7 +8,7 @@ from django.contrib import messages
 
 from .token import FernetToken, InvalidToken
 
-from kubeportal.models import Link
+from kubeportal.models import Link, UserState, User
 
 import logging
 logger = logging.getLogger('KubePortal')

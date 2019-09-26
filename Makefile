@@ -3,7 +3,7 @@ VERSION = 0.1.20
 
 .PHONY: check-venv
 
-venv/bin/activate: requirements.txt 
+venv/bin/activate: requirements.txt
 	test -d venv || python3 -m venv venv
 	venv/bin/pip install -r requirements.txt
 	touch venv/bin/activate
@@ -17,10 +17,10 @@ ifndef VIRTUAL_ENV
 endif
 
 # Run all tests.
-tests: check-venv 
+tests: check-venv
 	python ./manage.py test
 
-# Update version numbers, commit and tag 
+# Update version numbers, commit and tag
 bumpversion:
 	bumpversion --verbose patch
 
@@ -32,6 +32,16 @@ docker:
 
 docker-run:
 	docker run -it -p 8000:8000 troeger/kubeportal:$(VERSION)
+
+run: venv
+	source .env.sh && venv/bin/python3 manage.py runserver
+
+api-user: venv
+	source .env.sh && venv/bin/python3 manage.py createsuperuser --username api
+
+
+api-token: venv
+	source .env.sh && venv/bin/python3 manage.py drf_create_token api
 
 # Re-create docker images and upload into registry
 docker-push: docker

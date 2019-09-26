@@ -40,7 +40,11 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# logs
+*.log
+
 # Environments
+.env.sh
 .env
 .venv
 env/
