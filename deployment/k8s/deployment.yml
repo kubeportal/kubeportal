@@ -24,10 +24,10 @@ spec:
         - configMapRef:
             name: config
         volumeMounts:
-        - name: kubeportal-db
+        - name: kubeportal
           mountPath: /data
 
       volumes:
-      - name: kubeportal-db
+      - name: kubeportal
         persistentVolumeClaim:
-          claimName: kubeportal-db
+          claimName: kubeportal

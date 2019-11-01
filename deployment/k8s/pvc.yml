@@ -1,12 +1,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: kubeportal-db
+  name: kubeportal
   namespace: kubeportal
   labels:
     app.kubernetes.io/name: kubeportal
 spec:
-  storageClassName: local-hdd
   accessModes:
     - ReadWriteOnce
   resources:
