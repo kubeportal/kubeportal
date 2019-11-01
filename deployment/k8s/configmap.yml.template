@@ -5,4 +5,6 @@ metadata:
   namespace: kubeportal
 data:
   KUBEPORTAL_DATABASE_URL: sqlite:////data/kubeportal.sqlite3
+  KUBEPORTAL_API_USER_USERNAME: api
+  KUBEPORTAL_API_USER_EMAIL: null@example.com
   
