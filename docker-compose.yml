@@ -2,6 +2,7 @@ version: '3.7'
 services:
     kubeportal:
         image: kubeportal
+        container_name: kubeportal
         build:
             context: .
         ports:
