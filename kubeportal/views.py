@@ -7,10 +7,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 
 from .token import FernetToken, InvalidToken
+import logging
 
 from kubeportal.models import Link, UserState, User
 
-import logging
 logger = logging.getLogger('KubePortal')
 
 
