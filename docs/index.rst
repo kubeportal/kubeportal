@@ -56,4 +56,5 @@ Kubeportal acts as OAuth2 and WebHook authentication provider. This enables othe
    links
    webhook
    oidc
+   api
    changelog
