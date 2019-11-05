@@ -52,6 +52,7 @@ docker-push: docker
 clean:
 	find . -name "*.bak" -delete
 	find . -name "__pycache__" -delete
+	make -C docs clean
 
 # Clean cached Docker data and state
 clean-docker:
