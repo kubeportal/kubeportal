@@ -34,14 +34,14 @@ docker-run:
 	docker run -it -p 8000:8000 troeger/kubeportal:$(VERSION)
 
 run: venv
-	source .env.sh && venv/bin/python3 manage.py runserver
+	venv/bin/python3 manage.py runserver
 
 api-user: venv
-	source .env.sh && venv/bin/python3 manage.py createsuperuser --username api
+	venv/bin/python3 manage.py createsuperuser --username api
 
 
 api-token: venv
-	source .env.sh && venv/bin/python3 manage.py drf_create_token api
+	venv/bin/python3 manage.py drf_create_token api
 
 docker-dev: venv
 	rm -rf tmp && mkdir tmp
