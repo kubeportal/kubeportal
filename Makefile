@@ -43,6 +43,17 @@ api-user: venv
 api-token: venv
 	venv/bin/python3 manage.py drf_create_token api
 
+docker-dev: venv
+	rm -rf tmp && mkdir tmp
+	cp ~/.minikube/{client.*,ca.*} ./tmp
+	cp ~/.kube/config ./tmp
+	docker build -t troeger/kubeportal:dev -f Dockerfile-Dev .
+	rm -rf tmp
+
+docker-dev-run:
+	[ ! -z "$(minikube status | grep Running | head -n 1)" ] || minikube start
+	docker run -it --env-file .env-dev -e KUBEPORTAL_CLUSTER_API_SERVER=$(minikube ip) -p 8000:8000 troeger/kubeportal:dev
+
 # Re-create docker images and upload into registry
 docker-push: docker
 	docker login --username=troeger
