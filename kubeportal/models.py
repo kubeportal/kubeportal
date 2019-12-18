@@ -62,6 +62,7 @@ class User(AbstractUser):
     state = FSMField(default=UserState.NEW, verbose_name="Cluster access", help_text="The state of the cluster access approval workflow.")
     approval_id = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     answered_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
+    comments = models.CharField(max_length=150, help_text="Description on why this user needs cluster access. (150 characters)", default="", null=True, blank=True)
 
     service_account = models.ForeignKey(
         KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
