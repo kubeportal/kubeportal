@@ -52,7 +52,7 @@ docker-dev: venv
 
 docker-dev-run:
 	[ ! -z "$(minikube status | grep Running | head -n 1)" ] || minikube start
-	docker run -it --env-file .env-dev -e KUBEPORTAL_CLUSTER_API_SERVER=$(minikube ip) -p 8000:8000 troeger/kubeportal:dev
+	docker run -v $(shell pwd):/code -it --env-file .env-dev -e KUBEPORTAL_CLUSTER_API_SERVER=$(minikube ip) -p 8000:8000 troeger/kubeportal:dev
 
 # Re-create docker images and upload into registry
 docker-push: docker
