@@ -3,7 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-
 # Distribution / packaging
 .Python
 build/
@@ -44,7 +43,7 @@ docs/_build/
 *.log
 
 # Environments
-.env.sh
+.env-dev
 .env
 .venv
 env/
