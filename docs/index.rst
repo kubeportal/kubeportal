@@ -16,13 +16,13 @@ Kubeportal acts as OAuth2 and WebHook authentication provider. This enables othe
 .. figure:: static/kubeportal4.png
     :alt: KubePortal frontend login screen.
 
-    Portal users can use their organizational Active Directory, Google, 
+    Portal users can use their organizational Active Directory, Google,
     or Twitter login.
 
 .. figure:: static/kubeportal5.png
-    :alt: KubePortal landing page. 
+    :alt: KubePortal landing page.
 
-    After login, a landing page is shown that offers the possibility to request 
+    After login, a landing page is shown that offers the possibility to request
     Kubernetes access and become a *cluster user*.
 
 
@@ -49,7 +49,7 @@ Kubeportal acts as OAuth2 and WebHook authentication provider. This enables othe
 
 
 
-.. toctree::   
+.. toctree::
    installation
    users
    sync
@@ -58,3 +58,4 @@ Kubeportal acts as OAuth2 and WebHook authentication provider. This enables othe
    oidc
    api
    changelog
+   dev-env
