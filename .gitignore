@@ -55,6 +55,7 @@ env.bak/
 venv.bak/
 
 .DS_Store
+*/static-collected
 
 deployment/k8s/ingress.yml
 deployment/k8s/configmap.yml
