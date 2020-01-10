@@ -1,6 +1,6 @@
 SHELL = /bin/bash
 VERSION = 0.2.0
-HOME := $(shell echo $HOME)
+HOME = /home/mtrx
 
 .PHONY: check-venv
 

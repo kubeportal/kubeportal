@@ -28,6 +28,11 @@ kubeportal-dev image.
 Build dependencies
 ==================
 
+- docker
+- docker-compose
+- make
+- python3-pip
+- python3-virtualenv
 - minikube
 - kubernetes
 - libvirt
