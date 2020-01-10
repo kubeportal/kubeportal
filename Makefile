@@ -1,6 +1,5 @@
 SHELL = /bin/bash
 VERSION = 0.2.0
-HOME = /home/mtrx
 
 .PHONY: check-venv
 
@@ -54,11 +53,11 @@ docker-dev-run:
 				   -f ./deployment/k8s/rbac.yml \
 				   -f ./deployment/k8s/service.yml \
 				   -f ./deployment/k8s/deployment-dev.yml
-	kubectl create secret generic mk-client-crt --from-file=mk-client-crt=$(HOME)/.minikube/client.crt
-	kubectl create secret generic mk-ca-crt     --from-file=mk-ca-crt=$(HOME)/.minikube/ca.crt
-	kubectl create secret generic mk-ca-key     --from-file=mk-ca-key=$(HOME)/.minikube/ca.key
-	kubectl create secret generic mk-ca-pem     --from-file=mk-ca-pem=$(HOME)/.minikube/ca.pem
-	kubectl create secret generic kube-config   --from-file=kube-config=$(HOME)/.kube/config
+	kubectl create secret generic mk-client-crt --from-file=mk-client-crt=${HOME}/.minikube/client.crt
+	kubectl create secret generic mk-ca-crt     --from-file=mk-ca-crt=${HOME}/.minikube/ca.crt
+	kubectl create secret generic mk-ca-key     --from-file=mk-ca-key=${HOME}/.minikube/ca.key
+	kubectl create secret generic mk-ca-pem     --from-file=mk-ca-pem=${HOME}/.minikube/ca.pem
+	kubectl create secret generic kube-config   --from-file=kube-config=${HOME}/.kube/config
 
 # Re-create docker images and upload into registry
 docker-push: docker
