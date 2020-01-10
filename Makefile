@@ -46,10 +46,13 @@ api-token: venv
 docker-dev: venv
 	docker build -t troeger/kubeportal:dev -f Dockerfile-Dev .
 
+docker-dev-stop:
+	minikube stop
+	minikube delete
+
 docker-dev-run:
-	minikube start --vm-driver=kvm2 --disk-size '2000mb'
+	minikube start --disk-size '2000mb'
 	kubectl create -f ./deployment/k8s/namespace.yml \
-				   -f ./deployment/k8s/pvc.yml \
 				   -f ./deployment/k8s/rbac.yml \
 				   -f ./deployment/k8s/service.yml \
 				   -f ./deployment/k8s/deployment-dev.yml
