@@ -13,11 +13,6 @@ COPY . /code/
 RUN mkdir /root/.kube
 RUN mkdir /root/.minikube
 
-COPY tmp/config     /root/.kube/config
-COPY tmp/client.crt /root/.minikube/client.crt
-COPY tmp/client.key /root/.minikube/client.key
-COPY tmp/ca.crt     /root/.minikube/ca.crt
-
 ENV KUBEPORTAL_STATIC_ROOT='/code/static-collected'
 ENV KUBEPORTAL_STATICFILES_DIRS='/code/kubeportal/static'
 

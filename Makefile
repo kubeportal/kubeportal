@@ -1,5 +1,6 @@
 SHELL = /bin/bash
 VERSION = 0.2.0
+HOME := $(shell echo $HOME)
 
 .PHONY: check-venv
 
@@ -44,15 +45,20 @@ api-token: venv
 	venv/bin/python3 manage.py drf_create_token api
 
 docker-dev: venv
-	rm -rf tmp && mkdir tmp
-	cp ~/.minikube/{client.*,ca.*} ./tmp
-	cp ~/.kube/config ./tmp
 	docker build -t troeger/kubeportal:dev -f Dockerfile-Dev .
-	rm -rf tmp
 
 docker-dev-run:
-	[ ! -z "$(minikube status | grep Running | head -n 1)" ] || minikube start --vm-driver kvm2
-	docker run -it --env-file .env-dev -e KUBEPORTAL_CLUSTER_API_SERVER=$(minikube ip) -p 8000:8000 troeger/kubeportal:dev
+	minikube start --vm-driver=kvm2 --disk-size '2000mb'
+	kubectl create -f ./deployment/k8s/namespace.yml \
+				   -f ./deployment/k8s/pvc.yml \
+				   -f ./deployment/k8s/rbac.yml \
+				   -f ./deployment/k8s/service.yml \
+				   -f ./deployment/k8s/deployment-dev.yml
+	kubectl create secret generic mk-client-crt --from-file=mk-client-crt=$(HOME)/.minikube/client.crt
+	kubectl create secret generic mk-ca-crt     --from-file=mk-ca-crt=$(HOME)/.minikube/ca.crt
+	kubectl create secret generic mk-ca-key     --from-file=mk-ca-key=$(HOME)/.minikube/ca.key
+	kubectl create secret generic mk-ca-pem     --from-file=mk-ca-pem=$(HOME)/.minikube/ca.pem
+	kubectl create secret generic kube-config   --from-file=kube-config=$(HOME)/.kube/config
 
 # Re-create docker images and upload into registry
 docker-push: docker
