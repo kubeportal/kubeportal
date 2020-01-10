@@ -24,17 +24,12 @@ spec:
         - configMapRef:
             name: config
         volumeMounts:
-        - name: kubeportal
-          mountPath: /data
         - name: minikube-config
           mountPath: /root/.minikube
         - name: kube-config
           mountPath: /root/.kube
 
       volumes:
-      - name: kubeportal
-        persistentVolumeClaim:
-          claimName: kubeportal
       - name: minikube-config
         projected:
             sources:
