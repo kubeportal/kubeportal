@@ -34,33 +34,48 @@ docker-run:
 	docker run -it -p 8000:8000 troeger/kubeportal:$(VERSION)
 
 run: venv
-	venv/bin/python3 manage.py runserver
+	python manage.py runserver
 
 api-user: venv
-	venv/bin/python3 manage.py createsuperuser --username api
-
+	python manage.py createsuperuser --username api
 
 api-token: venv
-	venv/bin/python3 manage.py drf_create_token api
+	python manage.py drf_create_token api
 
+# build local kubeportal docker image
 docker-dev: venv
+	rm -rf tmp && mkdir tmp
+	cp ~/.minikube/{client.*,ca.*} ./tmp
+	cp ~/.kube/config ./tmp
 	docker build -t troeger/kubeportal:dev -f Dockerfile-Dev .
+	rm -rf tmp
 
-docker-dev-stop:
+# launch a local docker instance of kubeportal for live code reload
+docker-dev-run: venv
+	[ ! -z $(minikube status | grep Running | head -n 1) ] || minikube start
+	docker run -it \
+		--env-file .env-dev \
+		-e KUBEPORTAL_CLUSTER_API_SERVER=$(shell minikube ip) \
+		-p 8000:8000 troeger/kubeportal:dev
+
+# kill minikube instance
+docker-dev-mk-stop:
 	minikube stop
 	minikube delete
 
-docker-dev-run:
-	minikube start --disk-size '2000mb'
+# launch a minikube instance and deploy kubeportal on it
+docker-dev-mk-run:
+	minikube start --disk-size '8000mb'
+	bash -c 'eval $$(minikube docker-env | sed '/^#/d') && docker build -t troeger/kubeportal:dev .'
 	kubectl create -f ./deployment/k8s/namespace.yml \
 				   -f ./deployment/k8s/rbac.yml \
 				   -f ./deployment/k8s/service.yml \
 				   -f ./deployment/k8s/deployment-dev.yml
-	kubectl create secret generic mk-client-crt --from-file=mk-client-crt=${HOME}/.minikube/client.crt
-	kubectl create secret generic mk-ca-crt     --from-file=mk-ca-crt=${HOME}/.minikube/ca.crt
-	kubectl create secret generic mk-ca-key     --from-file=mk-ca-key=${HOME}/.minikube/ca.key
-	kubectl create secret generic mk-ca-pem     --from-file=mk-ca-pem=${HOME}/.minikube/ca.pem
-	kubectl create secret generic kube-config   --from-file=kube-config=${HOME}/.kube/config
+	kubectl create secret generic mk-client-crt --from-file=${HOME}/.minikube/client.crt -n kubeportal
+	kubectl create secret generic mk-ca-crt     --from-file=${HOME}/.minikube/ca.crt     -n kubeportal
+	kubectl create secret generic mk-ca-key     --from-file=${HOME}/.minikube/ca.key     -n kubeportal
+	kubectl create secret generic mk-ca-pem     --from-file=${HOME}/.minikube/ca.pem     -n kubeportal
+	kubectl create secret generic kube-config   --from-file=${HOME}/.kube/config         -n kubeportal
 
 # Re-create docker images and upload into registry
 docker-push: docker
@@ -72,6 +87,7 @@ clean:
 	find . -name "*.bak" -delete
 	find . -name "__pycache__" -delete
 	make -C docs clean
+	rm -rf OME
 
 # Clean cached Docker data and state
 clean-docker:
