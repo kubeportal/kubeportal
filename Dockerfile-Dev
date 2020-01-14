@@ -11,6 +11,12 @@ RUN apt-get update && \
 RUN mkdir /root/.kube
 RUN mkdir /root/.minikube
 
+COPY ./tmp/ca.crt /root/.minikube
+COPY ./tmp/ca.key /root/.minikube
+COPY ./tmp/ca.pem /root/.minikube
+COPY ./tmp/client.crt /root/.minikube
+COPY ./tmp/config /root/.kube
+
 ENV KUBEPORTAL_STATIC_ROOT='/code/static-collected'
 ENV KUBEPORTAL_STATICFILES_DIRS='/code/kubeportal/static'
 
