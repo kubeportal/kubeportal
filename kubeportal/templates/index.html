@@ -6,7 +6,7 @@
 {% settings_value "AUTH_AD_DOMAIN" as auth_ad_domain %}
 {% settings_value "SOCIAL_AUTH_TWITTER_KEY" as auth_twitter_key %}
 {% settings_value "SOCIAL_AUTH_GOOGLE_OAUTH2_KEY" as auth_google_key %}
-{% settings_value "SOCIAL_AUTH_BEUTHTEST_KEY" as auth_beuthtest_key %}
+{% settings_value "SOCIAL_AUTH_GENERICOIDC_KEY" as auth_oidc_key %}
 
 
 <div class="container">
@@ -24,7 +24,7 @@
   <div class="card card-login mx-auto mt-5 mb-5">
     <div class="card-header">{% settings_value "BRANDING" %}</div>
     <div class="card-body">
-      {%if not auth_ad_domain and not auth_twitter_key and not auth_google_key and not auth_beuthtest_key %}
+      {%if not auth_ad_domain and not auth_twitter_key and not auth_google_key and not auth_oidc_key %}
         <p style="text-align: center">Installation error: There is not authentication method configured.</p>
       {% else %}
         {% if auth_ad_domain %}
@@ -75,14 +75,12 @@
             <i class="fab fa-twitter"></i> Sign in with Twitter
           </a>
         {% endif %}
-        {% if auth_google_key %}
           <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ request.path }}" style="color: white" id="google-button" class="btn btn-sm btn-primary">
             <i class="fab fa-google"></i> Sign in with Google
           </a>
-        {% endif %}
-        {% if auth_beuthtest_key %}
-          <a href="{% url 'social:begin' 'beuthtest' %}?next={{ request.path }}" style="color: white" id="beuth-button" class="btn btn-sm btn-primary">
-            Sign in with Beuth-Account
+        {% if auth_oidc_key %}
+          <a href="{% url 'social:begin' 'genericoidc' %}?next={{ request.path }}" style="color: white" id="oidc-button" class="btn btn-sm btn-primary">
+            Sign in with OIDC-Account
           </a>
         {% endif %}
         </div>
