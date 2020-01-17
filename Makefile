@@ -1,102 +1,83 @@
-SHELL = /bin/bash
-VERSION = 0.2.0
+SHELL=/bin/bash
+VERSION=0.2.0
+GOOGLE_KEY=891177537513-sd1toqcvp7vl7e2bakvols27n1gh6h6n.apps.googleusercontent.com
+GOOGLE_SECRET=qwoYQ9ktOra9b_JMr2_E19cx
 
-.PHONY: check-venv
+# Run a Django dev server locally, together with Minikube
+# Configuration: Debug
+dev-run: minikube-start venv .env
+	./venv/bin/python ./manage.py ensure_root --configuration=Development
+	set -o allexport; source .env; set +o allexport; \
+	./venv/bin/python ./manage.py runserver_plus --configuration=Development
 
-venv/bin/activate: requirements.txt
-	test -d venv || python3 -m venv venv
-	venv/bin/pip install -r requirements.txt
-	touch venv/bin/activate
-
-# Shortcut for preparation of VirtualEnv
-venv: venv/bin/activate
-
-check-venv:
-ifndef VIRTUAL_ENV
-	$(error Please create a VirtualEnv with 'make venv' and activate it)
-endif
-
-# Run all tests.
-tests: check-venv
-	python ./manage.py test
+# Run a staging test server in Minikube, based on the production image
+# Server: uwsgi in Docker
+# Configuration: Production
+#
+# Note: Terminating the running Kubeportal Docker container with Ctrl+C may
+#       leave it in a dangled state. Call "docker system prune"
+#       in such cases before the next execution of this target.
+staging-run: staging-build minikube-start .env
+	docker run -it --detach \
+		--env-file .env \
+		--name kubeportal_staging \
+		-e KUBEPORTAL_CLUSTER_API_SERVER=$(shell minikube ip) \
+		-p 8000:8000 troeger/kubeportal:staging
+	# Copy and tweak config files so that Kubeportal can talk to Minikube
+	docker cp ${HOME}/.kube kubeportal_staging:/root/
+	docker exec kubeportal_staging sed -i 's#${HOME}/.minikube/#/root/.kube/#g' /root/.kube/config 
+	docker cp ${HOME}/.minikube/ca.crt kubeportal_staging:/root/.kube/
+	docker cp ${HOME}/.minikube/client.crt kubeportal_staging:/root/.kube/
+	docker cp ${HOME}/.minikube/client.key kubeportal_staging:/root/.kube/
+	docker attach kubeportal_staging
 
 # Update version numbers, commit and tag
-bumpversion:
+release-bumpversion:
 	bumpversion --verbose patch
 
-dev-ssl: check-venv
-	python ./manage.py runserver_plus --cert-file /tmp/cert.crt
-
-docker:
+# Build the official Kuberportal docker image
+release-build:
 	docker build -t troeger/kubeportal:$(VERSION) .
 
-docker-run:
-	docker run -it -p 8000:8000 troeger/kubeportal:$(VERSION)
-
-run: venv
-	python manage.py runserver
-
-api-user: venv
-	python manage.py createsuperuser --username api
-
-api-token: venv
-	python manage.py drf_create_token api
-
-# build local kubeportal docker image
-docker-dev: venv
-	rm -rf tmp && mkdir tmp
-	cp ~/.minikube/{client.*,ca.*} ./tmp
-	cp ~/.kube/config ./tmp
-	docker build -t troeger/kubeportal:dev -f Dockerfile-Dev .
-	rm -rf tmp
-
-# launch a local docker instance of kubeportal for live code reload
-docker-dev-run: venv
-	[ ! -z $(minikube status | grep Running | head -n 1) ] || minikube start
-	docker run -it \
-		--env-file .env-dev \
-		-e KUBEPORTAL_CLUSTER_API_SERVER=$(shell minikube ip) \
-		-p 8000:8000 troeger/kubeportal:dev
-
-# kill minikube instance
-docker-dev-mk-stop:
-	minikube stop
-	minikube delete
-
-# launch a minikube instance and deploy kubeportal on it
-docker-dev-mk-run:
-	minikube start --disk-size '8000mb'
-	bash -c 'eval $$(minikube docker-env | sed '/^#/d') && docker build -t troeger/kubeportal:dev .'
-	kubectl create -f ./deployment/k8s/namespace.yml \
-				   -f ./deployment/k8s/rbac.yml \
-				   -f ./deployment/k8s/service.yml \
-				   -f ./deployment/k8s/deployment-dev.yml
-	kubectl create secret generic mk-client-crt --from-file=${HOME}/.minikube/client.crt -n kubeportal
-	kubectl create secret generic mk-ca-crt     --from-file=${HOME}/.minikube/ca.crt     -n kubeportal
-	kubectl create secret generic mk-ca-key     --from-file=${HOME}/.minikube/ca.key     -n kubeportal
-	kubectl create secret generic mk-ca-pem     --from-file=${HOME}/.minikube/ca.pem     -n kubeportal
-	kubectl create secret generic kube-config   --from-file=${HOME}/.kube/config         -n kubeportal
-
-# Re-create docker images and upload into registry
-docker-push: docker
+# Upload the official Kuberportal image to Docker hub
+release-push:
 	docker login --username=troeger
 	docker push troeger/kubeportal:$(VERSION)
 
 # Clean temporary files
-clean:
+clean: minikube-stop
 	find . -name "*.bak" -delete
 	find . -name "__pycache__" -delete
 	make -C docs clean
-	rm -rf OME
-
-# Clean cached Docker data and state
-clean-docker:
-	docker container prune
-	docker volume prune
-	docker system prune
 
 # Build the HTML documentation from the sources.
-docs: check-venv
+docs: venv
 	pushd docs; make html; popd
 
 
+
+
+### Support functions, typically not for direct usage
+
+# Checks if a virtualenv exists, and creates it in case
+venv:
+	test -d venv || python3 -m venv venv
+	venv/bin/pip install -r requirements.txt	
+
+# Stops a Minikube environment
+minikube-stop:
+	minikube stop
+	minikube delete
+
+# Start a Minikube environment
+minikube-start:
+	[ ! -z $(minikube status | grep Running | head -n 1) ] || minikube start
+
+# Prepare a staging test Docker image
+staging-build: minikube-start
+	docker build -t troeger/kubeportal:staging .
+
+# Prepare .env File for staging tests
+.env:
+	@echo "KUBEPORTAL_AUTH_GOOGLE_KEY=\"$(GOOGLE_KEY)\"" >> .env
+	@echo "KUBEPORTAL_AUTH_GOOGLE_SECRET=\"$(GOOGLE_SECRET)\"" >> .env
