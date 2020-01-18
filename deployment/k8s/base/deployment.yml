@@ -17,12 +17,12 @@ spec:
     spec:
       containers:
       - name: kubeportal
-        image: troeger/kubeportal:0.2.0
+        image: troeger/kubeportal
         ports:
         - containerPort: 8000
         envFrom:
         - configMapRef:
-            name: config
+            name: kubeportal
         volumeMounts:
         - name: kubeportal
           mountPath: /data
