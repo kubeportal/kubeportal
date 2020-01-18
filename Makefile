@@ -1,7 +1,5 @@
 SHELL=/bin/bash
 VERSION=0.2.0
-GOOGLE_KEY=891177537513-sd1toqcvp7vl7e2bakvols27n1gh6h6n.apps.googleusercontent.com
-GOOGLE_SECRET=qwoYQ9ktOra9b_JMr2_E19cx
 
 # Run a Django dev server locally, together with Minikube
 # Configuration: Debug
@@ -10,26 +8,28 @@ dev-run: minikube-start venv .env
 	set -o allexport; source .env; set +o allexport; \
 	./venv/bin/python ./manage.py runserver_plus --configuration=Development
 
-# Run a staging test server in Minikube, based on the production image
-# Server: uwsgi in Docker
+# Runs the production Docker image in Minikube
 # Configuration: Production
-#
-# Note: Terminating the running Kubeportal Docker container with Ctrl+C may
-#       leave it in a dangled state. Call "docker system prune"
-#       in such cases before the next execution of this target.
 staging-run: staging-build minikube-start .env
-	docker run -it --detach \
-		--env-file .env \
-		--name kubeportal_staging \
-		-e KUBEPORTAL_CLUSTER_API_SERVER=$(shell minikube ip) \
-		-p 8000:8000 troeger/kubeportal:staging
-	# Copy and tweak config files so that Kubeportal can talk to Minikube
-	docker cp ${HOME}/.kube kubeportal_staging:/root/
-	docker exec kubeportal_staging sed -i 's#${HOME}/.minikube/#/root/.kube/#g' /root/.kube/config 
-	docker cp ${HOME}/.minikube/ca.crt kubeportal_staging:/root/.kube/
-	docker cp ${HOME}/.minikube/client.crt kubeportal_staging:/root/.kube/
-	docker cp ${HOME}/.minikube/client.key kubeportal_staging:/root/.kube/
-	docker attach kubeportal_staging
+	kubectl apply -k ./deployment/k8s/staging/
+	kubectl -n kubeportal delete configmap kubeportal --ignore-not-found=true
+	kubectl -n kubeportal create configmap kubeportal --from-env-file=.env 
+	kubectl -n kubeportal logs deployment/kubeportal
+	kubectl -n kubeportal port-forward svc/kubeportal 8000:8000
+
+# Clean temporary files
+clean: minikube-stop
+	find . -name "*.bak" -delete
+	find . -name "__pycache__" -delete
+	make -C docs clean
+
+# Build the HTML documentation from the sources.
+docs: venv
+	pushd docs; make html; popd
+
+
+### Functions for official releases
+
 
 # Update version numbers, commit and tag
 release-bumpversion:
@@ -44,20 +44,9 @@ release-push:
 	docker login --username=troeger
 	docker push troeger/kubeportal:$(VERSION)
 
-# Clean temporary files
-clean: minikube-stop
-	find . -name "*.bak" -delete
-	find . -name "__pycache__" -delete
-	make -C docs clean
-
-# Build the HTML documentation from the sources.
-docs: venv
-	pushd docs; make html; popd
-
-
-
 
 ### Support functions, typically not for direct usage
+
 
 # Checks if a virtualenv exists, and creates it in case
 venv:
@@ -71,13 +60,20 @@ minikube-stop:
 
 # Start a Minikube environment
 minikube-start:
-	[ ! -z $(minikube status | grep Running | head -n 1) ] || minikube start
+	(minikube status | grep Running) || minikube start
 
-# Prepare a staging test Docker image
+# Prepare a staging test Docker image in the Minikube environment
+# This works by utilizing the Docker environment inside Minikube
 staging-build: minikube-start
-	docker build -t troeger/kubeportal:staging .
+	eval $$(minikube docker-env); docker build -t troeger/kubeportal:staging .
 
-# Prepare .env File for staging tests
-.env:
-	@echo "KUBEPORTAL_AUTH_GOOGLE_KEY=\"$(GOOGLE_KEY)\"" >> .env
-	@echo "KUBEPORTAL_AUTH_GOOGLE_SECRET=\"$(GOOGLE_SECRET)\"" >> .env
+# Prepare minimal .env File for tests and development
+# These Google OAuth keys allow a redirect to localhost:8000
+# Other settings can be added to your version of the .env file,
+# consult the documentation
+.env: minikube-start
+	@echo "KUBEPORTAL_AUTH_GOOGLE_KEY=891177537513-sd1toqcvp7vl7e2bakvols27n1gh6h6n.apps.googleusercontent.com" > .env
+	@echo "KUBEPORTAL_AUTH_GOOGLE_SECRET=qwoYQ9ktOra9b_JMr2_E19cx" >> .env
+	@echo "KUBEPORTAL_CLUSTER_API_SERVER=https://$(shell minikube ip):8443" >> .env
+	# This is only used in the Production configuration, so its fine to set it here
+	@echo "KUBEPORTAL_DATABASE_URL=sqlite:////data/kubeportal.sqlite3" >> .env
