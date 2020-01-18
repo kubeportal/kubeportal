@@ -4,10 +4,12 @@ from django.http.response import HttpResponse
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 
 import logging
 
 from kubeportal.models import Link
+from kubeportal import kubernetes
 
 logger = logging.getLogger('KubePortal')
 
@@ -26,6 +28,13 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context['clusterapps'] = Link.objects.all()
+        User = get_user_model()
+        context['usercount'] = User.objects.count()
+        context['version'] = settings.VERSION
+        try:
+            context['stats'] = kubernetes.get_stats()
+        except:
+            context['stats'] = None
         return context
 
 

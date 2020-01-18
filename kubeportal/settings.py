@@ -5,6 +5,8 @@ from kubeportal.secret import get_secret_key
 
 
 class Common(Configuration):
+    VERSION = '0.2.0'
+
     SECRET_KEY = get_secret_key()
 
     INSTALLED_APPS = [

@@ -190,7 +190,10 @@ class User(AbstractUser):
     @property
     def token(self):
         from kubeportal.kubernetes import get_token
-        return get_token(self.service_account)
+        try:
+            token = get_token(self.service_account)
+        except:
+            return None
 
 
 class Link(models.Model):
