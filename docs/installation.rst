@@ -38,23 +38,11 @@ It is recommended to configure at least the following settings:
 
   - One authentication method (``KUBEPORTAL_AUTH_...``)
   - A reasonable path for the SQLite database in ``KUBEPORTAL_DATABASE_URL``, so that your user database persists on a mounted Kubernetes volume.
-  - ``KUBEPORTAL_BRANDING`` and ``KUBEPORTAL_CLUSTER_API_SERVER``, since these values are needed for the generated *kubectl* config files.
+  - ``KUBEPORTAL_CLUSTER_API_SERVER``, so that Kubeportal can talk to Kubernetes.
 
-The `example YMLs <https://github.com/troeger/kubeportal/tree/master/deployment/k8s>`_ show how these variables can be set through a standard Kubernetes config map.
+The `example YMLs <https://github.com/troeger/kubeportal/tree/master/deployment/k8s>`_ show how these variables can be set through a standard Kubernetes config map. Please note that we rely on
+Kustomize for them.
 
 After the first deployment, the log output of the KubePortal pod shows you the generated password for the *root* account once (!).
 This account **only** works for the backend login page, which is available at `<KubePortal URL>/admin/`.
-
-Configuring RBAC
-----------------
-
-Depending on your cluster setup, you may need to give KubePortal several permissions for API server access.
-Please check the `example YMLs <https://github.com/troeger/kubeportal/tree/master/deployment/k8s>`_ for further information.
-
-
-
-
-
-
-
 
