@@ -283,6 +283,8 @@ def get_stats():
     v1 = client.CoreV1Api()
     result = {}
     result['apiserver'] = v1.api_client.configuration.host
+    apiserver_image = v1.list_namespaced_pod("kube-system", label_selector="component=kube-apiserver").items[0].spec.containers[0].image.split(":")[1]
+    result['k8sversion'] = apiserver_image
     result['numberofpods'] = len(v1.list_pod_for_all_namespaces().items)
     nodes = v1.list_node().items
     result['numberofnodes'] = len(nodes)
