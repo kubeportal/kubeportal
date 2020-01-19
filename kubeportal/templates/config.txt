@@ -4,7 +4,7 @@ apiVersion: v1
 clusters:
 - cluster:
     insecure-skip-tls-verify: true
-    server: {% settings_value 'CLUSTER_API_SERVER' %}
+    server: {% apiserver %}
   name: {% settings_value_normalized 'BRANDING' %}
 contexts:
 - context:

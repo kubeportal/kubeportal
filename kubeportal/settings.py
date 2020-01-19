@@ -222,8 +222,6 @@ class Development(Common):
     TEST_PEP8_DIRS = [os.path.dirname(PROJECT_DIR), ]
     TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
-    CLUSTER_API_SERVER = values.Value(
-        "#missing setting#", environ_prefix='KUBEPORTAL')
     DEBUG = True
 
     REDIRECT_HOSTS = ['localhost', '127.0.0.1']
@@ -233,7 +231,6 @@ class Development(Common):
 
 
 class Production(Common):
-    CLUSTER_API_SERVER = values.Value('', environ_prefix='KUBEPORTAL')
     DEBUG = False
 
     DATABASE_URL = values.DatabaseURLValue(

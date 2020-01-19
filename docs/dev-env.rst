@@ -11,9 +11,9 @@ The following software is needed on your computer to start:
 - Minikube (+ dependencies, such as libvirt or kvm2)
 - GNU Make
 
-Note: If you have set up a minikube instance before using virtualbox you might
-want to either delete the old instance or set up a new, named instance using kvm.
-Otherwise minikube will refuse to start up.
+Note: If you have set up a minikube instance before, using virtualbox, you might
+want to either delete the old instance or set up a new, named instance using KVM.
+Otherwise minikube may refuse to start up.
 
 You can always clean your computer from the running Minikube containers and temporary files with:
 
@@ -30,7 +30,9 @@ Developing code
     make dev-run
 
 This command starts a minikube instance, creates a default .env configuration
-file (if missing) and starts the Django development server so that you can access the portal page at http://127.0.0.1:8000.
+file (if missing) and starts the Django development server so that you can access the portal page at http://127.0.0.1:8000. Minikube is automatically changing your `kubectl` configuration so that you talk to your local cluster by default.
+
+You may want to let your local KubePortal instance talk to an external cluster, f.e. to test functionalities against production data. This is trivially possible by activating a different kubectl configuration. Whatever `kubectl` is talking to, your KubePortal instance is doing the same. 
 
 Staging test
 ============

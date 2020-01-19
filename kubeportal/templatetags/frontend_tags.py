@@ -2,6 +2,7 @@ from django import template
 from django.conf import settings
 
 from kubeportal.active_directory import is_available
+from kubeportal.kubernetes import get_apiserver
 
 register = template.Library()
 
@@ -15,6 +16,11 @@ def ad_status():
             return "unavailable"
     else:
         return "unconfigured"
+
+
+@register.simple_tag
+def apiserver():
+    return get_apiserver()
 
 
 @register.simple_tag

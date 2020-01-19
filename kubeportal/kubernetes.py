@@ -278,6 +278,12 @@ def get_token(kubeportal_service_account):
     return b64decode(encoded_token).decode()
 
 
+def get_apiserver():
+    _load_config()
+    v1 = client.CoreV1Api()
+    return v1.api_client.configuration.host
+
+
 def get_stats():
     _load_config()
     v1 = client.CoreV1Api()
