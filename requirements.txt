@@ -2,7 +2,6 @@ urllib3==1.24.3   # resolve dependency conflict by explicit installation of this
 Django==2.2.9
 social-auth-app-django==3.1.0
 ldap3==2.5.2
-cryptography==2.5
 django-test-pep8==0.1
 django-oidc-provider==0.7.0
 colorama==0.4.1

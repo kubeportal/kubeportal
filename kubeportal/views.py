@@ -1,4 +1,3 @@
-import time
 from django.views.generic.base import TemplateView, View, RedirectView
 from django.contrib.auth.views import LoginView
 from django.http.response import HttpResponse
@@ -6,38 +5,11 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 
-from .token import FernetToken, InvalidToken
 import logging
 
 from kubeportal.models import Link
 
 logger = logging.getLogger('KubePortal')
-
-
-class FernetTokenView(LoginRequiredMixin, TemplateView):
-    template_name = "portal_fernet.html"
-
-    def post(self, request):
-        context = self.get_context_data()
-        token = self.request.POST.get('token')
-        fernet = FernetToken()
-        verify_msg = ''
-        if token:
-            context['token'] = token     # reinsert into form
-            # handle form post for token verification
-            try:
-                username = fernet.token_to_username(token)
-            except InvalidToken:
-                verify_msg = 'This token is invalid'
-            else:
-                if username == self.request.user.username:
-                    stamp = fernet.extract_timestamp(token)
-                    stamp = time.ctime(stamp)
-                    verify_msg = 'This is your token, issued ' + stamp
-                else:
-                    verify_msg = "This is the token of somebody else's token"
-        context['verify_msg'] = verify_msg
-        return self.render_to_response(context)
 
 
 class IndexView(LoginView):
