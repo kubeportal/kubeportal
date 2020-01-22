@@ -87,7 +87,8 @@ class Common(Configuration):
         'social_core.backends.username.UsernameAuth',
         'django.contrib.auth.backends.ModelBackend',
         'social_core.backends.twitter.TwitterOAuth',
-        'social_core.backends.google.GoogleOAuth2'
+        'social_core.backends.google.GoogleOAuth2',
+        'kubeportal.oidc.GenericOidc'
     )
 
     SOCIAL_AUTH_PIPELINE = (
@@ -191,6 +192,12 @@ class Common(Configuration):
         None, environ_name='AUTH_GOOGLE_KEY', environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = values.Value(
         None, environ_name='AUTH_GOOGLE_SECRET', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GENERICOIDC_ENDPOINT = values.Value(
+        None, environ_name='AUTH_GENERICOIDC_ENDPOINT', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GENERICOIDC_KEY = values.Value(
+        None, environ_name='AUTH_GENERICOIDC_KEY', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GENERICOIDC_SECRET = values.Value(
+        None, environ_name='AUTH_GENERICOIDC_SECRET', environ_prefix='KUBEPORTAL')
     AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
