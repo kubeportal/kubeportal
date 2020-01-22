@@ -10,10 +10,11 @@ class Command(BaseCommand):
         User = get_user_model()
         user, created = User.objects.get_or_create(
             username='root', is_superuser=True, is_staff=True)
+        pw = User.objects.make_random_password()
+        user.password = make_password(pw)
+        user.save()
+
         if created:
-            pw = User.objects.make_random_password()
-            user.password = make_password(pw)
-            user.save()
             print("Superuser created, password is '{0}'.".format(pw))
         else:
-            print("Superuser exists, nothing changed.")
+            print("Superuser exists, password is '{0}'.".format(pw))

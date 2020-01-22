@@ -13,8 +13,6 @@ COPY . /code/
 ENV KUBEPORTAL_STATIC_ROOT='/code/static-collected'
 ENV KUBEPORTAL_STATICFILES_DIRS='/code/kubeportal/static'
 
-RUN /code/manage.py collectstatic --noinput --configuration=Production
-
 EXPOSE 8000
 
 CMD ["/bin/sh", "/code/deployment/docker/docker-entry.sh"]

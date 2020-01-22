@@ -17,9 +17,17 @@ spec:
     spec:
       containers:
       - name: kubeportal
-        image: troeger/kubeportal:dev
+        image: troeger/kubeportal
         ports:
         - containerPort: 8000
         envFrom:
         - configMapRef:
-            name: config
+            name: kubeportal
+        volumeMounts:
+        - name: kubeportal
+          mountPath: /data
+
+      volumes:
+      - name: kubeportal
+        persistentVolumeClaim:
+          claimName: kubeportal
