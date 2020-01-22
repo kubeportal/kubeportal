@@ -12,6 +12,7 @@ router.register('users', api_views.UserView)
 
 urlpatterns = [
     path('config/', views.ConfigView.as_view(), name='config'),
+    path('stats/', views.StatsView.as_view(), name='stats'),
     path('subauthreq/', views.SubAuthRequestView.as_view(), name='subauthreq'),
     path('subauthreq', views.SubAuthRequestView.as_view(), name='subauthreq'),
     path('config/download/', views.ConfigDownloadView.as_view(content_type='text/plain'), name='config_download'),

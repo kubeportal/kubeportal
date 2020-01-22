@@ -276,3 +276,21 @@ def get_token(kubeportal_service_account):
         name=secret_name, namespace=kubeportal_service_account.namespace.name)
     encoded_token = secret.data['token']
     return b64decode(encoded_token).decode()
+
+
+def get_stats():
+    _load_config()
+    v1 = client.CoreV1Api()
+    result = {}
+    result['apiserver'] = v1.api_client.configuration.host
+    apiserver_image = v1.list_namespaced_pod("kube-system", label_selector="component=kube-apiserver").items[0].spec.containers[0].image.split(":")[1]
+    result['k8sversion'] = apiserver_image
+    result['numberofpods'] = len(v1.list_pod_for_all_namespaces().items)
+    nodes = v1.list_node().items
+    result['numberofnodes'] = len(nodes)
+    cpus = [int(node.status.capacity['cpu']) for node in nodes]
+    result['cpusum'] = sum(cpus)
+    mems = [int(node.status.capacity['memory'][:-2]) for node in nodes]
+    result['memsum'] = sum(mems)/1000000 # in GiBytes
+    result['numberofvolumes'] = len(v1.list_persistent_volume().items)
+    return result
