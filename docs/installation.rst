@@ -43,6 +43,6 @@ It is recommended to configure at least the following settings:
 The `example YMLs <https://github.com/troeger/kubeportal/tree/master/deployment/k8s>`_ show how these variables can be set through a standard Kubernetes config map. Please note that we rely on
 Kustomize for them.
 
-After the first deployment, the log output of the KubePortal pod shows you the generated password for the *root* account once (!).
+In production mode, after the first deployment, the log output of the KubePortal pod shows you the generated password for the *root* account once (!).
 This account **only** works for the backend login page, which is available at `<KubePortal URL>/admin/`.
 
