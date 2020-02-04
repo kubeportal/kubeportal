@@ -19,7 +19,7 @@ KUBEPORTAL_AUTH_GOOGLE_KEY            Client key for OAuth when offering fronten
 KUBEPORTAL_AUTH_GOOGLE_SECRET         Client secret for OAuth when offering frontend Google login.
 KUBEPORTAL_AUTH_AD_DOMAIN             Domain when offering frontend Active Directory login, e.g. ``example.com``.
 KUBEPORTAL_AUTH_AD_SERVER             Active directory server when offering frontend Active Directory login, e.g. ``192.168.1.1``. Not needed when equal to the A record behind the value of ``KUBEPORTAL_AUTH_AD_DOMAIN``.
-KUBEPORTAL_SESSION_COOKIE_DOMAIN      The domain used for the user session cookie, e.g. ``.example.com``.     
+KUBEPORTAL_SESSION_COOKIE_DOMAIN      The domain used for the user session cookie, e.g. ``.example.com``.
 KUBEPORTAL_NAMESPACE_CLUSTERROLES     Kubernetes cluster roles that should be bound to the *default* service account of newly created Kubernetes namespaces, e.g. ``minimal-api,standard-api``.
 KUBEPORTAL_BRANDING                   The human-readable name of your cluster.
 KUBEPORTAL_CLUSTER_API_SERVER         The URL for your Kubernetes API server, e.g. ``https://k8smaster.example.com:6443``.
@@ -28,8 +28,12 @@ KUBEPORTAL_TIME_ZONE                  The time zone for the web site, e.g. ``UTC
 KUBEPORTAL_ADMIN_NAME                 The name of the superuser, used only for email sending.
 KUBEPORTAL_ADMIN_EMAIL                The email address of the superuser.
 KUBEPORTAL_EMAIL_HOST                 The SMTP server used by the web site for sending mails.
-KUBEPORTAL_DATABASE_URL               The database to be used as URL (see `formatting examples <https://github.com/jacobian/dj-database-url>`), e.g. ``sqlite:////data/kubeportal.sqlite3``. 
+KUBEPORTAL_DATABASE_URL               The database to be used as URL (see `formatting examples <https://github.com/jacobian/dj-database-url>`), e.g. ``sqlite:////data/kubeportal.sqlite3``.
 KUBEPORTAL_REDIRECT_HOSTS             Hosts that redirect to the KubePortal web page, typically to perform OAuth authenication. Example: ``grafana.example.com, registry.example.com``.
+KUBEPORTAL_LOG_LEVEL                  Sets the verbosity of the logging.
+                                      0=maximum verbosity (default),
+                                      1=warnings,
+                                      2=critical problems
 ===================================== ============================================================================
 
 
