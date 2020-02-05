@@ -53,4 +53,4 @@ via the kubernetes dashboard. Just run `minikube dashboard`.
 Logging
 =======
 
-Developers are able to set different log levels for KubePortal. By default, it will log as verbose as possible. You change the verbosity using the `KUBEPORTAL_LOG_LEVEL` environment variable.
+Developers are able to set different log levels for KubePortal. By default, it will log as verbose as possible. You change the verbosity using the `KUBEPORTAL_LOG_LEVEL_*` environment variables.

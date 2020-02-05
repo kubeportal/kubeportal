@@ -24,9 +24,9 @@ def set_log_level(env_var_name, logger):
             formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             handler.setFormatter(formatter)
 
-set_log_level("KUBEPORTAL_REQUEST_LOG_LEVEL", logging.getLogger('django.request'))
-set_log_level("KUBEPORTAL_PORTAL_LOG_LEVEL", logging.getLogger('KubePortal'))
-set_log_level("KUBEPORTAL_SOCIAL_LOG_LEVEL", logging.getLogger('social'))
+set_log_level("KUBEPORTAL_LOG_LEVEL_REQUEST", logging.getLogger('django.request'))
+set_log_level("KUBEPORTAL_LOG_LEVEL_PORTAL", logging.getLogger('KubePortal'))
+set_log_level("KUBEPORTAL_LOG_LEVEL_SOCIAL", logging.getLogger('social'))
 
 
 default_app_config = 'kubeportal.apps.KubePortalConfig'
