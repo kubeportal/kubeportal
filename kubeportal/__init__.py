@@ -1,26 +1,32 @@
 import logging, sys
 from os import environ
 
-logger = logging.getLogger('KubePortal')
+def set_log_level(env_var_name, logger):
+    '''
+    Sets the log level based on environment variables for the given logger.
+    '''
+    # does the variable exist?
+    if environ.get(env_var_name):
+        log_level = int(environ[env_var_name])
+        if log_level == 0:
+            logger.setLevel(logging.CRITICAL)
+        elif log_level == 1:
+            logger.setLevel(logging.WARNING)
+        elif log_level == 2:
+            pass
+        else:
+            print("Unknown log level '{}'".format(log_level))
+            print("Please check your '{}' environment variable.".format(env_var_name))
+            
+            handler = logging.StreamHandler(sys.stdout)
+            logger.addHandler(handler)
+            
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
 
-# set log level (default to maximum verbosity)
-logger.setLevel(logging.INFO)
-if environ.get('KUBEPORTAL_LOG_LEVEL'):
-    log_level = int(environ['KUBEPORTAL_LOG_LEVEL'])
-    if log_level == 0:
-        logger.setLevel(logging.CRITICAL)
-    elif log_level == 1:
-        logger.setLevel(logging.WARNING)
-    elif log_level == 2:
-        pass
-    else:
-        print("Unknown log level '{}'".format(log_level))
-        print("Please check your KUBEPORTAL_LOG_LEVEL environment variable.")
+set_log_level("KUBEPORTAL_REQUEST_LOG_LEVEL", logging.getLogger('django.request'))
+set_log_level("KUBEPORTAL_PORTAL_LOG_LEVEL", logging.getLogger('KubePortal'))
+set_log_level("KUBEPORTAL_SOCIAL_LOG_LEVEL", logging.getLogger('social'))
 
-handler = logging.StreamHandler(sys.stdout)
-logger.addHandler(handler)
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
 
 default_app_config = 'kubeportal.apps.KubePortalConfig'

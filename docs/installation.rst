@@ -30,10 +30,9 @@ KUBEPORTAL_ADMIN_EMAIL                The email address of the superuser.
 KUBEPORTAL_EMAIL_HOST                 The SMTP server used by the web site for sending mails.
 KUBEPORTAL_DATABASE_URL               The database to be used as URL (see `formatting examples <https://github.com/jacobian/dj-database-url>`), e.g. ``sqlite:////data/kubeportal.sqlite3``.
 KUBEPORTAL_REDIRECT_HOSTS             Hosts that redirect to the KubePortal web page, typically to perform OAuth authenication. Example: ``grafana.example.com, registry.example.com``.
-KUBEPORTAL_LOG_LEVEL                  Sets the verbosity of the logging.
-                                      0=critical problems,
-                                      1=warnings,
-                                      2=maximum verbosity (default)
+KUBEPORTAL_PORTAL_LOG_LEVEL           Sets the verbosity of the logging for the admin panel. 0 = critical problems, 1 = warnings, 2 = maximum verbosity
+KUBEPORTAL_SOCIAL_LOG_LEVEL           Sets the verbosity of the logging for django.social.   0 = critical problems, 1 = warnings, 2 = maximum verbosity
+KUBEPORTAL_REQUEST_LOG_LEVEL          Sets the verbosity of the logging for requests.        0 = critical problems, 1 = warnings, 2 = maximum verbosity
 ===================================== ============================================================================
 
 
