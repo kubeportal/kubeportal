@@ -8,11 +8,14 @@ logger.setLevel(logging.INFO)
 if environ.get('KUBEPORTAL_LOG_LEVEL'):
     log_level = int(environ['KUBEPORTAL_LOG_LEVEL'])
     if log_level == 0:
-        pass
+        logger.setLevel(logging.CRITICAL)
     elif log_level == 1:
         logger.setLevel(logging.WARNING)
     elif log_level == 2:
-        logger.setLevel(logging.CRITICAL)
+        pass
+    else:
+        print("Unknown log level '{}'".format(log_level))
+        print("Please check your KUBEPORTAL_LOG_LEVEL environment variable.")
 
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)

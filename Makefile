@@ -66,14 +66,3 @@ minikube-start:
 # This works by utilizing the Docker environment inside Minikube
 staging-build: minikube-start
 	eval $$(minikube docker-env); docker build -t troeger/kubeportal:staging .
-
-# Prepare minimal .env File for tests and development
-# These Google OAuth keys allow a redirect to localhost:8000
-# Other settings can be added to your version of the .env file,
-# consult the documentation
-.env: minikube-start
-	@echo "KUBEPORTAL_AUTH_GOOGLE_KEY=891177537513-sd1toqcvp7vl7e2bakvols27n1gh6h6n.apps.googleusercontent.com" > .env
-	@echo "KUBEPORTAL_AUTH_GOOGLE_SECRET=qwoYQ9ktOra9b_JMr2_E19cx" >> .env
-	@echo "KUBEPORTAL_CLUSTER_API_SERVER=https://$(shell minikube ip):8443" >> .env
-	# This is only used in the Production configuration, so its fine to set it here
-	@echo "KUBEPORTAL_DATABASE_URL=sqlite:////data/kubeportal.sqlite3" >> .env
