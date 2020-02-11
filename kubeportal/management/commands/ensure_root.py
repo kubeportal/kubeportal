@@ -20,7 +20,6 @@ class Command(BaseCommand):
         '''
         pw = None
         if environ['DJANGO_CONFIGURATION'] == 'Development':
-            print(environ.get('DEV_ROOT_PASSWORD'))
             if environ.get('KUBEPORTAL_ROOT_PASSWORD'):
                 pw = environ['KUBEPORTAL_ROOT_PASSWORD']
             else:
