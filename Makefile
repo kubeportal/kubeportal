@@ -3,17 +3,18 @@ VERSION=0.2.0
 
 # Run a Django dev server locally, together with Minikube
 # Configuration: Debug
-dev-run: minikube-start venv .env
-	./venv/bin/python ./manage.py ensure_root --configuration=Development
+dev-run: minikube-start venv
 	set -o allexport; source .env; set +o allexport; \
+	KUBEPORTAL_CLUSTER_API_SERVER=$(shell minikube ip) \
+	./venv/bin/python ./manage.py ensure_root --configuration=Development
 	./venv/bin/python ./manage.py runserver_plus --configuration=Development
 
 # Runs the production Docker image in Minikube
 # Configuration: Production
-staging-run: staging-build minikube-start .env
+staging-run: staging-build minikube-start
 	kubectl apply -k ./deployment/k8s/staging/
 	kubectl -n kubeportal delete configmap kubeportal --ignore-not-found=true
-	kubectl -n kubeportal create configmap kubeportal --from-env-file=.env 
+	kubectl -n kubeportal create configmap kubeportal --from-env-file=.env
 	kubectl -n kubeportal logs deployment/kubeportal
 	kubectl -n kubeportal port-forward svc/kubeportal 8000:8000
 
@@ -51,7 +52,7 @@ release-push:
 # Checks if a virtualenv exists, and creates it in case
 venv:
 	test -d venv || python3 -m venv venv
-	venv/bin/pip install -r requirements.txt	
+	venv/bin/pip install -r requirements.txt
 
 # Stops a Minikube environment
 minikube-stop:

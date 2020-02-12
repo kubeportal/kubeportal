@@ -11,6 +11,15 @@ The following software is needed on your computer to start:
 - Minikube (+ dependencies, such as libvirt or kvm2)
 - GNU Make
 
+The development environment will require you to create a .env file containing
+the following necessary environment variables.
+
+- KUBEPORTAL_DATABASE_URL (usually sqlite:////data/kubeportal.sqlite3)
+- KUBEPORTAL_AUTH_GOOGLE_SECRET
+- KUBEPORTAL_AUTH_GOOGLE_KEY
+
+Information about the variables can be found `here <installation.html>`_.
+
 Note: If you have set up a minikube instance before using virtualbox you might
 want to either delete the old instance or set up a new, named instance using kvm.
 Otherwise minikube will refuse to start up.
@@ -29,8 +38,7 @@ Developing code
 
     make dev-run
 
-This command starts a minikube instance, creates a default .env configuration
-file (if missing) and starts the Django development server so that you can access the portal page at http://127.0.0.1:8000.
+This command starts a minikube instance and starts the Django development server so that you can access the portal page at http://127.0.0.1:8000. It will use the environment variables defined in the .env file.
 
 Staging test
 ============
@@ -42,10 +50,10 @@ Staging test
 This command:
 
   - Starts a minikube instance
-  - Creates a default .env configuration file (if missing)
   - Builds the production Docker image of KubePortal
   - Deploys it to the Minikube instance
   - Runs a port forwarding so that you can access the page at http://127.0.0.1:8000
+  - It will use the environment variables defined in the .env file.
 
 Note: You can check your current container status / logs not only via kubectl, but also
 via the kubernetes dashboard. Just run `minikube dashboard`.
