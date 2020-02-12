@@ -3,7 +3,7 @@ Development Environment
 
 There are 2 ways to launch the KubePortal development environment. One is for
 editing code, the other to perform a staging test with the production version
-of Kubeportal.
+of KubePortal.
 
 The following software is needed on your computer to start:
 
@@ -50,3 +50,7 @@ This command:
 Note: You can check your current container status / logs not only via kubectl, but also
 via the kubernetes dashboard. Just run `minikube dashboard`.
 
+Logging
+=======
+
+Developers are able to set different log levels for KubePortal. By default, it will log as verbose as possible. You change the verbosity using the `KUBEPORTAL_LOG_LEVEL_*` environment variables.
