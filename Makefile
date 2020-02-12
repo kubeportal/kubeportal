@@ -55,13 +55,17 @@ venv:
 	venv/bin/pip install -r requirements.txt
 
 # Stops a Minikube environment
-minikube-stop:
+minikube-stop: minikube-check
 	minikube stop
 	minikube delete
 
 # Start a Minikube environment
-minikube-start:
+minikube-start: minikube-check
 	(minikube status | grep Running) || minikube start
+
+# Check if minikube is installed
+minikube-check:
+	@test -f minikube || echo ERROR: Minikube installation is missing on your machine. && exit 1
 
 # Prepare a staging test Docker image in the Minikube environment
 # This works by utilizing the Docker environment inside Minikube
