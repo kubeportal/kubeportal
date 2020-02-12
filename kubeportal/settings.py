@@ -241,6 +241,8 @@ class Development(Common):
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     EMAIL_HOST = values.Value('localhost', environ_prefix='KUBEPORTAL')
 
+    ROOT_PASSWORD = values.Value('rootpw', environ_prefix='KUBEPORTAL')
+
 
 class Production(Common):
     CLUSTER_API_SERVER = values.Value('', environ_prefix='KUBEPORTAL')

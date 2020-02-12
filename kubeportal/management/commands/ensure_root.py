@@ -1,11 +1,20 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from os import environ
+from django.conf import settings
 
 
 class Command(BaseCommand):
-    ''' Make sure that superuser exists. '''
+    '''
+        Make sure that superuser exists.
+
+        In development mode, the superuser password is a default
+        one (see settings.py), or is set through the KUBEPORTAL_ROOT_PASSWORD
+        environment variable.
+
+        In production mode, the superuser password is changed on every start
+        and printed in the log output.
+    '''
 
     def handle(self, *args, **option):
         # create django user
@@ -13,24 +22,12 @@ class Command(BaseCommand):
         user, created = User.objects.get_or_create(
             username='root', is_superuser=True, is_staff=True)
 
-        '''
-        hard code password when running in development mode
-        use random password as default in case something goes wrong
-        if no root password is set as an environment variable, use 'rootpw'
-        '''
-        pw = None
-        if environ['DJANGO_CONFIGURATION'] == 'Development':
-            if environ.get('KUBEPORTAL_ROOT_PASSWORD'):
-                pw = environ['KUBEPORTAL_ROOT_PASSWORD']
-            else:
-                pw = "rootpw"
+        if hasattr(settings, 'ROOT_PASSWORD'):
+            pw = settings.ROOT_PASSWORD
         else:
             pw = User.objects.make_random_password()
 
         user.password = make_password(pw)
         user.save()
 
-        if created:
-            print("Superuser created, password is '{0}'.".format(pw))
-        else:
-            print("Superuser exists, password is '{0}'.".format(pw))
+        print("Superuser password is '{0}'.".format(pw))
