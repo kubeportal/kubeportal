@@ -31,6 +31,9 @@ KUBEPORTAL_EMAIL_HOST                 The SMTP server used by the web site for s
 KUBEPORTAL_DATABASE_URL               The database to be used as URL (see `formatting examples <https://github.com/jacobian/dj-database-url>`), e.g. ``sqlite:////data/kubeportal.sqlite3``.
 KUBEPORTAL_REDIRECT_HOSTS             Hosts that redirect to the KubePortal web page, typically to perform OAuth authenication. Example: ``grafana.example.com, registry.example.com``.
 KUBEPORTAL_ROOT_PASSWORD              The password to be used in the development environment for the `root` user. Replaces the default `rootpw` password.
+KUBEPORTAL_LOG_LEVEL_PORTAL           Sets the verbosity of the logging for the admin panel. [DEBUG, INFO, WARNING, ERROR, CRITICAL]
+KUBEPORTAL_LOG_LEVEL_SOCIAL           Sets the verbosity of the logging for django.social. [DEBUG, INFO, WARNING, ERROR, CRITICAL]
+KUBEPORTAL_LOG_LEVEL_REQUEST          Sets the verbosity of the logging for requests. [DEBUG, INFO, WARNING, ERROR, CRITICAL]
 ===================================== ============================================================================
 
 

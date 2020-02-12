@@ -125,6 +125,16 @@ class Common(Configuration):
     AUTH_USER_MODEL = 'kubeportal.User'
     SOCIAL_AUTH_USER_MODEL = 'kubeportal.User'
 
+    LOG_LEVEL_PORTAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
+    LOG_LEVEL_SOCIAL  = values.Value('DEBUG', environ_prefix='KUBEPORTAL')
+    LOG_LEVEL_REQUEST = values.Value('DEBUG', environ_prefix='KUBEPORTAL')
+    
+    # read the environment variables immediately because they're used to
+    # configure the loggers below
+    LOG_LEVEL_PORTAL.setup('LOG_LEVEL_PORTAL')
+    LOG_LEVEL_SOCIAL.setup('LOG_LEVEL_SOCIAL')
+    LOG_LEVEL_REQUEST.setup('LOG_LEVEL_REQUEST')
+    
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,
@@ -158,18 +168,18 @@ class Common(Configuration):
         'loggers': {
             'django.request': {
                 'handlers': ['mail_admins', 'console'],
-                'level': 'ERROR',
-                'propagate': True,
+                'level': LOG_LEVEL_REQUEST.value,
+                'propagate': True
             },
             'KubePortal': {
                 'handlers': ['console', ],
-                'level': 'DEBUG',
-                'propagate': True,
+                'level': LOG_LEVEL_PORTAL.value,
+                'propagate': True
             },
             'social': {
                 'handlers': ['console', ],
-                'level': 'DEBUG',
-                'propagate': True,
+                'level': LOG_LEVEL_SOCIAL.value,
+                'propagate': True
             },
         }
     }
@@ -194,7 +204,7 @@ class Common(Configuration):
     AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
-
+    
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
