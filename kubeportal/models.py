@@ -76,7 +76,7 @@ class User(AbstractUser):
     def has_access_requested(self):
         return self.state == UserState.ACCESS_REQUESTED and self.approval_id
 
-    @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
+    @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED, UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
     def send_access_request(self, request):
         '''
         Requests approval for cluster access.
