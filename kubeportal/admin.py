@@ -125,10 +125,10 @@ reject.short_description = "Reject access request for selected users"
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username', 'email', 'is_superuser']
     list_display = ('username', 'first_name', 'last_name',
-                    'is_staff', 'state', 'comments', 'email', 'approve_link', 'answered_by')
+                    'is_staff', 'state', 'answered_by', 'comments', 'email', 'approve_link')
     fieldsets = (
         (None, {'fields': ('username', 'first_name', 'last_name', 'email', 'comments', 'is_staff')}),
-        (None, {'fields': ('state', 'service_account', 'is_superuser')})
+        (None, {'fields': ('state', 'answered_by', 'service_account', 'is_superuser')})
     )
     actions = [reject]
 
