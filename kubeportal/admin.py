@@ -123,7 +123,7 @@ reject.short_description = "Reject access request for selected users"
 
 
 class PortalUserAdmin(UserAdmin):
-    readonly_fields = ['username', 'email', 'is_superuser', 'state']
+    readonly_fields = ['username', 'email', 'is_superuser']
     list_display = ('username', 'first_name', 'last_name',
                     'is_staff', 'state', 'comments', 'email', 'approve_link')
     fieldsets = (
@@ -131,6 +131,8 @@ class PortalUserAdmin(UserAdmin):
         (None, {'fields': ('state', 'service_account', 'is_superuser')})
     )
     actions = [reject]
+
+    
 
     def has_add_permission(self, request, obj=None):
         return False

@@ -55,14 +55,25 @@ class UserState():
     ACCESS_APPROVED = 'approved'
 
 
+user_state_list = ((UserState.NEW, UserState.NEW),
+                   (UserState.ACCESS_REQUESTED, UserState.ACCESS_REQUESTED),
+                   (UserState.ACCESS_REJECTED, UserState.ACCESS_REJECTED),
+                   (UserState.ACCESS_APPROVED, UserState.ACCESS_APPROVED)
+                   )
+
+
 class User(AbstractUser):
     '''
     A portal user.
     '''
-    state = FSMField(default=UserState.NEW, verbose_name="Cluster access", help_text="The state of the cluster access approval workflow.")
-    approval_id = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
-    answered_by = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
-    comments = models.CharField(max_length=150, help_text="Description on why this user needs cluster access. (150 characters)", default="", null=True, blank=True)
+    state = FSMField(default=UserState.NEW, verbose_name="Cluster access",
+                     help_text="The state of the cluster access approval workflow.", choices=user_state_list)
+    approval_id = models.UUIDField(
+        default=uuid.uuid4, editable=False, null=True)
+    answered_by = models.ForeignKey(
+        'User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
+    comments = models.CharField(
+        max_length=150, help_text="Description on why this user needs cluster access. (150 characters)", default="", null=True, blank=True)
 
     service_account = models.ForeignKey(
         KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
@@ -99,7 +110,8 @@ class User(AbstractUser):
             is_staff=True).values_list('email', flat=True)
 
         try:
-            send_mail(subject, text_mail, settings.ADMIN_EMAIL, cluster_admins, html_message=html_mail, fail_silently=False)
+            send_mail(subject, text_mail, settings.ADMIN_EMAIL,
+                      cluster_admins, html_message=html_mail, fail_silently=False)
             logger.debug(
                 'Sent email to admins about access request from ' + str(self))
             return True
@@ -120,7 +132,8 @@ class User(AbstractUser):
         '''
         messages.add_message(request, messages.INFO,
                              "Access request for '{0}' was rejected.".format(self))
-        logger.info("Access for user '{0}' was rejected by user '{1}'.".format(self, request.user))
+        logger.info("Access for user '{0}' was rejected by user '{1}'.".format(
+            self, request.user))
 
         html_mail = render_to_string('mail_access_rejected.html', {'branding': settings.BRANDING,
                                                                    'user': str(self),
@@ -131,14 +144,16 @@ class User(AbstractUser):
 
         try:
             if self.email:
-                send_mail(subject, text_mail, settings.ADMIN_EMAIL, [self.email, ], html_message=html_mail, fail_silently=False)
+                send_mail(subject, text_mail, settings.ADMIN_EMAIL, [
+                          self.email, ], html_message=html_mail, fail_silently=False)
                 logger.debug(
                     "Sent email to user '{0}' about access request rejection".format(self))
         except Exception:
             logger.exception(
                 "Problem while sending email to user '{0}' about access request rejection".format(self))
 
-        self.service_account = None   # overwrite old approval, if URL is used again by the admins
+        # overwrite old approval, if URL is used again by the admins
+        self.service_account = None
         self.answered_by = request.user
         return True
 
@@ -163,11 +178,13 @@ class User(AbstractUser):
                                                                    })
 
         text_mail = strip_tags(html_mail)
-        subject = 'Your request for access to the {0} Kubernetes Cluster'.format(settings.BRANDING)
+        subject = 'Your request for access to the {0} Kubernetes Cluster'.format(
+            settings.BRANDING)
 
         try:
             if self.email:
-                send_mail(subject, text_mail, settings.ADMIN_EMAIL, [self.email, ], html_message=html_mail, fail_silently=False)
+                send_mail(subject, text_mail, settings.ADMIN_EMAIL, [
+                          self.email, ], html_message=html_mail, fail_silently=False)
                 logger.debug(
                     "Sent email to user '{0}' about access request approval".format(self))
                 messages.info(
@@ -181,7 +198,8 @@ class User(AbstractUser):
 
     def approve_link(self):
         if self.has_access_requested():
-            uri = reverse('admin:access_approve', kwargs={'approval_id': self.approval_id})
+            uri = reverse('admin:access_approve', kwargs={
+                          'approval_id': self.approval_id})
             return mark_safe('<a class="grp-button" href="{0}" target="blank">Approve request</a>'.format(uri))
         else:
             return None
