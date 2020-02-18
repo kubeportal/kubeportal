@@ -6,8 +6,8 @@
 {% settings_value "AUTH_AD_DOMAIN" as auth_ad_domain %}
 {% settings_value "SOCIAL_AUTH_TWITTER_KEY" as auth_twitter_key %}
 {% settings_value "SOCIAL_AUTH_GOOGLE_OAUTH2_KEY" as auth_google_key %}
-{% settings_value "SOCIAL_AUTH_GENERICOIDC_KEY" as auth_oidc_key %}
-
+{% settings_value "SOCIAL_AUTH_GENERICOIDC_ENDPOINT" as auth_oidc_endpoint %}
+{% settings_value "SOCIAL_AUTH_GENERICOIDC_TITLE" as auth_oidc_title %}
 
 <div class="container">
   {% if messages %}
@@ -31,29 +31,27 @@
           {% ad_status as ad_status_cached %}
           {% if ad_status_cached == "available" %}
             <form method="POST" action="/social/complete/username/">
-          {% else %}
-            <form method="POST" action="">
+            {% csrf_token %}
+            <div class="form-group">
+              <div class="form-label-group">
+                {% if 'next' in request.GET %}
+                  <input type="hidden" name="next" value="{{ request.GET.next }}" />
+                {% elif 'rd' in request.GET %}
+                  <input type="hidden" name="next" value="{{ request.GET.rd }}" />
+                {% endif %}
+                <input type="text" id="username" name="username" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
+                <label for="username">User name</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="form-label-group">
+                <input type="password" id="password" name="password" class="form-control" placeholder="Password" required="required">
+                <label for="password">Password</label>
+              </div>
+            </div>
+            <input type="submit" value="Sign In" class="btn btn-primary btn-block"/>
+            </form>
           {% endif %}
-          {% csrf_token %}
-          <div class="form-group">
-            <div class="form-label-group">
-              {% if 'next' in request.GET %}
-                <input type="hidden" name="next" value="{{ request.GET.next }}" />
-              {% elif 'rd' in request.GET %}
-                <input type="hidden" name="next" value="{{ request.GET.rd }}" />
-              {% endif %}
-              <input type="text" id="username" name="username" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
-              <label for="username">User name</label>
-            </div>
-          </div>
-          <div class="form-group">
-            <div class="form-label-group">
-              <input type="password" id="password" name="password" class="form-control" placeholder="Password" required="required">
-              <label for="password">Password</label>
-            </div>
-          </div>
-          <input type="submit" value="Sign In" class="btn btn-primary btn-block"/>
-          </form>
           <div class="text-center">
             <div class="d-block small mt-3 text-secondary">
                     {% if ad_status_cached == "unconfigured" %}
@@ -78,9 +76,9 @@
           <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ request.path }}" style="color: white" id="google-button" class="btn btn-sm btn-primary">
             <i class="fab fa-google"></i> Sign in with Google
           </a>
-        {% if auth_oidc_key %}
+        {% if auth_oidc_endpoint %}
           <a href="{% url 'social:begin' 'genericoidc' %}?next={{ request.path }}" style="color: white" id="oidc-button" class="btn btn-sm btn-primary">
-            Sign in with OIDC-Account
+            <i class="fab fa-openid"></i> {{ auth_oidc_title|default:"Sign in with OIDC" }}
           </a>
         {% endif %}
         </div>

@@ -205,11 +205,13 @@ class Common(Configuration):
     SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = values.Value(
         None, environ_name='AUTH_GOOGLE_SECRET', environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_GENERICOIDC_ENDPOINT = values.Value(
-        None, environ_name='AUTH_GENERICOIDC_ENDPOINT', environ_prefix='KUBEPORTAL')
+        None, environ_name='AUTH_OIDC_ENDPOINT', environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_GENERICOIDC_KEY = values.Value(
-        None, environ_name='AUTH_GENERICOIDC_KEY', environ_prefix='KUBEPORTAL')
+        None, environ_name='AUTH_OIDC_KEY', environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_GENERICOIDC_SECRET = values.Value(
-        None, environ_name='AUTH_GENERICOIDC_SECRET', environ_prefix='KUBEPORTAL')
+        None, environ_name='AUTH_OIDC_SECRET', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GENERICOIDC_TITLE = values.Value(
+        None, environ_name='AUTH_OIDC_TITLE', environ_prefix='KUBEPORTAL')
     AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
@@ -221,7 +223,6 @@ class Common(Configuration):
     ADMIN_NAME = values.Value(environ_prefix='KUBEPORTAL')
     ADMIN_EMAIL = values.Value(environ_prefix='KUBEPORTAL')
     ADMINS = [(ADMIN_NAME, ADMIN_EMAIL), ]
-
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
