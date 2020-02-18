@@ -213,7 +213,9 @@ class Common(Configuration):
     AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
-    
+
+    API_SERVER_EXTERNAL = values.Value(None, environ_prefix='KUBEPORTAL')
+
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')

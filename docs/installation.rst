@@ -26,6 +26,7 @@ KUBEPORTAL_AUTH_OIDC_ENDPOINT         Endpoint URL when offering generic OpenID 
 KUBEPORTAL_AUTH_OIDC_TITLE            Button title when offering generic OpenID Connect login.
 KUBEPORTAL_AUTH_AD_DOMAIN             Domain when offering frontend Active Directory login, e.g. ``example.com``.
 KUBEPORTAL_AUTH_AD_SERVER             Active directory server when offering frontend Active Directory login, e.g. ``192.168.1.1``. Not needed when equal to the A record behind the value of ``KUBEPORTAL_AUTH_AD_DOMAIN``.
+KUBEPORTAL_API_SERVER_EXTERNAL        URL of the Kubernetes API server that works outside of the cluster, for end users. Automatically set to the internal URL if not set. 
 KUBEPORTAL_SESSION_COOKIE_DOMAIN      The domain used for the user session cookie, e.g. ``.example.com``.
 KUBEPORTAL_NAMESPACE_CLUSTERROLES     Kubernetes cluster roles that should be bound to the *default* service account of newly created Kubernetes namespaces, e.g. ``minimal-api,standard-api``.
 KUBEPORTAL_BRANDING                   The human-readable name of your cluster.
@@ -42,11 +43,11 @@ KUBEPORTAL_LOG_LEVEL_SOCIAL           Sets the verbosity of the logging for djan
 KUBEPORTAL_LOG_LEVEL_REQUEST          Sets the verbosity of the logging for requests. [DEBUG, INFO, WARNING, ERROR, CRITICAL]
 ===================================== ============================================================================
 
-It is recommended to configure at least the following settings:
+It is recommended to configure at least the following settings in production:
 
   - One authentication method (``KUBEPORTAL_AUTH_...``)
   - A reasonable path for the SQLite database in ``KUBEPORTAL_DATABASE_URL``, so that your user database persists on a mounted Kubernetes volume.
+  - The externally visible URL of your Kubernetes API server (``KUBEPORTAL_API_SERVER_EXTERNAL``)
 
-In production mode, the log output of the KubePortal pod shows you the generated password for the *root* account.
-This account **only** works for the backend login page, which is available at `<KubePortal URL>/admin/`.
+The log output of the KubePortal pod shows you the generated password for the *root* account. This account **only** works for the backend login page, which is available at `<KubePortal URL>/admin/`.
 

@@ -1,13 +1,14 @@
 Changelog
 #########
 
-.. _v0.2.6:
+.. _v0.2.7:
 
-v0.2.6 Release
+v0.2.7 Release
 ===============
 
   * Fix broken auth providers
-
+  * Allow override of auto-detected API server, because generated config file needs
+    the world-visible IP address in production.
 
 .. _v0.2.5:
 

@@ -279,9 +279,12 @@ def get_token(kubeportal_service_account):
 
 
 def get_apiserver():
-    _load_config()
-    v1 = client.CoreV1Api()
-    return v1.api_client.configuration.host
+    if settings.API_SERVER_EXTERNAL is None:
+        _load_config()
+        v1 = client.CoreV1Api()
+        return v1.api_client.configuration.host
+    else:
+        return settings.API_SERVER_EXTERNAL
 
 
 def get_stats():
