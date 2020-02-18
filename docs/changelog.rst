@@ -1,9 +1,9 @@
 Changelog
 #########
 
-.. _v0.2.3:
+.. _v0.2.4:
 
-v0.2.3 Release
+v0.2.4 Release
 ===============
 
   * Fixen broken dependencies

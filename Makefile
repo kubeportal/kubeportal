@@ -36,13 +36,13 @@ clean: minikube-stop
 docs: venv
 	pushd docs; make html; popd
 
-release: release-bumpversion release-build release-push
-
-### Support functions, typically not for direct usage
-
 # Update version numbers, commit and tag
 release-bumpversion:
 	bumpversion --verbose patch
+
+release: release-build release-push
+
+### Support functions, typically not for direct usage
 
 # Build the official Kuberportal docker image
 release-build:
