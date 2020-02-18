@@ -2,6 +2,9 @@ import ldap3
 import social_core.exceptions
 from django.conf import settings
 
+import logging
+
+logger = logging.getLogger('KubePortal')
 
 domainname = settings.AUTH_AD_DOMAIN
 server_adr = settings.AUTH_AD_SERVER if settings.AUTH_AD_SERVER else settings.AUTH_AD_DOMAIN
@@ -14,6 +17,7 @@ def is_available():
         conn.open()
         return True
     except Exception as e:
+        logger.debug("Could not connect to AD server: {0}".format(str(e)))
         return False
 
 
@@ -36,11 +40,14 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
     conn = ldap3.Connection(server, user=upn, password=password)
     try:
         conn.open()
+        logger.info('LDAP connection to {} established.'.format(upn))
+
     except Exception:
         raise social_core.exceptions.AuthUnreachableProvider(backend)
     conn.start_tls()
     # validate password by binding
     if not conn.bind():
+        logger.debug("AD LDAP bind with this password failed, refusing login.")
         raise social_core.exceptions.AuthFailed(backend,
                                                 conn.result['description'])
 

@@ -87,11 +87,12 @@ class Common(Configuration):
         'social_core.backends.username.UsernameAuth',
         'django.contrib.auth.backends.ModelBackend',
         'social_core.backends.twitter.TwitterOAuth',
-        'social_core.backends.google.GoogleOAuth2'
+        'social_core.backends.google.GoogleOAuth2',
+        'kubeportal.social.oidc.GenericOidc'
     )
 
     SOCIAL_AUTH_PIPELINE = (
-        'kubeportal.active_directory.user_password',
+        'kubeportal.social.ad.user_password',
         'social_core.pipeline.social_auth.social_details',
         'social_core.pipeline.social_auth.social_uid',
         'social_core.pipeline.social_auth.auth_allowed',
@@ -125,6 +126,16 @@ class Common(Configuration):
     AUTH_USER_MODEL = 'kubeportal.User'
     SOCIAL_AUTH_USER_MODEL = 'kubeportal.User'
 
+    LOG_LEVEL_PORTAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
+    LOG_LEVEL_SOCIAL  = values.Value('DEBUG', environ_prefix='KUBEPORTAL')
+    LOG_LEVEL_REQUEST = values.Value('DEBUG', environ_prefix='KUBEPORTAL')
+    
+    # read the environment variables immediately because they're used to
+    # configure the loggers below
+    LOG_LEVEL_PORTAL.setup('LOG_LEVEL_PORTAL')
+    LOG_LEVEL_SOCIAL.setup('LOG_LEVEL_SOCIAL')
+    LOG_LEVEL_REQUEST.setup('LOG_LEVEL_REQUEST')
+    
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,
@@ -138,7 +149,7 @@ class Common(Configuration):
         },
         'formatters': {
             'verbose': {
-                'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s"
+                'format': "[%(asctime)s] %(levelname)s %(message)s"
             },
             'simple': {
                 'format': '%(levelname)s %(message)s'
@@ -148,28 +159,30 @@ class Common(Configuration):
             'mail_admins': {
                 'level': 'ERROR',
                 'filters': ['require_debug_false', ],
-                'class': 'django.utils.log.AdminEmailHandler'
+                'class': 'django.utils.log.AdminEmailHandler',
+                'formatter': 'verbose'
             },
             'console': {
                 'level': 'DEBUG',
-                'class': 'logging.StreamHandler'
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose'
             },
         },
         'loggers': {
             'django.request': {
                 'handlers': ['mail_admins', 'console'],
-                'level': 'ERROR',
-                'propagate': True,
+                'level': LOG_LEVEL_REQUEST.value,
+                'propagate': True
             },
             'KubePortal': {
                 'handlers': ['console', ],
-                'level': 'DEBUG',
-                'propagate': True,
+                'level': LOG_LEVEL_PORTAL.value,
+                'propagate': True
             },
             'social': {
                 'handlers': ['console', ],
-                'level': 'DEBUG',
-                'propagate': True,
+                'level': LOG_LEVEL_SOCIAL.value,
+                'propagate': True
             },
         }
     }
@@ -191,10 +204,18 @@ class Common(Configuration):
         None, environ_name='AUTH_GOOGLE_KEY', environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = values.Value(
         None, environ_name='AUTH_GOOGLE_SECRET', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GENERICOIDC_ENDPOINT = values.Value(
+        None, environ_name='AUTH_OIDC_ENDPOINT', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GENERICOIDC_KEY = values.Value(
+        None, environ_name='AUTH_OIDC_KEY', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GENERICOIDC_SECRET = values.Value(
+        None, environ_name='AUTH_OIDC_SECRET', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GENERICOIDC_TITLE = values.Value(
+        None, environ_name='AUTH_OIDC_TITLE', environ_prefix='KUBEPORTAL')
     AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
     SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
-
+    
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
@@ -202,7 +223,6 @@ class Common(Configuration):
     ADMIN_NAME = values.Value(environ_prefix='KUBEPORTAL')
     ADMIN_EMAIL = values.Value(environ_prefix='KUBEPORTAL')
     ADMINS = [(ADMIN_NAME, ADMIN_EMAIL), ]
-
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -228,6 +248,8 @@ class Development(Common):
 
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     EMAIL_HOST = values.Value('localhost', environ_prefix='KUBEPORTAL')
+
+    ROOT_PASSWORD = values.Value('rootpw', environ_prefix='KUBEPORTAL')
 
 
 class Production(Common):

@@ -1,7 +1,7 @@
 from django import template
 from django.conf import settings
 
-from kubeportal.active_directory import is_available
+from kubeportal.social.ad import is_available
 from kubeportal.kubernetes import get_apiserver
 
 register = template.Library()

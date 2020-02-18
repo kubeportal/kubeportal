@@ -1,16 +1,17 @@
 urllib3==1.24.3   # resolve dependency conflict by explicit installation of this version
-Django==2.2.4
+Django==2.2.10
 social-auth-app-django==3.1.0
 ldap3==2.5.2
 django-test-pep8==0.1
 django-oidc-provider==0.7.0
 colorama==0.4.1
-kubernetes==8.0.1
+kubernetes==10.0.1
 django-configurations==2.1
 dj-database-url==0.5.0
 django-fsm==2.6.1
 # django REST
 djangorestframework==3.10.3
+python-jose==3.1.0
 
 # Replaced by django-oidc, but left in to not break migrations
 django-oauth-toolkit==1.2.0

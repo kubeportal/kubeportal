@@ -21,6 +21,22 @@ class IndexView(LoginView):
     def get_success_url_allowed_hosts(self):
         return settings.REDIRECT_HOSTS
 
+class StatsView(LoginRequiredMixin, TemplateView):
+    template_name = 'portal_stats.html'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        User = get_user_model()
+        context['usercount'] = User.objects.count()
+        context['version'] = settings.VERSION
+        try:
+            context['stats'] = kubernetes.get_stats()
+        except Exception as e:
+            logger.error("Failed to fetch Kubernetes stats: " + e)
+            context['stats'] = None
+
+        return context
+
 
 class WelcomeView(LoginRequiredMixin, TemplateView):
     template_name = "portal_welcome.html"
@@ -28,13 +44,6 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context['clusterapps'] = Link.objects.all()
-        User = get_user_model()
-        context['usercount'] = User.objects.count()
-        context['version'] = settings.VERSION
-        try:
-            context['stats'] = kubernetes.get_stats()
-        except:
-            context['stats'] = None
         return context
 
 
