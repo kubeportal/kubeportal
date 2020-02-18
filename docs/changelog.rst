@@ -1,13 +1,20 @@
 Changelog
 #########
 
+.. _v0.2.6:
+
+v0.2.6 Release
+===============
+
+  * Fix broken auth providers
+
+
 .. _v0.2.5:
 
 v0.2.5 Release
 ===============
 
   * Fix backend admin optics, allow change of approving person (:issue:`23`)
-
 
 .. _v0.2.4:
 
