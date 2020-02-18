@@ -36,9 +36,9 @@ clean: minikube-stop
 docs: venv
 	pushd docs; make html; popd
 
+release: release-bumpversion release-build release-push
 
-### Functions for official releases
-
+### Support functions, typically not for direct usage
 
 # Update version numbers, commit and tag
 release-bumpversion:
@@ -52,12 +52,6 @@ release-build:
 release-push:
 	docker login --username=troeger
 	docker push troeger/kubeportal:$(VERSION)
-
-
-### Support functions, typically not for direct usage
-
-run:
-
 
 # Checks if a virtualenv exists, and creates it in case
 venv:
