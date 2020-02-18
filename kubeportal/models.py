@@ -209,7 +209,7 @@ class User(AbstractUser):
     def token(self):
         from kubeportal.kubernetes import get_token
         try:
-            token = get_token(self.service_account)
+            return get_token(self.service_account)
         except:
             return None
 

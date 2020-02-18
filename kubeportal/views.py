@@ -87,8 +87,14 @@ class SubAuthRequestView(View):
             logger.debug("Allowing authorization through subrequest for user {0} with service account '{1}:{2}'.".format(
                 request.user, request.user.service_account.namespace.name, request.user.service_account.name))
             response = HttpResponse()
-            response['Authorization'] = 'Bearer ' + request.user.token
-            return response
+            token = request.user.token
+            if token:
+                response['Authorization'] = 'Bearer ' + token
+                return response
+            else:
+                logger.error("Error while fetching Kubernetes secret bearer token for user, must reject valid request.")
+                return HttpResponse(status=401)
+
 
 
 class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):

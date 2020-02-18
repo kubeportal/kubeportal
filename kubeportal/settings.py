@@ -185,7 +185,7 @@ class Common(Configuration):
         }
     }
 
-    OIDC_USERINFO = 'kubeportal.oidc.userinfo'
+    OIDC_USERINFO = 'kubeportal.social.oidc.userinfo'
     OIDC_TEMPLATES = {
         'authorize': 'oidc_authorize.html',
         'error': 'oidc_error.html'
