@@ -5,7 +5,7 @@ ldap3==2.5.2
 django-test-pep8==0.1
 django-oidc-provider==0.7.0
 colorama==0.4.1
-kubernetes==8.0.1
+kubernetes==10.0.1
 django-configurations==2.1
 dj-database-url==0.5.0
 django-fsm==2.6.1
