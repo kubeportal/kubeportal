@@ -88,11 +88,11 @@ class Common(Configuration):
         'django.contrib.auth.backends.ModelBackend',
         'social_core.backends.twitter.TwitterOAuth',
         'social_core.backends.google.GoogleOAuth2',
-        'kubeportal.oidc.GenericOidc'
+        'kubeportal.social.oidc.GenericOidc'
     )
 
     SOCIAL_AUTH_PIPELINE = (
-        'kubeportal.active_directory.user_password',
+        'kubeportal.social.ad.user_password',
         'social_core.pipeline.social_auth.social_details',
         'social_core.pipeline.social_auth.social_uid',
         'social_core.pipeline.social_auth.auth_allowed',
