@@ -62,7 +62,8 @@ run:
 # Checks if a virtualenv exists, and creates it in case
 venv:
 	test -d venv || python3 -m venv venv
-	venv/bin/pip install -r requirements.txt
+	venv/bin/pip install -r requirements-prod.txt
+	venv/bin/pip install -r requirements-dev.txt
 
 # Stops a Minikube environment
 minikube-stop: minikube-check

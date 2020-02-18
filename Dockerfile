@@ -1,10 +1,10 @@
 FROM python:3.5-buster
 
-COPY requirements.txt /tmp/
+COPY requirements-prod.txt /tmp/
 
 RUN apt-get update && \
     apt-get install -y gcc make libc-dev musl-dev libffi-dev libssl-dev libpcre3-dev && \
-    pip install --no-cache-dir -r /tmp/requirements.txt uwsgi && \
+    pip install --no-cache-dir -r /tmp/requirements-prod.txt uwsgi && \
     mkdir /code/ && \
     mkdir /data/
 
