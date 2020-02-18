@@ -18,6 +18,12 @@ KUBEPORTAL_AUTH_TWITTER_KEY           Client key for OAuth when offering fronten
 KUBEPORTAL_AUTH_TWITTER_SECRET        Client secret for OAuth when offering frontend Twitter login.
 KUBEPORTAL_AUTH_GOOGLE_KEY            Client key for OAuth when offering frontend Google login.
 KUBEPORTAL_AUTH_GOOGLE_SECRET         Client secret for OAuth when offering frontend Google login.
+KUBEPORTAL_AUTH_GOOGLE_KEY            Client key for OAuth when offering frontend Google login.
+KUBEPORTAL_AUTH_GOOGLE_SECRET         Client secret for OAuth when offering frontend Google login.
+KUBEPORTAL_AUTH_OIDC_KEY              Client key when offering generic OpenID Connect login.
+KUBEPORTAL_AUTH_OIDC_SECRET           Client secret when offering generic OpenID Connect login.
+KUBEPORTAL_AUTH_OIDC_ENDPOINT         Endpoint URL when offering generic OpenID Connect login.
+KUBEPORTAL_AUTH_OIDC_TITLE            Button title when offering generic OpenID Connect login.
 KUBEPORTAL_AUTH_AD_DOMAIN             Domain when offering frontend Active Directory login, e.g. ``example.com``.
 KUBEPORTAL_AUTH_AD_SERVER             Active directory server when offering frontend Active Directory login, e.g. ``192.168.1.1``. Not needed when equal to the A record behind the value of ``KUBEPORTAL_AUTH_AD_DOMAIN``.
 KUBEPORTAL_SESSION_COOKIE_DOMAIN      The domain used for the user session cookie, e.g. ``.example.com``.

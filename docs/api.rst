@@ -1,5 +1,7 @@
+.. _api:
+
 API
-####################
+###
 
 KubePortal provides an API for fetching information stored in the portal database.
 
@@ -9,5 +11,5 @@ The access token is printed in the Docker logs on startup. For clients to authen
 
 The API allows you to fetch the following information:
 
-  * List of approved cluster users: `https://cluster.datexis.com/api/users/` (GET)
+  * List of approved cluster users: `https://<your installation>/api/users/` (GET)
 
