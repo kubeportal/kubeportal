@@ -1,7 +1,7 @@
 project = 'KubePortal'
 copyright = '2019, Peter Tröger'
 author = 'Peter Tröger'
-release = 'v0.2.4'
+release = 'v0.2.5'
 extensions = [
 	'sphinx_issues'
 ]
