@@ -16,7 +16,6 @@ class Common(Configuration):
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
-        'django_extensions',
         'oidc_provider',
         'social_django',
         'rest_framework',
@@ -249,6 +248,8 @@ class Development(Common):
     EMAIL_HOST = values.Value('localhost', environ_prefix='KUBEPORTAL')
 
     ROOT_PASSWORD = values.Value('rootpw', environ_prefix='KUBEPORTAL')
+
+    INSTALLED_APPS.append('django_extensions')
 
 
 class Production(Common):

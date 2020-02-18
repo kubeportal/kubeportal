@@ -1,13 +1,19 @@
 Changelog
 #########
 
+.. _v0.2.3:
+
+v0.2.3 Release
+===============
+
+  * Fixen broken dependencies
 
 .. _v0.2.2:
 
 v0.2.2 Release
 ===============
 
-  * Database migrations squashed, attempt to fix :issue:`12`
+  * Database migrations squashed, outdated dependencies removed - attempt to fix :issue:`12`
   * Show approving person in backend overview list
 
 .. _v0.2.1:
