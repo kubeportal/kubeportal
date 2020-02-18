@@ -148,7 +148,7 @@ class Common(Configuration):
         },
         'formatters': {
             'verbose': {
-                'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s"
+                'format': "[%(asctime)s] %(levelname)s %(message)s"
             },
             'simple': {
                 'format': '%(levelname)s %(message)s'
@@ -158,11 +158,13 @@ class Common(Configuration):
             'mail_admins': {
                 'level': 'ERROR',
                 'filters': ['require_debug_false', ],
-                'class': 'django.utils.log.AdminEmailHandler'
+                'class': 'django.utils.log.AdminEmailHandler',
+                'formatter': 'verbose'
             },
             'console': {
                 'level': 'DEBUG',
-                'class': 'logging.StreamHandler'
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose'
             },
         },
         'loggers': {
