@@ -6,7 +6,6 @@ VERSION=0.2.0
 dev-run: minikube-start venv
 	./venv/bin/python ./manage.py ensure_root --configuration=Development
 	set -o allexport; source .env; set +o allexport; \
-	KUBEPORTAL_CLUSTER_API_SERVER=$(shell minikube ip) \
 	./venv/bin/python ./manage.py runserver_plus --configuration=Development
 
 # Runs the production Docker image in Minikube
