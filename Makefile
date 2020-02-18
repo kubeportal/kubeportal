@@ -1,18 +1,19 @@
 SHELL=/bin/bash
 VERSION=0.2.0
 
+.PHONY: docs
+
 # Run a Django dev server locally, together with Minikube
 # Configuration: Debug
-dev-run: minikube-start venv
-	./venv/bin/python ./manage.py ensure_root --configuration=Development
-	set -o allexport; source .env; set +o allexport; \
-	./venv/bin/python ./manage.py runserver_plus --configuration=Development
+dev-run: minikube-start web-run
 
 # Run a Django dev server locally, leaving out the Minikube startup
-# This allows you to work against another cluster
+# This allows you to work against another cluster.
 # Configuration: Debug
 web-run: venv
+	./venv/bin/python ./manage.py migrate --configuration=Development
 	./venv/bin/python ./manage.py ensure_root --configuration=Development
+	./venv/bin/python ./manage.py drf_create_token root --configuration=Development
 	set -o allexport; source .env; set +o allexport; \
 	./venv/bin/python ./manage.py runserver_plus --configuration=Development
 
@@ -54,6 +55,8 @@ release-push:
 
 
 ### Support functions, typically not for direct usage
+
+run:
 
 
 # Checks if a virtualenv exists, and creates it in case
