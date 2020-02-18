@@ -17,6 +17,7 @@ def is_available():
         conn.open()
         return True
     except Exception as e:
+        logger.debug("Could not connect to AD server: {0}".format(str(e)))
         return False
 
 
@@ -46,6 +47,7 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
     conn.start_tls()
     # validate password by binding
     if not conn.bind():
+        logger.debug("AD LDAP bind with this password failed, refusing login.")
         raise social_core.exceptions.AuthFailed(backend,
                                                 conn.result['description'])
 
