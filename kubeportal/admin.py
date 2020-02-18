@@ -113,7 +113,6 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
             qs = qs.filter(visible=True)
         return qs
 
-
 def reject(modeladmin, request, queryset):
     for user in queryset:
         if user.reject(request):
@@ -124,11 +123,11 @@ reject.short_description = "Reject access request for selected users"
 
 
 class PortalUserAdmin(UserAdmin):
-    readonly_fields = ['username', 'is_superuser', 'state']
+    readonly_fields = ['username', 'email', 'is_superuser', 'state']
     list_display = ('username', 'first_name', 'last_name',
-                    'is_staff', 'state', 'comments', 'approve_link')
+                    'is_staff', 'state', 'comments', 'email', 'approve_link')
     fieldsets = (
-        (None, {'fields': ('username', 'first_name', 'last_name', 'comments', 'is_staff')}),
+        (None, {'fields': ('username', 'first_name', 'last_name', 'email', 'comments', 'is_staff')}),
         (None, {'fields': ('state', 'service_account', 'is_superuser')})
     )
     actions = [reject]
@@ -158,6 +157,11 @@ class PortalUserAdmin(UserAdmin):
                 path('<uuid:approval_id>/reject/', self.admin_site.admin_view(self.reject_view), name='access_reject')] + urls
 
     def approve_view(self, request, approval_id):
+        '''
+        This function handles new approval requests.
+        It will use the user model's approve()/reject() functions to validate.
+        After validation, the namespaces need to be created/deleted accordingly.
+        '''
         user = get_object_or_404(User, approval_id=approval_id)
         current_ns = user.service_account.namespace if user.service_account else None
 

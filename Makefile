@@ -3,17 +3,18 @@ VERSION=0.2.0
 
 # Run a Django dev server locally, together with Minikube
 # Configuration: Debug
-dev-run: minikube-start venv .env
+dev-run: minikube-start venv
 	./venv/bin/python ./manage.py ensure_root --configuration=Development
 	set -o allexport; source .env; set +o allexport; \
+	KUBEPORTAL_CLUSTER_API_SERVER=$(shell minikube ip) \
 	./venv/bin/python ./manage.py runserver_plus --configuration=Development
 
 # Runs the production Docker image in Minikube
 # Configuration: Production
-staging-run: staging-build minikube-start .env
+staging-run: staging-build minikube-start
 	kubectl apply -k ./deployment/k8s/staging/
 	kubectl -n kubeportal delete configmap kubeportal --ignore-not-found=true
-	kubectl -n kubeportal create configmap kubeportal --from-env-file=.env 
+	kubectl -n kubeportal create configmap kubeportal --from-env-file=.env
 	kubectl -n kubeportal logs deployment/kubeportal
 	kubectl -n kubeportal port-forward svc/kubeportal 8000:8000
 
@@ -51,29 +52,22 @@ release-push:
 # Checks if a virtualenv exists, and creates it in case
 venv:
 	test -d venv || python3 -m venv venv
-	venv/bin/pip install -r requirements.txt	
+	venv/bin/pip install -r requirements.txt
 
 # Stops a Minikube environment
-minikube-stop:
+minikube-stop: minikube-check
 	minikube stop
 	minikube delete
 
 # Start a Minikube environment
-minikube-start:
+minikube-start: minikube-check
 	(minikube status | grep Running) || minikube start
+
+# Check if minikube is installed
+minikube-check:
+	@test -f /usr/local/bin/minikube || (echo ERROR: Minikube installation is missing on your machine. && exit 1)
 
 # Prepare a staging test Docker image in the Minikube environment
 # This works by utilizing the Docker environment inside Minikube
 staging-build: minikube-start
 	eval $$(minikube docker-env); docker build -t troeger/kubeportal:staging .
-
-# Prepare minimal .env File for tests and development
-# These Google OAuth keys allow a redirect to localhost:8000
-# Other settings can be added to your version of the .env file,
-# consult the documentation
-.env: minikube-start
-	@echo "KUBEPORTAL_AUTH_GOOGLE_KEY=891177537513-sd1toqcvp7vl7e2bakvols27n1gh6h6n.apps.googleusercontent.com" > .env
-	@echo "KUBEPORTAL_AUTH_GOOGLE_SECRET=qwoYQ9ktOra9b_JMr2_E19cx" >> .env
-	@echo "KUBEPORTAL_CLUSTER_API_SERVER=https://$(shell minikube ip):8443" >> .env
-	# This is only used in the Production configuration, so its fine to set it here
-	@echo "KUBEPORTAL_DATABASE_URL=sqlite:////data/kubeportal.sqlite3" >> .env
