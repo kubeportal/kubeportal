@@ -1,6 +1,15 @@
 Changelog
 #########
 
+
+.. _v0.2.2:
+
+v0.2.2 Release
+===============
+
+  * Database migrations squashed, attempt to fix :issue:`12`
+  * Show approving person in backend overview list
+
 .. _v0.2.1:
 
 v0.2.1 Release
