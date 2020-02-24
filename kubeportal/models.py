@@ -39,7 +39,7 @@ class KubernetesServiceAccount(models.Model):
         max_length=100, help_text="Lower case alphanumeric characters or '-', and must start and end with an alphanumeric character (e.g. 'my-name', or '123-abc').")
     uid = models.CharField(max_length=50, null=True, editable=False)
     namespace = models.ForeignKey(
-        KubernetesNamespace, on_delete=models.CASCADE)
+        KubernetesNamespace, related_name="service_accounts", on_delete=models.CASCADE)
 
     def __str__(self):
         return "{1}:{0}".format(self.name, self.namespace)
@@ -76,7 +76,7 @@ class User(AbstractUser):
         max_length=150, help_text="Description on why this user needs cluster access. (150 characters)", default="", null=True, blank=True)
 
     service_account = models.ForeignKey(
-        KubernetesServiceAccount, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
+        KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
 
     def has_access_approved(self):
         return self.state == UserState.ACCESS_APPROVED and self.service_account

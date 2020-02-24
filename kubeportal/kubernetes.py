@@ -244,6 +244,25 @@ def _load_config():
     config.load_kube_config()
 
 
+def get_namespaces():
+    '''
+    Returns the list of cluster namespaces.
+    '''
+    _load_config()
+    try:
+        core_v1 = client.CoreV1Api()
+        return core_v1.list_namespace().items
+    except Exception as e:
+        logger.error("Exception: {0}".format(e))
+        return None
+
+
+def get_pods():
+    _load_config()
+    v1 = client.CoreV1Api()
+    return v1.list_pod_for_all_namespaces().items
+
+
 def sync(request):
     '''
     Synchronizes the local shallow copy of Kubernetes data.
