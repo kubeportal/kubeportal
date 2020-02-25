@@ -5,55 +5,54 @@
 {% block portal_content %}
 
 <div class="row">
-<div class="col">
-<div class="card mb-3">
-  <div class="card-header">
-    <i class="fas fa-user"></i>
-    Hello {{user.get_short_name}}!
+  <div class="col">
+    <div class="card mb-3">
+      <div class="card-header">
+        <i class="fas fa-user"></i>
+        Hello {{user.get_short_name}}!
+      </div>
+      <div class="card-body">
+        <p>Full name: {{user.get_full_name}}</p>
+        <p>User name: {{user.get_username}}</p>
+        {% if user.has_access_approved %}
+        <p>Kubernetes Service Account: {{user.service_account}}</p>
+        {% else %}
+        <p class="text-danger">
+          Sorry, you have no access to the cluster.
+        </p>
+        {% if user.has_access_requested %}
+        Your request for access was sent to the administrators (<a href="{% url 'access_request' %}">re-send</a>). You will be informed by e-email.
+        {% else %}
+        You can send a <a href="{% url 'access_request' %}">request for cluster access</a> to the administrators.
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
   </div>
-  <div class="card-body">
-  	<p>Full name: {{user.get_full_name}}</p>
-  	<p>User name: {{user.get_username}}</p>
-    {% if user.has_access_approved %}
-    <p>Kubernetes Service Account: {{user.service_account}}</p>
-    {% else %}
-      <p class="text-danger">
-      Sorry, you have no access to the cluster.
-      </p> 
-      {% if user.has_access_requested %}
-        Your request for access was sent to the administrators (<a href="{% url 'access_request' %}">re-send</a>). You will be informed by e-email.    
-      {% else %}
-        You can send a <a href="{% url 'access_request' %}">request for cluster access</a> to the administrators.    
-      {% endif %}
-    {% endif %}
-  </div>
-</div>
-</div>
 </div>
 
 {% if user.has_access_approved %}
-<div class="row">
-{% for app in clusterapps %}
-<div class="col-6">
-<div class="card mb-3 text-white bg-{% cycle 'primary' 'success' 'warning' %}">
-  <div class="card-body">
-    <div class="card-body-icon">
-      <i class="fas fa-fw fa-external-link-alt"></i>
+<div class="card-columns">
+  {% for app in clusterapps %}
+  <div display="inline-block">
+    <div class="card mb-3 text-white bg-{% cycle 'primary' 'success' 'warning' %}">
+      <div class="card-body">
+        <div class="card-body-icon">
+          <i class="fas fa-fw fa-external-link-alt"></i>
+        </div>
+        <div>{% placeholder_replace app.name %}</div>
+      </div>
+      <a target="_new" href="{% placeholder_replace app.url %}">
+        <div class="card-footer text-white clearfix small">
+          <span class="float-left">Start</span>
+          <span class="float-right">
+            <i class="fas fa-angle-right"></i>
+          </span>
+        </div>
+      </a>
     </div>
-    <div class="mr-5">{% placeholder_replace app.name %}</div>
   </div>
-  <a class="card-footer text-white clearfix small z-1" target="_new" href="{% placeholder_replace app.url %}">
-    <span class="float-left">Start</span>
-    <span class="float-right">
-      <i class="fas fa-angle-right"></i>
-    </span>
-  </a>
-</div>
-</div>
-{% endfor %}
-
-
-
+  {% endfor %}
 
 </div>
 {% endif %}
