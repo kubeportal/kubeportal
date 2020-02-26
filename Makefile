@@ -70,7 +70,10 @@ minikube-start: minikube-check
 
 # Check if minikube is installed
 minikube-check:
-	@test -f /usr/local/bin/minikube || (echo ERROR: Minikube installation is missing on your machine. && exit 1)
+	@test -f /usr/local/bin/minikube \
+	|| test -f /usr/bin/minikube \
+	|| test -f /bin/minikube \
+	|| (echo ERROR: Minikube installation is missing on your machine. && exit 1)
 
 # Prepare a staging test Docker image in the Minikube environment
 # This works by utilizing the Docker environment inside Minikube
