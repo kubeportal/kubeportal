@@ -8,7 +8,7 @@ from django.template.response import TemplateResponse
 import oidc_provider
 import logging
 from . import models
-from kubeportal.kubernetes import sync
+from kubeportal import kubernetes
 
 
 logger = logging.getLogger('KubePortal')
@@ -24,32 +24,26 @@ class CustomAdminSite(admin.AdminSite):
         return urls + [path('sync/', self.admin_view(self.sync_view), name='sync'), ]
 
     def sync_view(self, request):
-        sync(request)
+        kubernetes.sync(request)
         return redirect('admin:index')
 
 
 class KubernetesServiceAccountAdmin(admin.ModelAdmin):
     list_display = ['name', 'namespace']
+    list_display_links = None
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
     def has_change_permission(self, request, obj=None):
-        '''
-        The name and namespace of the service account can only be configured on
-        creation, but is fixed after the first sync.
-        '''
-        if obj and obj.is_synced():
-            return False
-        else:
-            return True
+        return False
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        sync(request)
-
-    def has_delete_permission(self, request, obj=None):
-        '''
-        Disable deletion, even for superusers.
-        '''
-        return False
+        kubernetes.sync(request)
 
     def get_queryset(self, request):
         '''
@@ -62,17 +56,48 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
         return qs
 
 
+def make_visible(modeladmin, request, queryset):
+    queryset.update(visible=True)
+make_visible.short_description = "Mark as visible"
+
+
+def make_invisible(modeladmin, request, queryset):
+    queryset.update(visible=False)
+make_invisible.short_description = "Mark as non-visible"
+
+
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'visible']
+    list_display = ['name', 'visible', 'portal_users', 'created', 'number_of_pods']
+    list_display_links = None
+    list_filter = ['visible']
+    ns_list = kubernetes.get_namespaces()
+    pod_list = kubernetes.get_pods()
+    actions = [make_visible, make_invisible]
+
+    def portal_users(self, instance):
+        return ','.join(User.objects.filter(service_account__namespace=instance).values_list('username', flat=True))
+
+    def created(self, instance):
+        for ns in self.ns_list:
+            if ns.metadata.name == instance.name:
+                return ns.metadata.creation_timestamp
+        return None
+    created.short_description = "Created in Kubernetes"
+
+    def number_of_pods(self, instance):
+        count = 0
+        for pod in self.pod_list:
+            if pod.metadata.namespace == instance.name:
+                count += 1
+        return count
+    number_of_pods.short_description = "Number of pods"
 
     def has_change_permission(self, request, obj=None):
-        '''
-        When everything is read-only, the view is no longer a change view
-        '''
-        if obj and obj.is_synced() and not request.user.is_superuser:
-            return False
-        else:
-            return True
+        return False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
 
     def get_readonly_fields(self, request, obj=None):
         '''
@@ -101,7 +126,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        sync(request)
+        kubernetes.sync(request)
 
     def get_queryset(self, request):
         '''
@@ -113,12 +138,11 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
             qs = qs.filter(visible=True)
         return qs
 
+
 def reject(modeladmin, request, queryset):
     for user in queryset:
         if user.reject(request):
             user.save()
-
-
 reject.short_description = "Reject access request for selected users"
 
 
@@ -131,8 +155,6 @@ class PortalUserAdmin(UserAdmin):
         (None, {'fields': ('state', 'answered_by', 'service_account', 'is_superuser')})
     )
     actions = [reject]
-
-    
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -182,7 +204,7 @@ class PortalUserAdmin(UserAdmin):
             if request.POST['choice'] == "approve_create":
                 new_ns = models.KubernetesNamespace(name=request.POST['approve_create_name'])
                 new_ns.save()
-                if sync(request):  # creates "default" service account automatically
+                if kubernetes.sync(request):  # creates "default" service account automatically
                     new_svc = get_object_or_404(models.KubernetesServiceAccount, namespace=new_ns, name="default")
                     if user.approve(request, new_svc):
                         user.save()
