@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.urls import path
 from django.shortcuts import redirect, get_object_or_404
-from django.contrib import admin, messages
+from django.contrib import admin, messages, auth
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.template.response import TemplateResponse
@@ -70,14 +70,17 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
     list_display = ['name', 'visible', 'portal_users', 'created', 'number_of_pods']
     list_display_links = None
     list_filter = ['visible']
-    ns_list = kubernetes.get_namespaces()
-    pod_list = kubernetes.get_pods()
+    ns_list = None
+    pod_list = None
     actions = [make_visible, make_invisible]
 
     def portal_users(self, instance):
         return ','.join(User.objects.filter(service_account__namespace=instance).values_list('username', flat=True))
 
     def created(self, instance):
+        if not self.ns_list:
+            self.ns_list = kubernetes.get_namespaces()
+
         for ns in self.ns_list:
             if ns.metadata.name == instance.name:
                 return ns.metadata.creation_timestamp
@@ -85,6 +88,8 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
     created.short_description = "Created in Kubernetes"
 
     def number_of_pods(self, instance):
+        if not self.pod_list:
+            self.pod_list = kubernetes.get_pods()
         count = 0
         for pod in self.pod_list:
             if pod.metadata.namespace == instance.name:

@@ -259,8 +259,12 @@ def get_namespaces():
 
 def get_pods():
     _load_config()
-    v1 = client.CoreV1Api()
-    return v1.list_pod_for_all_namespaces().items
+    try:
+        v1 = client.CoreV1Api()
+        return v1.list_pod_for_all_namespaces().items
+    except Exception as e:
+        logger.error("Exception: {0}".format(e))
+        return None
 
 
 def sync(request):
