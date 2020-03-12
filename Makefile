@@ -36,6 +36,11 @@ clean: minikube-stop
 docs: venv
 	pushd docs; make html; popd
 
+# Runs the test suite
+test:
+	./venv/bin/python ./manage.py test --configuration=Development
+
+
 # Update version numbers, commit and tag
 release-bumpversion:
 	bumpversion --verbose patch
