@@ -31,6 +31,8 @@ clean: minikube-stop
 	find . -name "*.bak" -delete
 	find . -name "__pycache__" -delete
 	make -C docs clean
+	rm -rf htmlcov
+	rm .coverage
 
 # Build the HTML documentation from the sources.
 docs: venv
@@ -40,6 +42,9 @@ docs: venv
 test: venv
 	./venv/bin/python ./manage.py test --configuration=Development
 
+# Run all tests and obtain coverage information.
+coverage: venv 
+	./venv/bin/coverage run --omit 'venv/*' ./manage.py test --configuration=Development; ./venv/bin/coverage html; open htmlcov/index.html 
 
 # Update version numbers, commit and tag
 release-bumpversion:
