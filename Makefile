@@ -37,7 +37,7 @@ docs: venv
 	pushd docs; make html; popd
 
 # Runs the test suite
-test:
+test: venv
 	./venv/bin/python ./manage.py test --configuration=Development
 
 
