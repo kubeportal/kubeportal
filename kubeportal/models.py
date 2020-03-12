@@ -62,6 +62,21 @@ user_state_list = ((UserState.NEW, UserState.NEW),
                    )
 
 
+class Project(models.Model):
+    '''
+    Portal users can be assigned to projects.
+    '''
+    name = models.CharField(
+        max_length=100, help_text="The name of the project.")
+
+
+    def member_list(self):
+        return ', '.join([str(u) for u in self.members.all()])
+
+    def __str__(self):
+        return self.name
+
+
 class User(AbstractUser):
     '''
     A portal user.
@@ -74,6 +89,7 @@ class User(AbstractUser):
         'User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
     comments = models.CharField(
         max_length=150, help_text="Description on why this user needs cluster access. (150 characters)", default="", null=True, blank=True)
+    projects = models.ManyToManyField(Project, related_name="members")
 
     service_account = models.ForeignKey(
         KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
@@ -210,9 +226,22 @@ class User(AbstractUser):
         from kubeportal.kubernetes import get_token
         try:
             return get_token(self.service_account)
-        except:
+        except Exception:
             return None
 
+    @property
+    def project_list(self):
+        return [p.name for p in self.projects.all()]
+
+    @property
+    def full_name(self):
+        return self.first_name + ' ' + self.last_name
+
+    def __str__(self):
+        if self.first_name or self.last_name:
+            return self.first_name + ' ' + self.last_name
+        else:
+            return self.username
 
 class Link(models.Model):
     '''
