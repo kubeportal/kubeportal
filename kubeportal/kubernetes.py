@@ -25,6 +25,17 @@ logger = logging.getLogger('KubePortal')
 HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 
 
+
+def _create_k8s_ns(name, core_v1):
+    logger.info(
+        "Creating Kubernetes namespace '{0}'".format(name))
+    k8s_ns = client.V1Namespace(
+        api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=name))
+    core_v1.create_namespace(k8s_ns)
+    # Fetch UID and store it in portal record
+    return core_v1.read_namespace(name=name)
+
+
 def _sync_namespaces(request, core_v1, rbac_v1):
     # K8S namespaces -> portal namespaces
     success_count_pull = 0
@@ -33,7 +44,8 @@ def _sync_namespaces(request, core_v1, rbac_v1):
         k8s_ns_list = core_v1.list_namespace()
     except Exception as e:
         logger.error("Exception: {0}".format(e))
-        messages.error(request, "Sync failed, error while fetching list of namespaces: {0}.".format(e))
+        messages.error(
+            request, "Sync failed, error while fetching list of namespaces: {0}.".format(e))
         return
     k8s_ns_uids = []
     for k8s_ns in k8s_ns_list.items:
@@ -62,7 +74,8 @@ def _sync_namespaces(request, core_v1, rbac_v1):
                 success_count_pull += 1
         except Exception as e:
             logger.error("Exception: {0}".format(e))
-            messages.error(request, "Sync from Kubernetes for namespace {0} failed: {1}.".format(k8s_ns_name, e))
+            messages.error(
+                request, "Sync from Kubernetes for namespace {0} failed: {1}.".format(k8s_ns_name, e))
 
     # portal namespaces -> K8S namespaces
     success_count_push = 0
@@ -85,20 +98,15 @@ def _sync_namespaces(request, core_v1, rbac_v1):
                         request, "Namespace '{0}' no longer exists in Kubernetes and was removed.".format(portal_ns.name))
             else:
                 # Portal namespaces without UID are new and should be created in K8S
-                logger.info(
-                    "Creating Kubernetes namespace '{0}'".format(portal_ns.name))
-                k8s_ns = client.V1Namespace(
-                    api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=portal_ns.name))
-                core_v1.create_namespace(k8s_ns)
-                # Fetch UID and store it in portal record
-                created_k8s_ns = core_v1.read_namespace(name=portal_ns.name)
+                created_k8s_ns = _create_k8s_ns(portal_ns.name, core_v1)
                 portal_ns.uid = created_k8s_ns.metadata.uid
                 portal_ns.save()
                 messages.success(
                     request, "Created namespace '{0}' in Kubernetes.".format(portal_ns.name))
         except Exception as e:
             logger.error("Exception: {0}".format(e))
-            messages.error(request, "Sync to Kubernetes for namespace {0} failed: {1}.".format(portal_ns, e))
+            messages.error(
+                request, "Sync to Kubernetes for namespace {0} failed: {1}.".format(portal_ns, e))
 
     if success_count_push == success_count_pull:
         messages.success(
@@ -114,25 +122,34 @@ def _sync_namespaces(request, core_v1, rbac_v1):
             rolebindings = rbac_v1.list_namespaced_role_binding(portal_ns.name)
         except Exception as e:
             logger.error("Exception: {0}".format(e))
-            messages.error(request, "Could not fetch role bindings for namespace '{0}': {1}.".format(portal_ns, e))
+            messages.error(
+                request, "Could not fetch role bindings for namespace '{0}': {1}.".format(portal_ns, e))
             continue
         # Get all cluster roles this namespace is currently bound to
-        clusterroles_active = [rolebinding.role_ref.name for rolebinding in rolebindings.items if rolebinding.role_ref.kind == 'ClusterRole']
-        logger.debug("Namespace '{0}' is bound to cluster roles {1}".format(portal_ns, clusterroles_active))
+        clusterroles_active = [
+            rolebinding.role_ref.name for rolebinding in rolebindings.items if rolebinding.role_ref.kind == 'ClusterRole']
+        logger.debug("Namespace '{0}' is bound to cluster roles {1}".format(
+            portal_ns, clusterroles_active))
         # Check list of default cluster roles from settings
         for clusterrole in settings.NAMESPACE_CLUSTERROLES:
             if clusterrole not in clusterroles_active:
                 try:
-                    logger.info("Namespace '{0}' is not bound to cluster role '{1}', fixing this ...".format(portal_ns, clusterrole))
-                    role_ref = client.V1RoleRef(name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
+                    logger.info("Namespace '{0}' is not bound to cluster role '{1}', fixing this ...".format(
+                        portal_ns, clusterrole))
+                    role_ref = client.V1RoleRef(
+                        name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
                     # Subject for the cluster role are all service accounts in the namespace
-                    subject = client.V1Subject(name="system:serviceaccounts:" + portal_ns.name, kind="Group", api_group="rbac.authorization.k8s.io")
+                    subject = client.V1Subject(
+                        name="system:serviceaccounts:" + portal_ns.name, kind="Group", api_group="rbac.authorization.k8s.io")
                     metadata = client.V1ObjectMeta(name=clusterrole)
-                    new_rolebinding = client.V1RoleBinding(role_ref=role_ref, metadata=metadata, subjects=[subject, ])
-                    rbac_v1.create_namespaced_role_binding(portal_ns.name, new_rolebinding)
+                    new_rolebinding = client.V1RoleBinding(
+                        role_ref=role_ref, metadata=metadata, subjects=[subject, ])
+                    rbac_v1.create_namespaced_role_binding(
+                        portal_ns.name, new_rolebinding)
                 except Exception as e:
                     logger.exception(e)
-                    messages.error(request, "Could not create binding of namespace '{0}' to cluster role '{1}': {2}.".format(portal_ns.name, clusterrole, e))
+                    messages.error(request, "Could not create binding of namespace '{0}' to cluster role '{1}': {2}.".format(
+                        portal_ns.name, clusterrole, e))
                     continue
 
 
@@ -146,7 +163,8 @@ def _sync_svcaccounts(request, v1):
         k8s_svca_list = v1.list_service_account_for_all_namespaces()
     except Exception as e:
         logger.error("Exception: {0}".format(e))
-        messages.error(request, "Sync failed, error while fetching list of service accounts: {0}.".format(e))
+        messages.error(
+            request, "Sync failed, error while fetching list of service accounts: {0}.".format(e))
         return
     for k8s_svca in k8s_svca_list.items:
         try:
@@ -180,7 +198,8 @@ def _sync_svcaccounts(request, v1):
                 success_count_pull += 1
         except Exception as e:
             logger.error("Exception: {0}".format(e))
-            messages.error(request, "Sync from Kubernetes for service account {0} failed: {1}.".format(k8s_svca.metadata.name, e))
+            messages.error(request, "Sync from Kubernetes for service account {0} failed: {1}.".format(
+                k8s_svca.metadata.name, e))
 
     if len(ignored_missing_ns) > 0:
         names = ["{0}:{1}".format(a, b)
@@ -225,7 +244,8 @@ def _sync_svcaccounts(request, v1):
                     portal_ns.name, portal_svca.name))
         except Exception as e:
             logger.error("Exception: {0}".format(e))
-            messages.error(request, "Sync to Kubernetes for service account {0} failed: {1}.".format(portal_ns.name, e))
+            messages.error(request, "Sync to Kubernetes for service account {0} failed: {1}.".format(
+                portal_ns.name, e))
 
     if success_count_push == success_count_pull:
         messages.success(
@@ -236,21 +256,18 @@ def _load_config():
     try:
         # Production mode
         config.load_incluster_config()
-        return
     except Exception:
         # Dev mode
-        pass
-    # Let it fail without being in a nested exception handling
-    config.load_kube_config()
+        config.load_kube_config()
+    return client.CoreV1Api(), client.RbacAuthorizationV1Api()
 
 
 def get_namespaces():
     '''
     Returns the list of cluster namespaces.
     '''
-    _load_config()
+    core_v1, rbac_v1 = _load_config()
     try:
-        core_v1 = client.CoreV1Api()
         return core_v1.list_namespace().items
     except Exception as e:
         logger.error("Exception: {0}".format(e))
@@ -258,10 +275,9 @@ def get_namespaces():
 
 
 def get_pods():
-    _load_config()
+    core_v1, rbac_v1 = _load_config()
     try:
-        v1 = client.CoreV1Api()
-        return v1.list_pod_for_all_namespaces().items
+        return core_v1.list_pod_for_all_namespaces().items
     except Exception as e:
         logger.error("Exception: {0}".format(e))
         return None
@@ -272,10 +288,8 @@ def sync(request):
     Synchronizes the local shallow copy of Kubernetes data.
     Returns True on success.
     '''
-    _load_config()
+    core_v1, rbac_v1 = _load_config()
     try:
-        core_v1 = client.CoreV1Api()
-        rbac_v1 = client.RbacAuthorizationV1Api()
         _sync_namespaces(request, core_v1, rbac_v1)
         _sync_svcaccounts(request, core_v1)
         return True
@@ -289,13 +303,12 @@ def sync(request):
 
 
 def get_token(kubeportal_service_account):
-    _load_config()
-    v1 = client.CoreV1Api()
-    service_account = v1.read_namespaced_service_account(
+    core_v1, rbac_v1 = _load_config()
+    service_account = core_v1.read_namespaced_service_account(
         name=kubeportal_service_account.name,
         namespace=kubeportal_service_account.namespace.name)
     secret_name = service_account.secrets[0].name
-    secret = v1.read_namespaced_secret(
+    secret = core_v1.read_namespaced_secret(
         name=secret_name, namespace=kubeportal_service_account.namespace.name)
     encoded_token = secret.data['token']
     return b64decode(encoded_token).decode()
@@ -303,26 +316,25 @@ def get_token(kubeportal_service_account):
 
 def get_apiserver():
     if settings.API_SERVER_EXTERNAL is None:
-        _load_config()
-        v1 = client.CoreV1Api()
-        return v1.api_client.configuration.host
+        core_v1, rbac_v1 = _load_config()
+        return core_v1.api_client.configuration.host
     else:
         return settings.API_SERVER_EXTERNAL
 
 
 def get_stats():
-    _load_config()
-    v1 = client.CoreV1Api()
+    core_v1, rbac_v1 = _load_config()
     result = {}
-    result['apiserver'] = v1.api_client.configuration.host
-    apiserver_image = v1.list_namespaced_pod("kube-system", label_selector="component=kube-apiserver").items[0].spec.containers[0].image.split(":")[1]
+    result['apiserver'] = core_v1.api_client.configuration.host
+    apiserver_image = core_v1.list_namespaced_pod(
+        "kube-system", label_selector="component=kube-apiserver").items[0].spec.containers[0].image.split(":")[1]
     result['k8sversion'] = apiserver_image
-    result['numberofpods'] = len(v1.list_pod_for_all_namespaces().items)
-    nodes = v1.list_node().items
+    result['numberofpods'] = len(core_v1.list_pod_for_all_namespaces().items)
+    nodes = core_v1.list_node().items
     result['numberofnodes'] = len(nodes)
     cpus = [int(node.status.capacity['cpu']) for node in nodes]
     result['cpusum'] = sum(cpus)
     mems = [int(node.status.capacity['memory'][:-2]) for node in nodes]
-    result['memsum'] = sum(mems)/1000000 # in GiBytes
-    result['numberofvolumes'] = len(v1.list_persistent_volume().items)
+    result['memsum'] = sum(mems) / 1000000  # in GiBytes
+    result['numberofvolumes'] = len(core_v1.list_persistent_volume().items)
     return result

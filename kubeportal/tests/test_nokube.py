@@ -63,3 +63,10 @@ class Backend(AdminLoggedInTestCase):
     def test_admin_index_view(self):
         response = self.c.get('/admin/')
         self.assertEqual(response.status_code, 200)
+
+    def k8s_sync_error(self):
+        response = self.c.get(reverse('admin:sync'))
+        messages = list(response.context['messages'])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(str(messages[0]), 'my message')
+        

@@ -68,6 +68,13 @@ class Backend(AdminLoggedInTestCase):
         ns_names = [ns.metadata.name for ns in kubernetes.get_namespaces()]
         self.assertIn("foo", ns_names)
 
+    def test_new_external_ns_sync(self):
+        self.c.get(reverse('admin:sync'))
+        core_v1, rbac_v1 = kubernetes._load_config()
+        kubernetes._create_k8s_ns("new-external-ns", core_v1)
+        self.c.get(reverse('admin:sync'))
+        self.assertEqual(KubernetesNamespace.objects.filter(name="new-external-ns").count(), 1)
+
     def test_new_svc_sync(self):
         self.c.get(reverse('admin:sync'))
         default_ns = KubernetesNamespace.objects.get(name="default")
