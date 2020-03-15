@@ -12,6 +12,7 @@ for OIDC authentication:
   - The link `<KubePortal URL>/oidc/authorize` provides the authorization page.
   - The link `<KubePortal URL>/oidc/token` provides the token information.
   - The link `<KubePortal URL>/oidc/userinfo` provides the OAuth API for fetching user information.
+  - The returned JSON with user information contains the keys 'nickname' (aka username), 'given_name', 'family_name', 'name', and 'email'.
 
 Example configuration for Grafana:
 
