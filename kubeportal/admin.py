@@ -56,12 +56,6 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
         return qs
 
 
-class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['name', 'member_list']
-
-
-
-
 def make_visible(modeladmin, request, queryset):
     queryset.update(visible=True)
 make_visible.short_description = "Mark as visible"
@@ -159,16 +153,13 @@ reject.short_description = "Reject access request for selected users"
 
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username', 'email', 'is_superuser']
-    list_display = ('username', 'full_name',
-                    'is_staff', 'state', 'answered_by', 'project_list', 'comments', 'email', 'approve_link')
+    list_display = ('username', 'first_name', 'last_name',
+                    'is_staff', 'state', 'answered_by', 'comments', 'email', 'approve_link')
     fieldsets = (
         (None, {'fields': ('username', 'first_name', 'last_name', 'email', 'comments', 'is_staff')}),
-        (None, {'fields': ('state', 'answered_by', 'service_account', 'is_superuser')}),
-        (None, {'fields': ('projects',)})
+        (None, {'fields': ('state', 'answered_by', 'service_account', 'is_superuser')})
     )
     actions = [reject]
-    list_filter = ['is_staff', 'state', 'answered_by']
-
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -243,7 +234,6 @@ class PortalUserAdmin(UserAdmin):
 
 admin_site = CustomAdminSite()
 admin_site.register(models.User, PortalUserAdmin)
-admin_site.register(models.Project, ProjectAdmin)
 admin_site.register(models.KubernetesServiceAccount,
                     KubernetesServiceAccountAdmin)
 admin_site.register(models.KubernetesNamespace, KubernetesNamespaceAdmin)
