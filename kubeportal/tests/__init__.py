@@ -14,16 +14,21 @@ admin_data = {
 }
 
 
-class AdminLoggedInTestCase(TestCase):
-    def login_admin(self):
-        self.c.login(username=admin_data['username'],
-                     password=admin_clear_password)
-
+class AdminLoggedOutTestCase(TestCase):
     def setUp(self):
         self.c = client.Client()
         User = get_user_model()
         self.admin = User(**admin_data)
         self.admin.save()
+
+
+class AdminLoggedInTestCase(AdminLoggedOutTestCase):
+    def login_admin(self):
+        self.c.login(username=admin_data['username'],
+                     password=admin_clear_password)
+
+    def setUp(self):
+        super().setUp()
         self.login_admin()
 
 

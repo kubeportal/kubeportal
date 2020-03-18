@@ -6,10 +6,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 
-import logging
-
 from kubeportal.models import Link
 from kubeportal import kubernetes
+
+import logging
 
 logger = logging.getLogger('KubePortal')
 

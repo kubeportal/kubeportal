@@ -224,6 +224,9 @@ class Common(Configuration):
     ADMIN_EMAIL = values.Value(environ_prefix='KUBEPORTAL')
     ADMINS = [(ADMIN_NAME, ADMIN_EMAIL), ]
 
+    OIDC_IDTOKEN_PROCESSING_HOOK = 'kubeportal.security.oidc_hook'
+
+
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
