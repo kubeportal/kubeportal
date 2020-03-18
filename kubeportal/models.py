@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags, mark_safe
 import uuid
 import logging
-
+import oidc_provider
 
 logger = logging.getLogger('KubePortal')
 
@@ -212,6 +212,15 @@ class User(AbstractUser):
             return get_token(self.service_account)
         except:
             return None
+
+
+class Group(models.Model):
+    '''
+    A group of portal users.
+    '''
+    name = models.CharField(max_length=100)
+    members = models.ManyToManyField(User)
+    oidc_clients = models.ManyToManyField(oidc_provider.models.Client)
 
 
 class Link(models.Model):
