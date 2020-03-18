@@ -1,6 +1,16 @@
 Changelog
 #########
 
+
+.. _v0.2.8:
+
+v0.2.8 Release
+===============
+
+  * The Kubernetes namespace list in the backend now has some usage statistics, in order to find zombie namespaces  (:issue:`43`).
+  * The Kubernetes namespace list in the backend now supports some bulk actions (:issue:`24`, :issue:`18`).
+  * The welcome page is now mobile-friendly (:issue:`46`).
+
 .. _v0.2.7:
 
 v0.2.7 Release
