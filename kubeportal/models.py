@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags, mark_safe
+from oidc_provider.models import Client
 import uuid
 import logging
 import oidc_provider
@@ -229,29 +230,12 @@ class WebApplication(models.Model):
         null=True, blank=True,
         verbose_name="Link URL",
         help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
-    oidc_enable = models.BooleanField(
-        verbose_name="Enable OIDC authentication", default=False)
-    oidc_client_id = models.CharField(
-        max_length=255, unique=True, null=True, blank=True, verbose_name='Client ID')
-    oidc_client_secret = models.CharField(
-        max_length=255, null=True, blank=True, verbose_name='Client secret')
-    _oidc_redirect_uris = models.TextField(
-        default='', verbose_name='Allowed redirects after login',
-        help_text='Enter each URI on a new line.',
-        null=True, blank=True)
-
+    oidc_client = models.OneToOneField(Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Client settings")
     class Meta:
         verbose_name = 'web application'
 
     def __str__(self):
         return self.name
-
-
-class OidcClient(oidc_provider.models.Client):
-    web_application = models.OneToOneField(
-        WebApplication,
-        on_delete=models.SET_NULL,
-        null=True)
 
 
 class Group(models.Model):
@@ -261,6 +245,10 @@ class Group(models.Model):
     name = models.CharField(
         max_length=100, verbose_name='Name for the user group')
     members = models.ManyToManyField(
-        User, verbose_name='Members of the user group')
+        User, blank=True, verbose_name='Members of the user group')
     web_applications = models.ManyToManyField(
-        WebApplication, verbose_name='Web applications enabled for this user group')
+        WebApplication, blank=True, verbose_name='Web applications enabled for this user group')
+
+    def __str__(self):
+        return self.name
+

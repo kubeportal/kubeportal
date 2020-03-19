@@ -5,8 +5,11 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.template.response import TemplateResponse
+from django.contrib.contenttypes.admin import GenericStackedInline
+from oidc_provider.models import Client
 from sortedm2m_filter_horizontal_widget.forms import SortedFilteredSelectMultiple
 import logging
+import uuid
 from . import models
 from kubeportal import kubernetes
 
@@ -65,9 +68,9 @@ def make_invisible(modeladmin, request, queryset):
     queryset.update(visible=False)
 make_invisible.short_description = "Mark as non-visible"
 
-
-
 class WebApplicationAdmin(admin.ModelAdmin):
+    list_display = ['name', 'link_show', 'client_id', 'client_secret']
+
     fieldsets = (
         (None, {
             'fields': ('name',)
@@ -75,10 +78,19 @@ class WebApplicationAdmin(admin.ModelAdmin):
         ('Portal frontend', {
             'fields': ('link_show', 'link_name', 'link_url'),
         }),
-        ('OpenID Connect Provider', {
-            'fields': ('oidc_enable', 'oidc_client_id', 'oidc_client_secret', '_oidc_redirect_uris'),
+        ('OpenID Connect', {
+            'fields': ('oidc_client', ),
         }),
     )
+
+    def client_id(self, instance):
+        return instance.oidc_client.client_id if instance.oidc_client else ""
+    client_id.short_description = "OIDC Client ID"
+
+    def client_secret(self, instance):
+        return instance.oidc_client.client_secret if instance.oidc_client else ""
+    client_secret.short_description = "OIDC Client Secret"
+
 
 
 
@@ -168,10 +180,20 @@ reject.short_description = "Reject access request for selected users"
 
 
 class PortalGroupAdmin(admin.ModelAdmin):
+    list_display = ('name', 'members_list', 'app_list')
+
     def formfield_for_manytomany(self, db_field, request=None, **kwargs):
         if db_field.name in ('members', 'web_applications'):
             kwargs['widget'] = SortedFilteredSelectMultiple()
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    def members_list(self, instance):
+        return ', '.join(instance.members.values_list('username', flat=True))
+    members_list.short_description = "Members"
+
+    def app_list(self, instance):
+        return ', '.join(instance.web_applications.all().values_list('name', flat=True))
+    app_list.short_description = "Web applications"
 
 
 class PortalUserAdmin(UserAdmin):
@@ -254,6 +276,23 @@ class PortalUserAdmin(UserAdmin):
             user.save()
         return redirect('admin:kubeportal_user_changelist')
 
+class OidcClientAdmin(admin.ModelAdmin):
+    exclude = ('name', 'owner','client_type','response_types','jwt_alg', 'website_url', 'terms_url', 'contact_email', 'reuse_consent', 'require_consent', '_post_logout_redirect_uris', 'logo', '_scope')
+    readonly_fields = ('client_secret',)
+
+    def has_module_permission(self, request):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if not obj.client_secret:
+            obj.client_secret = uuid.uuid4()
+        obj.name = obj.client_id
+        obj._scope = "openid profile email"
+        super().save_model(request, obj, form, change)
+
+    class Meta:
+        verbose_name = "OpenID Connect settings"
+
 
 admin_site = CustomAdminSite()
 admin_site.register(models.User, PortalUserAdmin)
@@ -262,3 +301,4 @@ admin_site.register(models.KubernetesServiceAccount,
                     KubernetesServiceAccountAdmin)
 admin_site.register(models.KubernetesNamespace, KubernetesNamespaceAdmin)
 admin_site.register(models.WebApplication, WebApplicationAdmin)
+admin_site.register(Client, OidcClientAdmin)

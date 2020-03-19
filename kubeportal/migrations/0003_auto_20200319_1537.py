@@ -13,21 +13,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='Group',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, verbose_name='Name for the user group')),
-                ('members', models.ManyToManyField(to=settings.AUTH_USER_MODEL, verbose_name='Members of the user group')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='OidcClient',
-            fields=[
-                ('client_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='oidc_provider.Client')),
-            ],
-            bases=('oidc_provider.client',),
-        ),
         migrations.RenameModel(
             old_name='Link',
             new_name='WebApplication'
@@ -68,32 +53,16 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='WebApplication',
-            name='oidc_enable',
-            field=models.BooleanField(default=False, verbose_name='Enable OIDC authentication')
+            name='oidc_client',
+            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='oidc_provider.Client', verbose_name='Client settings'),
         ),
-        migrations.AddField(
-            model_name='WebApplication',
-            name='oidc_client_id',
-            field=models.CharField(blank=True, max_length=255, null=True, unique=True, verbose_name='Client ID')
-        ),
-        migrations.AddField(
-            model_name='WebApplication',
-            name='oidc_client_secret',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='Client secret')
-        ),
-        migrations.AddField(
-            model_name='WebApplication',
-            name='_oidc_redirect_uris',
-            field=models.TextField(blank=True, default='', help_text='Enter each URI on a new line.', null=True, verbose_name='Allowed redirects after login')
-        ),
-        migrations.AddField(
-            model_name='oidcclient',
-            name='web_application',
-            field=models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, to='kubeportal.WebApplication'),
-        ),
-        migrations.AddField(
-            model_name='group',
-            name='web_applications',
-            field=models.ManyToManyField(to='kubeportal.WebApplication', verbose_name='Web applications enabled for this user group'),
+        migrations.CreateModel(
+            name='Group',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('name', models.CharField(max_length=100, verbose_name='Name for the user group')),
+                ('members', models.ManyToManyField(blank=True, to=settings.AUTH_USER_MODEL, verbose_name='Members of the user group')),
+                ('web_applications', models.ManyToManyField(blank=True, to='kubeportal.WebApplication', verbose_name='Web applications enabled for this user group'))            
+            ],
         ),
     ]
