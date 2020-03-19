@@ -210,27 +210,57 @@ class User(AbstractUser):
         from kubeportal.kubernetes import get_token
         try:
             return get_token(self.service_account)
-        except:
+        except Exception:
             return None
+
+
+class WebApplication(models.Model):
+    '''
+    A web application protected and / or linked by KubePortal.
+    '''
+    name = models.CharField(max_length=100)
+    link_show = models.BooleanField(
+        verbose_name="Show link on welcome page", default=False)
+    link_name = models.CharField(
+        null=True, blank=True,
+        verbose_name="Link title",
+        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
+    link_url = models.URLField(
+        null=True, blank=True,
+        verbose_name="Link URL",
+        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
+    oidc_enable = models.BooleanField(
+        verbose_name="Enable OIDC authentication", default=False)
+    oidc_client_id = models.CharField(
+        max_length=255, unique=True, null=True, blank=True, verbose_name='Client ID')
+    oidc_client_secret = models.CharField(
+        max_length=255, null=True, blank=True, verbose_name='Client secret')
+    _oidc_redirect_uris = models.TextField(
+        default='', verbose_name='Allowed redirects after login',
+        help_text='Enter each URI on a new line.',
+        null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'web application'
+
+    def __str__(self):
+        return self.name
+
+
+class OidcClient(oidc_provider.models.Client):
+    web_application = models.OneToOneField(
+        WebApplication,
+        on_delete=models.SET_NULL,
+        null=True)
 
 
 class Group(models.Model):
     '''
     A group of portal users.
     '''
-    name = models.CharField(max_length=100)
-    members = models.ManyToManyField(User)
-    oidc_clients = models.ManyToManyField(oidc_provider.models.Client)
-
-
-class Link(models.Model):
-    '''
-    Links to be shown in the frontend.
-    '''
     name = models.CharField(
-        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
-    url = models.URLField(
-        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
-
-    def __str__(self):
-        return self.name
+        max_length=100, verbose_name='Name for the user group')
+    members = models.ManyToManyField(
+        User, verbose_name='Members of the user group')
+    web_applications = models.ManyToManyField(
+        WebApplication, verbose_name='Web applications enabled for this user group')

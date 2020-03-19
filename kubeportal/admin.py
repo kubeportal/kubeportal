@@ -1,11 +1,11 @@
 from django.conf import settings
 from django.urls import path
 from django.shortcuts import redirect, get_object_or_404
-from django.contrib import admin, messages, auth
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.template.response import TemplateResponse
-import oidc_provider
+from sortedm2m_filter_horizontal_widget.forms import SortedFilteredSelectMultiple
 import logging
 from . import models
 from kubeportal import kubernetes
@@ -64,6 +64,22 @@ make_visible.short_description = "Mark as visible"
 def make_invisible(modeladmin, request, queryset):
     queryset.update(visible=False)
 make_invisible.short_description = "Mark as non-visible"
+
+
+
+class WebApplicationAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {
+            'fields': ('name',)
+        }),
+        ('Portal frontend', {
+            'fields': ('link_show', 'link_name', 'link_url'),
+        }),
+        ('OpenID Connect Provider', {
+            'fields': ('oidc_enable', 'oidc_client_id', 'oidc_client_secret', '_oidc_redirect_uris'),
+        }),
+    )
+
 
 
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
@@ -151,6 +167,13 @@ def reject(modeladmin, request, queryset):
 reject.short_description = "Reject access request for selected users"
 
 
+class PortalGroupAdmin(admin.ModelAdmin):
+    def formfield_for_manytomany(self, db_field, request=None, **kwargs):
+        if db_field.name in ('members', 'web_applications'):
+            kwargs['widget'] = SortedFilteredSelectMultiple()
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username', 'email', 'is_superuser']
     list_display = ('username', 'first_name', 'last_name',
@@ -234,9 +257,8 @@ class PortalUserAdmin(UserAdmin):
 
 admin_site = CustomAdminSite()
 admin_site.register(models.User, PortalUserAdmin)
+admin_site.register(models.Group, PortalGroupAdmin)
 admin_site.register(models.KubernetesServiceAccount,
                     KubernetesServiceAccountAdmin)
 admin_site.register(models.KubernetesNamespace, KubernetesNamespaceAdmin)
-admin_site.register(models.Link)
-admin_site.register(oidc_provider.models.Client)
-admin_site.register(oidc_provider.models.UserConsent)
+admin_site.register(models.WebApplication, WebApplicationAdmin)

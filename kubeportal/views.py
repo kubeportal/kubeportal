@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 
-from kubeportal.models import Link
+from kubeportal.models import WebApplication
 from kubeportal import kubernetes
 
 import logging
@@ -44,7 +44,7 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['clusterapps'] = Link.objects.all()
+        context['clusterapps'] = WebApplication.objects.all()
         return context
 
 

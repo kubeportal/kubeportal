@@ -16,6 +16,7 @@ class Common(Configuration):
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
+        'sortedm2m_filter_horizontal_widget',
         'oidc_provider',
         'social_django',
         'rest_framework',
