@@ -69,7 +69,7 @@ def make_invisible(modeladmin, request, queryset):
 make_invisible.short_description = "Mark as non-visible"
 
 class WebApplicationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'link_show', 'client_id', 'client_secret']
+    list_display = ['name', 'link_show', 'client_id', 'client_secret', 'client_redirect_uris']
 
     fieldsets = (
         (None, {
@@ -90,6 +90,10 @@ class WebApplicationAdmin(admin.ModelAdmin):
     def client_secret(self, instance):
         return instance.oidc_client.client_secret if instance.oidc_client else ""
     client_secret.short_description = "OIDC Client Secret"
+
+    def client_redirect_uris(self, instance):
+        return ', '.join(instance.oidc_client.redirect_uris) if instance.oidc_client else ""
+    client_secret.short_description = "OIDC Redirect Targets"
 
 
 
