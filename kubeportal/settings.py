@@ -225,7 +225,6 @@ class Common(Configuration):
     ADMIN_EMAIL = values.Value(environ_prefix='KUBEPORTAL')
     ADMINS = [(ADMIN_NAME, ADMIN_EMAIL), ]
 
-    OIDC_IDTOKEN_PROCESSING_HOOK = 'kubeportal.security.oidc_idtoken_hook'
     OIDC_AFTER_USERLOGIN_HOOK = 'kubeportal.security.oidc_login_hook'
 
 class Development(Common):
