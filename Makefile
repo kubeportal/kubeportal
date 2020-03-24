@@ -39,7 +39,7 @@ docs: venv
 	pushd docs; make html; popd
 
 # Runs the test suite
-test: venv
+test: venv minikube-start
 	./venv/bin/python ./manage.py test --configuration=Development
 
 # Run all tests and obtain coverage information.
@@ -77,6 +77,7 @@ minikube-stop: minikube-check
 # Start a Minikube environment
 minikube-start: minikube-check
 	(minikube status | grep Running) || minikube start
+	kubectl config use-context minikube
 
 # Check if minikube is installed
 minikube-check:
