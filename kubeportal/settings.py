@@ -16,6 +16,7 @@ class Common(Configuration):
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
+        'sortedm2m_filter_horizontal_widget',
         'oidc_provider',
         'social_django',
         'rest_framework',
@@ -223,6 +224,8 @@ class Common(Configuration):
     ADMIN_NAME = values.Value(environ_prefix='KUBEPORTAL')
     ADMIN_EMAIL = values.Value(environ_prefix='KUBEPORTAL')
     ADMINS = [(ADMIN_NAME, ADMIN_EMAIL), ]
+
+    OIDC_AFTER_USERLOGIN_HOOK = 'kubeportal.security.oidc_login_hook'
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

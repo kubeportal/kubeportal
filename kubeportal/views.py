@@ -6,10 +6,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 
-import logging
-
-from kubeportal.models import Link
+from kubeportal.models import WebApplication
 from kubeportal import kubernetes
+
+import logging
 
 logger = logging.getLogger('KubePortal')
 
@@ -44,7 +44,7 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['clusterapps'] = Link.objects.all()
+        context['clusterapps'] = WebApplication.objects.all()
         return context
 
 
@@ -63,6 +63,21 @@ class AccessRequestView(LoginRequiredMixin, RedirectView):
 
 
 class SubAuthRequestView(View):
+    '''
+    Some design considerations:
+
+    One may think that sub-auth requests must become a user group feature,
+    something you can switch on and off for groups of people, similar to
+    web applications.
+
+    This makes no sense, since a successfull sub-auth request demands a working
+    K8S bearer token, so the individual user must have a valid K8S account.
+    Having this, and not being allowed to perform sub-auth request, would only make
+    sense of you could define that per single web application (e.g. K8S Dashboard
+    only for these Kubernetes users). But due to the fact that we cannot reliabily
+    identify the web app triggering the sub auth request, such identification is not possible.
+    In sum, this feature just becomes available when somebody has Kubernetes access.
+    '''
     http_method_names = ['get']
 
     def _dump_request_info(self, request):

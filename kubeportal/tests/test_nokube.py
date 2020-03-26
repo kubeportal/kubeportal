@@ -1,7 +1,6 @@
 from . import AnonymousTestCase, AdminLoggedInTestCase
 from django.urls import reverse
 
-
 class FrontendAnonymous(AnonymousTestCase):
 
     def test_index_view(self):

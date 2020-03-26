@@ -36,6 +36,15 @@ def _create_k8s_ns(name, core_v1):
     return core_v1.read_namespace(name=name)
 
 
+def _delete_k8s_ns(name, core_v1):
+    if is_minikube:
+        logger.info(
+            "Deleting Kubernetes namespace '{0}'".format(name))
+        core_v1.delete_namespace(name)
+    else:
+        logger.error("K8S namespace deletion not allowed in production clusters")
+
+
 def _sync_namespaces(request, core_v1, rbac_v1):
     # K8S namespaces -> portal namespaces
     success_count_pull = 0
@@ -261,6 +270,13 @@ def _load_config():
         config.load_kube_config()
     return client.CoreV1Api(), client.RbacAuthorizationV1Api()
 
+
+def is_minikube():
+    '''
+    Checks if the current context is minikube. This is needed for checks in the test code.
+    '''
+    contexts, active_context = config.list_kube_config_contexts()
+    return active_context['context']['cluster'] == 'minikube'
 
 def get_namespaces():
     '''

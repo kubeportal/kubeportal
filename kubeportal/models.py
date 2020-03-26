@@ -7,9 +7,9 @@ from django.urls import reverse
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags, mark_safe
+from oidc_provider.models import Client
 import uuid
 import logging
-
 
 logger = logging.getLogger('KubePortal')
 
@@ -210,18 +210,46 @@ class User(AbstractUser):
         from kubeportal.kubernetes import get_token
         try:
             return get_token(self.service_account)
-        except:
+        except Exception:
             return None
 
 
-class Link(models.Model):
+class WebApplication(models.Model):
     '''
-    Links to be shown in the frontend.
+    A web application protected and / or linked by KubePortal.
+    '''
+    name = models.CharField(max_length=100)
+    link_show = models.BooleanField(
+        verbose_name="Show link on welcome page", default=False)
+    link_name = models.CharField(
+        null=True, blank=True,
+        verbose_name="Link title",
+        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
+    link_url = models.URLField(
+        null=True, blank=True,
+        verbose_name="Link URL",
+        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
+    oidc_client = models.OneToOneField(Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Client settings")
+
+    class Meta:
+        verbose_name = 'web application'
+
+    def __str__(self):
+        return self.name
+
+
+class Group(models.Model):
+    '''
+    A group of portal users.
     '''
     name = models.CharField(
-        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
-    url = models.URLField(
-        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
+        max_length=100, verbose_name='Name for the user group')
+    members = models.ManyToManyField(
+        User, blank=True, verbose_name='Members of the user group', related_name='portal_groups')
+    web_applications = models.ManyToManyField(
+        WebApplication, blank=True, verbose_name='Web applications enabled for this user group', related_name='portal_groups')
+    auto_add = models.BooleanField(
+        verbose_name="Add new users automatically to this group", default=False)
 
     def __str__(self):
         return self.name
