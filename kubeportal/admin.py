@@ -98,7 +98,7 @@ class WebApplicationAdmin(admin.ModelAdmin):
 
     def client_redirect_uris(self, instance):
         return ', '.join(instance.oidc_client.redirect_uris) if instance.oidc_client else ""
-    client_secret.short_description = "OIDC Redirect Targets"
+    client_redirect_uris.short_description = "OIDC Redirect Targets"
 
 
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
