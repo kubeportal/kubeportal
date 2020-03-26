@@ -15,6 +15,7 @@ from . import AdminLoggedOutTestCase, admin_data
 from urllib.parse import urlencode
 from unittest.mock import patch
 from kubeportal.models import WebApplication, Group
+from kubeportal.views import WelcomeView
 import uuid
 import random
 from django.utils import timezone
@@ -61,20 +62,21 @@ class FrontendAuth(AdminLoggedOutTestCase):
         request.user = self.admin
         return AuthorizeView.as_view()(request)
 
-    def _create_token(self):
+    def _create_token(self, user, client, request):
         scope = ['openid', 'email']
 
         token = create_token(
-            user=self.admin,
-            client=self.client,
+            user=user,
+            client=client,
             scope=scope)
 
         id_token_dic = create_id_token(
             token=token,
-            user=self.user,
-            aud=self.client.client_id,
+            user=user,
+            aud=client.client_id,
             nonce='abcdefghijk',
             scope=scope,
+            request=request
         )
 
         token.id_token = id_token_dic
@@ -82,14 +84,15 @@ class FrontendAuth(AdminLoggedOutTestCase):
 
         return token
 
-    def _create_group(self, name, member=None, app=None):
-        group = Group(name=name)
+    def _create_group(self, name, member=None, app=None, auto_add=False):
+        group = Group(name=name, auto_add=auto_add)
         group.save()
         if member:
             group.members.add(member)
         if app:
             group.web_applications.add(app)
         group.save()
+        return group
 
     def test_oidc_login_hook(self):
         '''
@@ -133,3 +136,19 @@ class FrontendAuth(AdminLoggedOutTestCase):
             self._authenticate(self.client[0])
         with self.assertRaises(PermissionDenied):
             self._authenticate(self.client[1])
+
+    def test_oidc_no_group_auto_add_on_deny(self):
+        auto_group = self._create_group(
+            name="Auto-add group", auto_add=True)
+        with self.assertRaises(PermissionDenied):
+            self._authenticate(self.client[0])
+        self.assertEquals(auto_group.members.all().count(), 0)
+
+    def test_oidc_token_auth(self):
+        url = reverse('oidc_provider:userinfo')
+        request = self.factory.post(url, data={}, content_type='multipart/form-data')
+        token = self._create_token(self.admin, self.client[0], request)
+        request.META['HTTP_AUTHORIZATION'] = 'Bearer {0}'.format(token.access_token)
+        response = userinfo(request)
+        self.assertTrue(response.status_code, 200)
+

@@ -14,12 +14,26 @@ admin_data = {
 }
 
 
-class AdminLoggedOutTestCase(TestCase):
+class BaseTestCase(TestCase):
     def setUp(self):
         self.c = client.Client()
+
+    def _create_user(name):
         User = get_user_model()
-        self.admin = User(**admin_data)
-        self.admin.save()
+        u = User(**admin_data)
+        u.save()
+        return u
+
+
+
+class AnonymousTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+
+class AdminLoggedOutTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.admin = self._create_user()
 
 
 class AdminLoggedInTestCase(AdminLoggedOutTestCase):
@@ -31,7 +45,3 @@ class AdminLoggedInTestCase(AdminLoggedOutTestCase):
         super().setUp()
         self.login_admin()
 
-
-class AnonymousTestCase(TestCase):
-    def setUp(self):
-        self.c = client.Client()

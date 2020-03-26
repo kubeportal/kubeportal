@@ -75,7 +75,8 @@ class SubAuthRequestView(View):
     Having this, and not being allowed to perform sub-auth request, would only make
     sense of you could define that per single web application (e.g. K8S Dashboard
     only for these Kubernetes users). But due to the fact that we cannot reliabily
-    identify the web app from the sub auth request, such identification is not possible.
+    identify the web app triggering the sub auth request, such identification is not possible.
+    In sum, this feature just becomes available when somebody has Kubernetes access.
     '''
     http_method_names = ['get']
 
