@@ -245,9 +245,9 @@ class Group(models.Model):
     name = models.CharField(
         max_length=100, verbose_name='Name for the user group')
     members = models.ManyToManyField(
-        User, blank=True, verbose_name='Members of the user group')
+        User, blank=True, verbose_name='Members of the user group', related_name='portal_groups')
     web_applications = models.ManyToManyField(
-        WebApplication, blank=True, verbose_name='Web applications enabled for this user group')
+        WebApplication, blank=True, verbose_name='Web applications enabled for this user group', related_name='groups')
 
     def __str__(self):
         return self.name

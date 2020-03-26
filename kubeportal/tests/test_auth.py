@@ -26,20 +26,29 @@ class FrontendAuth(AdminLoggedOutTestCase):
     def setUp(self):
         super().setUp()
         self.factory = RequestFactory()
-        self.client = Client()
-        self.client.name = 'Some Client'
-        self.client.client_id = str(random.randint(1, 999999)).zfill(6)
-        self.client.client_secret = str(random.randint(1, 999999)).zfill(6)
-        self.client.redirect_uris = ['http://example.com/']
-        self.client.require_consent = False
-        self.client.save()
-        self.client.response_types.add(ResponseType.objects.get(value='code'))
+        self.client = {}
+        self.app = {}
+        for index, name in enumerate(["Fancy chat tool", "Fancy wiki tool"]):
+            self.client[index] = Client()
+            self.client[index].name = name
+            self.client[index].client_id = str(
+                random.randint(1, 999999)).zfill(6)
+            self.client[index].client_secret = str(
+                random.randint(1, 999999)).zfill(6)
+            self.client[index].redirect_uris = ['http://example.com/']
+            self.client[index].require_consent = False
+            self.client[index].save()
+            self.client[index].response_types.add(
+                ResponseType.objects.get(value='code'))
+            self.app[index] = WebApplication(
+                name=name, oidc_client=self.client[index])
+            self.app[index].save()
         self.state = uuid.uuid4().hex
 
-    def _authenticate(self):
+    def _authenticate(self, client):
         data = {
-            'client_id': self.client.client_id,
-            'redirect_uri': self.client.default_redirect_uri,
+            'client_id': client.client_id,
+            'redirect_uri': client.default_redirect_uri,
             'response_type': 'code',
             'scope': 'openid email',
             'state': self.state,
@@ -51,7 +60,6 @@ class FrontendAuth(AdminLoggedOutTestCase):
         request = self.factory.get(url)
         request.user = self.admin
         return AuthorizeView.as_view()(request)
-
 
     def _create_token(self):
         scope = ['openid', 'email']
@@ -74,36 +82,54 @@ class FrontendAuth(AdminLoggedOutTestCase):
 
         return token
 
+    def _create_group(self, name, member=None, app=None):
+        group = Group(name=name)
+        group.save()
+        if member:
+            group.members.add(member)
+        if app:
+            group.web_applications.add(app)
+        group.save()
+
     def test_oidc_login_hook(self):
         '''
         OIDC login hook should be called called when someone performs a Login through the OIDC functionalities.
         '''
+        client = self.client[0]
         with patch('kubeportal.security.oidc_login_hook') as mocked_oidc_login_hook:
-            response = self._authenticate()
+            response = self._authenticate(client)
             self.assertTrue(
-                response['Location'].startswith(self.client.default_redirect_uri),
+                response['Location'].startswith(client.default_redirect_uri),
                 msg='Different redirect_uri returned')
             self.assertTrue(response.status_code, 302)
             mocked_oidc_login_hook.assert_called()
 
-    def test_oidc_allowed(self):
-        self.app = WebApplication(name="Fancy chat tool", oidc_client=self.client)
-        self.app.save()
-        self.group = Group(name="Users for chat only")
-        self.group.save()
-        self.group.members.add(self.admin)
-        self.group.web_applications.add(self.app)
-        self.group.save()
-        response = self._authenticate()
+    def test_oidc_multiple_groups_one_allowed(self):
+        group1 = self._create_group(
+            name="Users for chat only", member=self.admin, app=self.app[0])
+        group2 = self._create_group(
+            name="Users for chat only", member=self.admin, app=None)
+        response = self._authenticate(self.client[0])
+        self.assertTrue(response.status_code, 302)
+        with self.assertRaises(PermissionDenied):
+            self._authenticate(self.client[1])
+
+    def test_oidc_multiple_groups_multiple_allowed(self):
+        group1 = self._create_group(
+            name="Users for chat only", member=self.admin, app=self.app[0])
+        group2 = self._create_group(
+            name="Users for chat only", member=self.admin, app=self.app[1])
+        response = self._authenticate(self.client[0])
+        self.assertTrue(response.status_code, 302)
+        response = self._authenticate(self.client[1])
         self.assertTrue(response.status_code, 302)
 
-    def test_oidc_users_group_not_for_app(self):
-        self.app = WebApplication(name="Fancy chat tool", oidc_client=self.client)
-        self.app.save()
-        self.group = Group(name="Users for chat only")
-        self.group.save()
-        self.group.web_applications.add(self.app)
-        self.group.save()
+    def test_oidc_multiple_groups_none_allowed(self):
+        group1 = self._create_group(
+            name="Users for chat only", member=self.admin, app=None)
+        group2 = self._create_group(
+            name="Users for chat only", member=self.admin, app=None)
         with self.assertRaises(PermissionDenied):
-            self._authenticate()
-
+            self._authenticate(self.client[0])
+        with self.assertRaises(PermissionDenied):
+            self._authenticate(self.client[1])
