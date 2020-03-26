@@ -48,6 +48,47 @@ class KubernetesServiceAccount(models.Model):
         return self.uid is not None
 
 
+class WebApplication(models.Model):
+    '''
+    A web application protected and / or linked by KubePortal.
+    '''
+    name = models.CharField(max_length=100)
+    link_show = models.BooleanField(
+        verbose_name="Show link on welcome page", default=False)
+    link_name = models.CharField(
+        null=True, blank=True,
+        verbose_name="Link title",
+        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
+    link_url = models.URLField(
+        null=True, blank=True,
+        verbose_name="Link URL",
+        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
+    oidc_client = models.OneToOneField(Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Client settings")
+
+    class Meta:
+        verbose_name = 'web application'
+
+    def __str__(self):
+        return self.name
+
+
+class PortalGroup(models.Model):
+    '''
+    A group of portal users.
+    '''
+    name = models.CharField(
+        max_length=100, verbose_name='Name for the user group')
+    web_applications = models.ManyToManyField(
+        WebApplication, blank=True, verbose_name='Web applications enabled for this user group', related_name='portal_groups')
+    auto_add = models.BooleanField(
+        verbose_name="Add new users automatically to this group", default=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "User Group"
+
 class UserState():
     NEW = 'not requested'
     ACCESS_REQUESTED = 'requested'
@@ -74,6 +115,9 @@ class User(AbstractUser):
         'User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
     comments = models.CharField(
         max_length=150, help_text="Description on why this user needs cluster access. (150 characters)", default="", null=True, blank=True)
+    portal_groups = models.ManyToManyField(
+        PortalGroup, blank=True, verbose_name='Groups of the user', related_name='members')
+
 
     service_account = models.ForeignKey(
         KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
@@ -214,42 +258,4 @@ class User(AbstractUser):
             return None
 
 
-class WebApplication(models.Model):
-    '''
-    A web application protected and / or linked by KubePortal.
-    '''
-    name = models.CharField(max_length=100)
-    link_show = models.BooleanField(
-        verbose_name="Show link on welcome page", default=False)
-    link_name = models.CharField(
-        null=True, blank=True,
-        verbose_name="Link title",
-        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
-    link_url = models.URLField(
-        null=True, blank=True,
-        verbose_name="Link URL",
-        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
-    oidc_client = models.OneToOneField(Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Client settings")
 
-    class Meta:
-        verbose_name = 'web application'
-
-    def __str__(self):
-        return self.name
-
-
-class Group(models.Model):
-    '''
-    A group of portal users.
-    '''
-    name = models.CharField(
-        max_length=100, verbose_name='Name for the user group')
-    members = models.ManyToManyField(
-        User, blank=True, verbose_name='Members of the user group', related_name='portal_groups')
-    web_applications = models.ManyToManyField(
-        WebApplication, blank=True, verbose_name='Web applications enabled for this user group', related_name='portal_groups')
-    auto_add = models.BooleanField(
-        verbose_name="Add new users automatically to this group", default=False)
-
-    def __str__(self):
-        return self.name

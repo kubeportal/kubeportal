@@ -191,11 +191,6 @@ reject.short_description = "Reject access request for selected users"
 class PortalGroupAdmin(admin.ModelAdmin):
     list_display = ('name', 'members_list', 'app_list')
 
-    def formfield_for_manytomany(self, db_field, request=None, **kwargs):
-        if db_field.name in ('members', 'web_applications'):
-            kwargs['widget'] = SortedFilteredSelectMultiple()
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
-
     def members_list(self, instance):
         return ', '.join(instance.members.values_list('username', flat=True))
     members_list.short_description = "Members"
@@ -205,9 +200,6 @@ class PortalGroupAdmin(admin.ModelAdmin):
     app_list.short_description = "Web applications"
 
 
-class PortalGroupsInline(admin.StackedInline):
-    model = models.User.portal_groups.through
-    extra = 1
 
 
 class PortalUserAdmin(UserAdmin):
@@ -217,10 +209,14 @@ class PortalUserAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'first_name',
                            'last_name', 'email', 'comments', 'is_staff')}),
-        (None, {'fields': ('state', 'answered_by', 'service_account', 'is_superuser')})
+        (None, {'fields': ('state', 'answered_by', 'service_account', 'is_superuser')}),
+        (None, {'fields': ('portal_groups',)})
     )
     actions = [reject]
-    inlines = (PortalGroupsInline,)
+
+    def formfield_for_manytomany(self, db_field, request=None, **kwargs):
+        kwargs['widget'] = SortedFilteredSelectMultiple(attrs = {'verbose_name': 'user groups'})
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -319,7 +315,7 @@ class OidcClientAdmin(admin.ModelAdmin):
 
 admin_site = CustomAdminSite()
 admin_site.register(models.User, PortalUserAdmin)
-admin_site.register(models.Group, PortalGroupAdmin)
+admin_site.register(models.PortalGroup, PortalGroupAdmin)
 admin_site.register(models.KubernetesServiceAccount,
                     KubernetesServiceAccountAdmin)
 admin_site.register(models.KubernetesNamespace, KubernetesNamespaceAdmin)

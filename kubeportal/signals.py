@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from kubeportal.models import User
-from kubeportal.models import Group as PortalGroup
+from kubeportal.models import PortalGroup
 
 from django.contrib.auth.models import Group, Permission
 import logging

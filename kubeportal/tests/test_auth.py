@@ -14,7 +14,7 @@ from oidc_provider.lib.utils.token import create_token, create_id_token
 from . import AdminLoggedOutTestCase, admin_data
 from urllib.parse import urlencode
 from unittest.mock import patch
-from kubeportal.models import WebApplication, Group
+from kubeportal.models import WebApplication, PortalGroup
 from kubeportal.views import WelcomeView
 import uuid
 import random
@@ -85,7 +85,7 @@ class FrontendAuth(AdminLoggedOutTestCase):
         return token
 
     def _create_group(self, name, member=None, app=None, auto_add=False):
-        group = Group(name=name, auto_add=auto_add)
+        group = PortalGroup(name=name, auto_add=auto_add)
         group.save()
         if member:
             group.members.add(member)
