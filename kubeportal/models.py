@@ -10,7 +10,6 @@ from django.utils.html import strip_tags, mark_safe
 from oidc_provider.models import Client
 import uuid
 import logging
-import oidc_provider
 
 logger = logging.getLogger('KubePortal')
 
@@ -231,6 +230,7 @@ class WebApplication(models.Model):
         verbose_name="Link URL",
         help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
     oidc_client = models.OneToOneField(Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Client settings")
+
     class Meta:
         verbose_name = 'web application'
 
@@ -248,6 +248,8 @@ class Group(models.Model):
         User, blank=True, verbose_name='Members of the user group', related_name='portal_groups')
     web_applications = models.ManyToManyField(
         WebApplication, blank=True, verbose_name='Web applications enabled for this user group', related_name='portal_groups')
+    auto_add = models.BooleanField(
+        verbose_name="Add new users automatically to this group", default=False)
 
     def __str__(self):
         return self.name

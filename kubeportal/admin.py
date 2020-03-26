@@ -5,7 +5,6 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.template.response import TemplateResponse
-from django.contrib.contenttypes.admin import GenericStackedInline
 from oidc_provider.models import Client
 from sortedm2m_filter_horizontal_widget.forms import SortedFilteredSelectMultiple
 import logging
@@ -61,15 +60,21 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
 
 def make_visible(modeladmin, request, queryset):
     queryset.update(visible=True)
+
+
 make_visible.short_description = "Mark as visible"
 
 
 def make_invisible(modeladmin, request, queryset):
     queryset.update(visible=False)
+
+
 make_invisible.short_description = "Mark as non-visible"
 
+
 class WebApplicationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'link_show', 'client_id', 'client_secret', 'client_redirect_uris']
+    list_display = ['name', 'link_show', 'client_id',
+                    'client_secret', 'client_redirect_uris']
 
     fieldsets = (
         (None, {
@@ -96,10 +101,9 @@ class WebApplicationAdmin(admin.ModelAdmin):
     client_secret.short_description = "OIDC Redirect Targets"
 
 
-
-
 class KubernetesNamespaceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'visible', 'portal_users', 'created', 'number_of_pods']
+    list_display = ['name', 'visible',
+                    'portal_users', 'created', 'number_of_pods']
     list_display_links = None
     list_filter = ['visible']
     ns_list = None
@@ -134,7 +138,6 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request, obj=None):
         return False
-
 
     def get_readonly_fields(self, request, obj=None):
         '''
@@ -180,6 +183,8 @@ def reject(modeladmin, request, queryset):
     for user in queryset:
         if user.reject(request):
             user.save()
+
+
 reject.short_description = "Reject access request for selected users"
 
 
@@ -200,15 +205,22 @@ class PortalGroupAdmin(admin.ModelAdmin):
     app_list.short_description = "Web applications"
 
 
+class PortalGroupsInline(admin.StackedInline):
+    model = models.User.portal_groups.through
+    extra = 1
+
+
 class PortalUserAdmin(UserAdmin):
     readonly_fields = ['username', 'email', 'is_superuser']
     list_display = ('username', 'first_name', 'last_name',
                     'is_staff', 'state', 'answered_by', 'comments', 'email', 'approve_link')
     fieldsets = (
-        (None, {'fields': ('username', 'first_name', 'last_name', 'email', 'comments', 'is_staff')}),
+        (None, {'fields': ('username', 'first_name',
+                           'last_name', 'email', 'comments', 'is_staff')}),
         (None, {'fields': ('state', 'answered_by', 'service_account', 'is_superuser')})
     )
     actions = [reject]
+    inlines = (PortalGroupsInline,)
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -251,15 +263,20 @@ class PortalUserAdmin(UserAdmin):
         )
         if request.method == 'POST':
             if request.POST['choice'] == "approve_choose":
-                new_ns = get_object_or_404(models.KubernetesNamespace, name=request.POST['approve_choose_name'])
-                new_svc = get_object_or_404(models.KubernetesServiceAccount, namespace=new_ns, name="default")
+                new_ns = get_object_or_404(
+                    models.KubernetesNamespace, name=request.POST['approve_choose_name'])
+                new_svc = get_object_or_404(
+                    models.KubernetesServiceAccount, namespace=new_ns, name="default")
                 if user.approve(request, new_svc):
                     user.save()
             if request.POST['choice'] == "approve_create":
-                new_ns = models.KubernetesNamespace(name=request.POST['approve_create_name'])
+                new_ns = models.KubernetesNamespace(
+                    name=request.POST['approve_create_name'])
                 new_ns.save()
-                if kubernetes.sync(request):  # creates "default" service account automatically
-                    new_svc = get_object_or_404(models.KubernetesServiceAccount, namespace=new_ns, name="default")
+                # creates "default" service account automatically
+                if kubernetes.sync(request):
+                    new_svc = get_object_or_404(
+                        models.KubernetesServiceAccount, namespace=new_ns, name="default")
                     if user.approve(request, new_svc):
                         user.save()
                     else:
@@ -280,8 +297,10 @@ class PortalUserAdmin(UserAdmin):
             user.save()
         return redirect('admin:kubeportal_user_changelist')
 
+
 class OidcClientAdmin(admin.ModelAdmin):
-    exclude = ('name', 'owner','client_type','response_types','jwt_alg', 'website_url', 'terms_url', 'contact_email', 'reuse_consent', 'require_consent', '_post_logout_redirect_uris', 'logo', '_scope')
+    exclude = ('name', 'owner', 'client_type', 'response_types', 'jwt_alg', 'website_url', 'terms_url',
+               'contact_email', 'reuse_consent', 'require_consent', '_post_logout_redirect_uris', 'logo', '_scope')
     readonly_fields = ('client_secret',)
 
     def has_module_permission(self, request):
