@@ -6,6 +6,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.template.response import TemplateResponse
 from oidc_provider.models import Client
+from sortedm2m_filter_horizontal_widget.forms import SortedFilteredSelectMultiple
 import logging
 import uuid
 from . import models
@@ -190,6 +191,11 @@ reject.short_description = "Reject access request for selected users"
 class PortalGroupAdmin(admin.ModelAdmin):
     list_display = ('name', 'members_list', 'app_list')
 
+    def formfield_for_manytomany(self, db_field, request=None, **kwargs):
+        if db_field.name in ('members', 'web_applications'):
+            kwargs['widget'] = SortedFilteredSelectMultiple()
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
     def members_list(self, instance):
         return ', '.join(instance.members.values_list('username', flat=True))
     members_list.short_description = "Members"
@@ -201,6 +207,7 @@ class PortalGroupAdmin(admin.ModelAdmin):
 
 class PortalGroupsInline(admin.StackedInline):
     model = models.User.portal_groups.through
+    extra = 1
 
 
 class PortalUserAdmin(UserAdmin):
