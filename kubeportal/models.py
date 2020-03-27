@@ -82,9 +82,16 @@ class PortalGroup(models.Model):
         WebApplication, blank=True, verbose_name='Web applications enabled for this user group', related_name='portal_groups')
     auto_add = models.BooleanField(
         verbose_name="Add new users automatically to this group", default=False)
+    subauth = models.BooleanField(
+        verbose_name="Enable sub-authentication", help_text="Enable sub-authentication with Kubernetes Bearer token.", default=False)
+    auto_admin = models.BooleanField(
+        verbose_name="Users in this group are admins", default=False)
 
     def __str__(self):
         return self.name
+
+    def has_member(user):
+        return self.members.filter(pk=user.pk).exists()
 
     class Meta:
         verbose_name = "User Group"
@@ -121,6 +128,13 @@ class User(AbstractUser):
 
     service_account = models.ForeignKey(
         KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
+
+    def can_subauth(self):
+        for group in self.portal_groups:
+            if group.subauth:
+                logger.debug("Sub authentication allowed for {0} by membership in group {1}".format(self, group))
+                return True
+        return False
 
     def has_access_approved(self):
         return self.state == UserState.ACCESS_APPROVED and self.service_account

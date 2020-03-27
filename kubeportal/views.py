@@ -63,21 +63,6 @@ class AccessRequestView(LoginRequiredMixin, RedirectView):
 
 
 class SubAuthRequestView(View):
-    '''
-    Some design considerations:
-
-    One may think that sub-auth requests must become a user group feature,
-    something you can switch on and off for groups of people, similar to
-    web applications.
-
-    This makes no sense, since a successfull sub-auth request demands a working
-    K8S bearer token, so the individual user must have a valid K8S account.
-    Having this, and not being allowed to perform sub-auth request, would only make
-    sense of you could define that per single web application (e.g. K8S Dashboard
-    only for these Kubernetes users). But due to the fact that we cannot reliabily
-    identify the web app triggering the sub auth request, such identification is not possible.
-    In sum, this feature just becomes available when somebody has Kubernetes access.
-    '''
     http_method_names = ['get']
 
     def _dump_request_info(self, request):
@@ -97,6 +82,11 @@ class SubAuthRequestView(View):
         elif not request.user.service_account:
             logger.debug(
                 "Rejecting authorization through subrequest, user {0} has no service account.".format(request.user))
+            self._dump_request_info(request)
+            return HttpResponse(status=401)
+        elif not request.user.can_subauth():
+            logger.debug(
+                "Rejecting authorization through subrequest, forbidden for user {0} through group membership.".format(request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         else:
