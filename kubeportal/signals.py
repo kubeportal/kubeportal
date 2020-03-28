@@ -12,6 +12,10 @@ logger = logging.getLogger('KubePortal')
 
 @receiver(post_save, sender=User)
 def handle_user_change(sender, instance, **kwargs):
+    # Avoid recursion of post_save handler when changing the instance
+    if hasattr(instance, '_dirty'):
+        return
+
     member_of_auto_admin_group = False
     for group in PortalGroup.objects.all():
         if group.auto_add:
@@ -21,27 +25,47 @@ def handle_user_change(sender, instance, **kwargs):
         if group.auto_admin and group.has_member(instance) and not instance.is_staff:
             logger.debug("Enabling admin rights for user {0} due to group membership in {1}".format(instance, group))
             instance.is_staff = True
-            instance.save()
-            member_of_auto_admin_group = True
+            try:
+                instance._dirty = True
+                instance.save()
+            finally:
+                del instance._dirty
+                member_of_auto_admin_group = True
     if not member_of_auto_admin_group and instance.is_staff:
         logger.debug("Disabling admin rights for user {0}, not in any auto-admin group".format(instance))
         instance.is_staff = False
-        instance.save()
+        try:
+            instance._dirty = True
+            instance.save()
+        finally:
+            del instance._dirty
 
 @receiver(post_save, sender=PortalGroup)
 def handle_group_change(sender, instance, **kwargs):
+    # Avoid recursion of post_save handler when changing the instance
+    if hasattr(instance, '_dirty'):
+        return
+
     for member in instance.members.all():
         if instance.auto_admin and not member.is_staff:
-            logger.debug("Enabling admin rights for user {0} due to group membership in {1}".format(instance, group))
+            logger.debug("Enabling admin rights for user {0} due to group membership in {1}".format(member, instance))
             instance.is_staff = True
-            instance.save()
+            try:
+                instance._dirty = True
+                instance.save()
+            finally:
+                del instance._dirty
         if not instance.auto_admin and member.is_staff:
             found_another_auto_admin_group = False
             for group in PortalGroup.objects.all():
                 if group.auto_admin and group.pk != instance.pk:
                     found_another_auto_admin_group = True
             if not found_another_auto_admin_group:
-                logger.debug("Disabling admin rights for user {0}, no longer in any auto-admin group".format(instance))
+                logger.debug("Disabling admin rights for user {0}, no longer in any auto-admin group".format(member))
                 instance.is_staff = False
-                instance.save()
+                try:
+                    instance._dirty = True
+                    instance.save()
+                finally:
+                    del instance._dirty
 

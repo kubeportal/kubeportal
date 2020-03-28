@@ -1,7 +1,7 @@
 from django.contrib.auth.hashers import make_password
 from django.test import TestCase, client
 from django.contrib.auth import get_user_model
-
+from kubeportal import models
 
 admin_clear_password = 'adminäö&%/1`'
 
@@ -18,14 +18,6 @@ class BaseTestCase(TestCase):
     def setUp(self):
         self.c = client.Client()
 
-    def _create_user(name):
-        User = get_user_model()
-        u = User(**admin_data)
-        u.save()
-        return u
-
-
-
 class AnonymousTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -33,8 +25,13 @@ class AnonymousTestCase(BaseTestCase):
 class AdminLoggedOutTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.admin = self._create_user()
-
+        User = get_user_model()
+        self.admin = User(**admin_data)
+        self.admin.save()
+        self.admin_group = models.PortalGroup(name="Admins", auto_admin=True)
+        self.admin_group.save()
+        self.admin_group.members.add(self.admin)
+        self.admin_group.save()
 
 class AdminLoggedInTestCase(AdminLoggedOutTestCase):
     def login_admin(self):
@@ -44,4 +41,5 @@ class AdminLoggedInTestCase(AdminLoggedOutTestCase):
     def setUp(self):
         super().setUp()
         self.login_admin()
+
 

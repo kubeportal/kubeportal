@@ -90,7 +90,7 @@ class PortalGroup(models.Model):
     def __str__(self):
         return self.name
 
-    def has_member(user):
+    def has_member(self, user):
         return self.members.filter(pk=user.pk).exists()
 
     class Meta:

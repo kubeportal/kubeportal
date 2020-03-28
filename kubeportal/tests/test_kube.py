@@ -10,7 +10,8 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
     def setUp(self):
         super().setUp()
         os.system("(minikube status | grep Running) || minikube start")
-        self.c.get(reverse('admin:sync'))
+        response = self.c.get(reverse('admin:sync'))
+        self.assertEqual(response.status_code, 200)
         default_ns = KubernetesNamespace.objects.get(name='default')
         self.admin.service_account = default_ns.service_accounts.get(
             name='default')
