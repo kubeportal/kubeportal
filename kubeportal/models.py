@@ -58,11 +58,11 @@ class WebApplication(models.Model):
     link_name = models.CharField(
         null=True, blank=True,
         verbose_name="Link title",
-        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
+        help_text="The title of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
     link_url = models.URLField(
         null=True, blank=True,
         verbose_name="Link URL",
-        help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
+        help_text="The URL of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
     oidc_client = models.OneToOneField(Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Client settings")
 
     class Meta:
@@ -77,15 +77,15 @@ class PortalGroup(models.Model):
     A group of portal users.
     '''
     name = models.CharField(
-        max_length=100, verbose_name='Name for the user group')
+        max_length=100, verbose_name='Name')
     web_applications = models.ManyToManyField(
-        WebApplication, blank=True, verbose_name='Web applications enabled for this user group', related_name='portal_groups')
+        WebApplication, blank=True, verbose_name='Web applications', help_text="Group members can access the chosen web applications.", related_name='portal_groups')
     auto_add = models.BooleanField(
-        verbose_name="Add new users automatically to this group", default=False)
+        verbose_name="Add all new users", help_text="Enabling this makes all new users automatically a member of this group. Existing users are not modified.", default=False)
     subauth = models.BooleanField(
-        verbose_name="Enable sub-authentication", help_text="Enable sub-authentication with Kubernetes Bearer token.", default=False)
+        verbose_name="Enable sub-authentication", help_text="Enabling this allows all group members the token-based sub-authentication with their Kubernetes credentials.", default=False)
     auto_admin = models.BooleanField(
-        verbose_name="Users in this group are admins", default=False)
+        verbose_name="Administrators", help_text="Enabling this gives all group members administrative access in the backend.", default=False)
 
     def __str__(self):
         return self.name
@@ -119,11 +119,11 @@ class User(AbstractUser):
     approval_id = models.UUIDField(
         default=uuid.uuid4, editable=False, null=True)
     answered_by = models.ForeignKey(
-        'User', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
+        'User', help_text="Which user approved the cluster access for this user.", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
     comments = models.CharField(
-        max_length=150, help_text="Description on why this user needs cluster access. (150 characters)", default="", null=True, blank=True)
+        max_length=150, default="", null=True, blank=True)
     portal_groups = models.ManyToManyField(
-        PortalGroup, blank=True, verbose_name='Groups of the user', related_name='members')
+        PortalGroup, blank=True, verbose_name='Groups', help_text="The user groups this account belongs to.", related_name='members')
 
 
     service_account = models.ForeignKey(
