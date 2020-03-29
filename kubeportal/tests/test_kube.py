@@ -11,7 +11,6 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         super().setUp()
         os.system("(minikube status | grep Running) || minikube start")
         response = self.c.get(reverse('admin:sync'))
-        self.assertEqual(response.status_code, 200)
         default_ns = KubernetesNamespace.objects.get(name='default')
         self.admin.service_account = default_ns.service_accounts.get(
             name='default')
@@ -33,9 +32,16 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         response = self.c.get('/stats/')
         self.assertEqual(response.status_code, 200)
 
-    def test_subauth_view(self):
+    def test_subauth_view_not_enabled(self):
+        response = self.c.get('/subauthreq/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_subauth_view_enabled(self):
+        self.admin_group.subauth = True
+        self.admin_group.save()
         response = self.c.get('/subauthreq/')
         self.assertEqual(response.status_code, 200)
+
 
 
 class Backend(AdminLoggedInTestCase):

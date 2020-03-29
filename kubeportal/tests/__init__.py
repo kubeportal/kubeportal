@@ -1,7 +1,12 @@
 from django.contrib.auth.hashers import make_password
-from django.test import TestCase, client
+from django.test import TestCase, client, override_settings
 from django.contrib.auth import get_user_model
 from kubeportal import models
+import logging
+
+logging.getLogger('KubePortal').setLevel(logging.DEBUG)
+logging.getLogger('django.request').setLevel(logging.DEBUG)
+logging.getLogger('social').setLevel(logging.DEBUG)
 
 admin_clear_password = 'adminäö&%/1`'
 
@@ -13,16 +18,26 @@ admin_data = {
     'is_superuser': True
 }
 
-
 class BaseTestCase(TestCase):
+    '''
+    Nobody is logged in. No user is prepared.
+    '''
     def setUp(self):
         self.c = client.Client()
 
+
 class AnonymousTestCase(BaseTestCase):
+    '''
+    Nobody is logged in. No user is prepared.
+    '''
     def setUp(self):
         super().setUp()
 
 class AdminLoggedOutTestCase(BaseTestCase):
+    '''
+    An administrator is logged out and part of an auto-admin group.
+    Web applications and subauth's are not enabled.
+    '''
     def setUp(self):
         super().setUp()
         User = get_user_model()
@@ -34,6 +49,10 @@ class AdminLoggedOutTestCase(BaseTestCase):
         self.admin_group.save()
 
 class AdminLoggedInTestCase(AdminLoggedOutTestCase):
+    '''
+    An administrator is logged in and part of an auto-admin group.
+    Web applications and subauth's are not enabled.
+    '''
     def login_admin(self):
         self.c.login(username=admin_data['username'],
                      password=admin_clear_password)

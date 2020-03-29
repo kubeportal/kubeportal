@@ -130,7 +130,7 @@ class User(AbstractUser):
         KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
 
     def can_subauth(self):
-        for group in self.portal_groups:
+        for group in self.portal_groups.all():
             if group.subauth:
                 logger.debug("Sub authentication allowed for {0} by membership in group {1}".format(self, group))
                 return True
