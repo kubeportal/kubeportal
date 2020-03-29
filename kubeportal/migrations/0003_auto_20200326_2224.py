@@ -62,6 +62,8 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=100, verbose_name='Name for the user group')),
                 ('auto_add', models.BooleanField(default=False, verbose_name='Add new users automatically to this group')),
+                ('auto_admin', models.BooleanField(default=False, verbose_name='Users in this group are admins')),
+                ('subauth', models.BooleanField(default=False, help_text='Enable sub-authentication with Kubernetes Bearer token.', verbose_name='Enable sub-authentication'))
             ],
             options={'verbose_name': 'User Group'},
         ),
@@ -77,3 +79,4 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, related_name='members', to='kubeportal.PortalGroup', verbose_name='Groups of the user'),
         ),
     ]
+
