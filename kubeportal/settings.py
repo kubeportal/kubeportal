@@ -125,67 +125,6 @@ class Common(Configuration):
     AUTH_USER_MODEL = 'kubeportal.User'
     SOCIAL_AUTH_USER_MODEL = 'kubeportal.User'
 
-    LOG_LEVEL_PORTAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
-    LOG_LEVEL_SOCIAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
-    LOG_LEVEL_REQUEST = values.Value('ERROR', environ_prefix='KUBEPORTAL')
-    
-    # read the environment variables immediately because they're used to
-    # configure the loggers below
-    LOG_LEVEL_PORTAL.setup('LOG_LEVEL_PORTAL')
-    LOG_LEVEL_SOCIAL.setup('LOG_LEVEL_SOCIAL')
-    LOG_LEVEL_REQUEST.setup('LOG_LEVEL_REQUEST')
-    
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'filters': {
-            'require_debug_false': {
-                '()': 'django.utils.log.RequireDebugFalse'
-            },
-            'require_debug_true': {
-                '()': 'django.utils.log.RequireDebugTrue'
-            },
-        },
-        'formatters': {
-            'verbose': {
-                'format': "[%(asctime)s] %(levelname)s %(message)s"
-            },
-            'simple': {
-                'format': '%(levelname)s %(message)s'
-            },
-        },
-        'handlers': {
-            'mail_admins': {
-                'level': 'ERROR',
-                'filters': ['require_debug_false', ],
-                'class': 'django.utils.log.AdminEmailHandler',
-                'formatter': 'verbose'
-            },
-            'console': {
-                'level': 'DEBUG',
-                'class': 'logging.StreamHandler',
-                'formatter': 'verbose'
-            },
-        },
-        'loggers': {
-            'django.request': {
-                'handlers': ['mail_admins', 'console'],
-                'level': LOG_LEVEL_REQUEST.value,
-                'propagate': True
-            },
-            'KubePortal': {
-                'handlers': ['console', ],
-                'level': LOG_LEVEL_PORTAL.value,
-                'propagate': True
-            },
-            'social': {
-                'handlers': ['console', ],
-                'level': LOG_LEVEL_SOCIAL.value,
-                'propagate': True
-            },
-        }
-    }
-
     OIDC_USERINFO = 'kubeportal.social.oidc.userinfo'
     OIDC_TEMPLATES = {
         'authorize': 'oidc_authorize.html',
@@ -250,6 +189,36 @@ class Development(Common):
 
     ROOT_PASSWORD = values.Value('rootpw', environ_prefix='KUBEPORTAL')
 
+    LOGGING = {
+        'version': 1,
+        'formatters': {
+            'verbose': {
+                'format': "[%(asctime)s] %(levelname)s %(message)s"
+            },
+        },
+        'handlers': {
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose'
+            },
+        },
+        'loggers': {
+            'django.request': {
+                'handlers': ['console'],
+                'level': 'DEBUG',
+            },
+            'KubePortal': {
+                'handlers': ['console', ],
+                'level': 'DEBUG',
+            },
+            'social': {
+                'handlers': ['console', ],
+                'level': 'DEBUG',
+            },
+        }
+    }
+
 
 class Production(Common):
     DEBUG = False
@@ -264,3 +233,53 @@ class Production(Common):
     REDIRECT_HOSTS = values.TupleValue(None, environ_prefix='KUBEPORTAL')
 
     EMAIL_HOST = values.Value('localhost', environ_prefix='KUBEPORTAL')
+
+    LOG_LEVEL_PORTAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
+    LOG_LEVEL_SOCIAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
+    LOG_LEVEL_REQUEST = values.Value('ERROR', environ_prefix='KUBEPORTAL')
+    
+    # read the environment variables immediately because they're used to
+    # configure the loggers below
+    LOG_LEVEL_PORTAL.setup('LOG_LEVEL_PORTAL')
+    LOG_LEVEL_SOCIAL.setup('LOG_LEVEL_SOCIAL')
+    LOG_LEVEL_REQUEST.setup('LOG_LEVEL_REQUEST')
+    
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': "[%(asctime)s] %(levelname)s %(message)s"
+            },
+        },
+        'handlers': {
+            'mail_admins': {
+                'level': 'ERROR',
+                'filters': ['require_debug_false', ],
+                'class': 'django.utils.log.AdminEmailHandler',
+                'formatter': 'verbose'
+            },
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose'
+            },
+        },
+        'loggers': {
+            'django.request': {
+                'handlers': ['mail_admins', 'console'],
+                'level': LOG_LEVEL_REQUEST.value,
+                'propagate': True
+            },
+            'KubePortal': {
+                'handlers': ['mail_admins', 'console', ],
+                'level': LOG_LEVEL_PORTAL.value,
+                'propagate': True
+            },
+            'social': {
+                'handlers': ['mail_admins', 'console', ],
+                'level': LOG_LEVEL_SOCIAL.value,
+                'propagate': True
+            },
+        }
+    }
