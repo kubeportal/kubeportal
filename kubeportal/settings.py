@@ -239,11 +239,7 @@ class Development(Common):
         os.path.join(BASE_DIR, "static"),
     ]
 
-    INSTALLED_APPS = Common.INSTALLED_APPS + ['test_pep8', ]
-    TEST_PEP8_IGNORE = ['E501', ]
     PROJECT_DIR = os.path.dirname(__file__)
-    TEST_PEP8_DIRS = [os.path.dirname(PROJECT_DIR), ]
-    TEST_PEP8_EXCLUDE = ['.env', '.venv', 'env', 'venv', ]
 
     DEBUG = True
 
@@ -253,8 +249,6 @@ class Development(Common):
     EMAIL_HOST = values.Value('localhost', environ_prefix='KUBEPORTAL')
 
     ROOT_PASSWORD = values.Value('rootpw', environ_prefix='KUBEPORTAL')
-
-    INSTALLED_APPS.append('django_extensions')
 
 
 class Production(Common):
