@@ -391,26 +391,86 @@ class PortalGroups(AnonymousTestCase):
     def setUp(self):
         super().setUp()
         User = get_user_model()
-        self.fred = User()
-        self.fred.save()
-        self.assertEquals(self.fred.is_staff, False)
+        self.second_admin = User(username="Fred")
+        self.second_admin.save()
+        self.assertEquals(self.second_admin.is_staff, False)
 
     def test_post_save_group_members(self):
+        '''
+        Make sure that the signal handler is called.
+        '''
         admin_group = models.PortalGroup(name="Admins", auto_admin=True)
-        admin_group.save()
-        with patch('kubeportal.signals.handle_group_change') as mocked_handle_group_change:
-            admin_group.members.add(self.fred)
+        # Note: We cannot patch the original signal handler:
+        # https://stackoverflow.com/questions/13112302/how-do-i-mock-a-django-signal-handler
+        with patch('kubeportal.signals._set_staff_status') as mocked_handle_group_change:
+            admin_group.save()
+            mocked_handle_group_change.assert_not_called()
+            admin_group.members.add(self.second_admin)
             admin_group.save()
             mocked_handle_group_change.assert_called()
 
     def test_auto_admin_add_remove_user(self):
+        # Create admin group
         admin_group = models.PortalGroup(name="Admins", auto_admin=True)
         admin_group.save()
-        self.assertEquals(self.fred.is_staff, False)
-        admin_group.members.add(self.fred)
+        # Non-member should not become admin
+        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.assertEquals(self.second_admin.is_staff, False)
+        # make member, should become admin
+        admin_group.members.add(self.second_admin)
         admin_group.save()
-        self.assertEquals(self.fred.is_staff, True)
-        admin_group.members.delete(self.fred)
+        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.assertEquals(self.second_admin.is_staff, True)
+        # remove again from group, shopuld lose admin status
+        admin_group.members.remove(self.second_admin)
         admin_group.save()
-        self.assertEquals(self.fred.is_staff, False)
+        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.assertEquals(self.second_admin.is_staff, False)
+
+    def test_two_auto_admin_groups(self):
+        # create two admin groups
+        admin_group1 = models.PortalGroup(name="Admins1", auto_admin=True)
+        admin_group1.save()
+        admin_group2 = models.PortalGroup(name="Admins2", auto_admin=True)
+        admin_group2.save()
+        # add same person to both groups
+        admin_group1.members.add(self.second_admin)
+        admin_group2.members.add(self.second_admin)
+        admin_group1.save()
+        admin_group2.save()
+        # person should be admin now
+        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.assertEquals(self.second_admin.is_staff, True)
+        # remove from first group, should still be admin
+        admin_group1.members.remove(self.second_admin)
+        admin_group1.save()
+        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.assertEquals(self.second_admin.is_staff, True)
+        # remove from second group, should lose admin status
+        admin_group2.members.remove(self.second_admin)
+        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.assertEquals(self.second_admin.is_staff, False)
+
+    def test_auto_add_group(self):
+        # Creating an auto_add group should not change its member list.
+        group = models.PortalGroup(name="All users", auto_add=True)
+        group.save()
+        self.assertEquals(group.members.count(), 0)
+        # Changing an existing user should not change its member list.
+        self.second_admin.is_staff=not self.second_admin.is_staff
+        self.second_admin.save()
+        self.assertEquals(group.members.count(), 0)
+        # Adding a new user chould change the member list
+        User = get_user_model()
+        self.third_admin = User(username="Hugo")
+        self.third_admin.save()
+        self.assertEquals(group.members.count(), 1)
+
+    def test_forward_relation_change(self):
+        admin_group = models.PortalGroup(name="Admins", auto_admin=True)
+        admin_group.save()
+        self.assertEquals(admin_group.members.count(), 0)
+        self.second_admin.portal_groups.add(admin_group)
+        self.second_admin.save()
+        self.assertEquals(admin_group.members.count(), 1)
 
