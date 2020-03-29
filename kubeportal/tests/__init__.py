@@ -383,3 +383,34 @@ class Backend(AdminLoggedInTestCase):
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), 'my message')
 
+
+class PortalGroups(AnonymousTestCase):
+    '''
+    Test cases for group functionality.
+    '''
+    def setUp(self):
+        super().setUp()
+        User = get_user_model()
+        self.fred = User()
+        self.fred.save()
+        self.assertEquals(self.fred.is_staff, False)
+
+    def test_post_save_group_members(self):
+        admin_group = models.PortalGroup(name="Admins", auto_admin=True)
+        admin_group.save()
+        with patch('kubeportal.signals.handle_group_change') as mocked_handle_group_change:
+            admin_group.members.add(self.fred)
+            admin_group.save()
+            mocked_handle_group_change.assert_called()
+
+    def test_auto_admin_add_remove_user(self):
+        admin_group = models.PortalGroup(name="Admins", auto_admin=True)
+        admin_group.save()
+        self.assertEquals(self.fred.is_staff, False)
+        admin_group.members.add(self.fred)
+        admin_group.save()
+        self.assertEquals(self.fred.is_staff, True)
+        admin_group.members.delete(self.fred)
+        admin_group.save()
+        self.assertEquals(self.fred.is_staff, False)
+
