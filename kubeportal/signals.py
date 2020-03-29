@@ -16,6 +16,10 @@ def handle_user_change(sender, instance, created, **kwargs):
     if hasattr(instance, '_dirty'):
         return
 
+    # Do not touch superusers
+    if instance.is_superuser:
+        return
+
     logger.debug("Change of user detected.")
 
     member_of_auto_admin_group = False
@@ -51,6 +55,10 @@ def _set_staff_status(user):
     '''
     Check if the user should have staff status, and set it accordingly.
     '''
+    # Do not touch superusers
+    if user.is_superuser:
+        return
+
     in_auto_admin_group = user.portal_groups.filter(auto_admin=True).exists()
     logger.debug("User {0} in auto_admin group: {1}".format(user, in_auto_admin_group))
     if not in_auto_admin_group and user.is_staff:

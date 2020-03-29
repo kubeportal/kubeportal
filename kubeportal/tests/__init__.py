@@ -474,3 +474,22 @@ class PortalGroups(AnonymousTestCase):
         self.second_admin.save()
         self.assertEquals(admin_group.members.count(), 1)
 
+    def test_dont_touch_superuser(self):
+        '''
+        The auto_admin magic should not be applied to superusers,
+        otherwise they may loose the backend access when not
+        be a member of an admin group.
+        '''
+        self.second_admin.is_superuser =True
+        self.second_admin.is_staff =True
+        self.second_admin.username = "NewNameToTriggerSignalHandler"
+        self.second_admin.save()
+        self.assertEquals(self.second_admin.is_superuser, True)
+        self.assertEquals(self.second_admin.is_staff, True)
+        non_admin_group = models.PortalGroup(name="NonAdmins", auto_admin=False)
+        non_admin_group.save()
+        self.second_admin.portal_groups.add(non_admin_group)
+        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.assertEquals(self.second_admin.is_superuser, True)
+        self.assertEquals(self.second_admin.is_staff, True)
+
