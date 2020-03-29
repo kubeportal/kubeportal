@@ -125,9 +125,9 @@ class Common(Configuration):
     AUTH_USER_MODEL = 'kubeportal.User'
     SOCIAL_AUTH_USER_MODEL = 'kubeportal.User'
 
-    LOG_LEVEL_PORTAL  = values.Value('DEBUG', environ_prefix='KUBEPORTAL')
-    LOG_LEVEL_SOCIAL  = values.Value('DEBUG', environ_prefix='KUBEPORTAL')
-    LOG_LEVEL_REQUEST = values.Value('DEBUG', environ_prefix='KUBEPORTAL')
+    LOG_LEVEL_PORTAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
+    LOG_LEVEL_SOCIAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
+    LOG_LEVEL_REQUEST = values.Value('ERROR', environ_prefix='KUBEPORTAL')
     
     # read the environment variables immediately because they're used to
     # configure the loggers below
