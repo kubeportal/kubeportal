@@ -2,14 +2,18 @@ Changelog
 #########
 
 
-.. _v0.2.8:
+.. _v0.3.0:
 
-v0.2.8 Release
+v0.3.0 Release
 ===============
 
+  * User groups and web applications were added as new concept, and replace the former direct OpenID connect handling.
+    Check the documentation for details (:issue:`4`, :issue:`6`)
+  * Backend permissions are now solely handled by group membership (:issue:`52`).
   * The Kubernetes namespace list in the backend now has some usage statistics, in order to find zombie namespaces  (:issue:`43`).
   * The Kubernetes namespace list in the backend now supports some bulk actions (:issue:`24`, :issue:`18`).
   * The welcome page is now mobile-friendly (:issue:`46`).
+  * The test coverage was greatly extended (:issue:`34`).
 
 .. _v0.2.7:
 
