@@ -15,7 +15,7 @@ web-run: venv
 	./venv/bin/python ./manage.py ensure_root --configuration=Development
 	./venv/bin/python ./manage.py drf_create_token root --configuration=Development
 	set -o allexport; source .env; set +o allexport; \
-	./venv/bin/python ./manage.py runserver_plus --configuration=Development
+	./venv/bin/python ./manage.py runserver --configuration=Development
 
 # Runs the production Docker image in Minikube
 # Configuration: Production
