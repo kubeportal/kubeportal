@@ -191,6 +191,7 @@ class Development(Common):
 
     LOGGING = {
         'version': 1,
+        'disable_existing_loggers': False,
         'formatters': {
             'verbose': {
                 'format': "[%(asctime)s] %(levelname)s %(message)s"
@@ -207,14 +208,17 @@ class Development(Common):
             'django.request': {
                 'handlers': ['console'],
                 'level': 'DEBUG',
+                'propagate': True
             },
             'KubePortal': {
                 'handlers': ['console', ],
                 'level': 'DEBUG',
+                'propagate': True
             },
             'social': {
                 'handlers': ['console', ],
                 'level': 'DEBUG',
+                'propagate': True
             },
         }
     }
