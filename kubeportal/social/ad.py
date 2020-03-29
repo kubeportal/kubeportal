@@ -59,6 +59,7 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
                       attributes=list(attributes.keys()))
     if res:
         entry = conn.entries[0]
+        logger.debug("Got user details from LDAP server: {0}".format(entry))
         for ldapname, socialname in attributes.items():
             try:
                 details[socialname] = entry[ldapname].value
