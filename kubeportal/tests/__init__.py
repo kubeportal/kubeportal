@@ -452,21 +452,7 @@ class PortalGroups(AnonymousTestCase):
         admin_group.members.add(self.second_user)
         self.assertEquals(admin_group.has_member(self.second_user), True)
 
-    def test_post_save_group_members(self):
-        '''
-        Make sure that the signal handler is called.
-        '''
-        admin_group = models.PortalGroup(name="Admins", can_admin=True)
-        # Note: We cannot patch the original signal handler:
-        # https://stackoverflow.com/questions/13112302/how-do-i-mock-a-django-signal-handler
-        with patch('kubeportal.signals._set_staff_status') as mocked_handle_group_change:
-            admin_group.save()
-            mocked_handle_group_change.assert_not_called()
-            admin_group.members.add(self.second_user)
-            admin_group.save()
-            mocked_handle_group_change.assert_called()
-
-    def test_group_modification_with_members(self):
+    def test_admin_attrib_modification_with_members(self):
         future_admin_group = models.PortalGroup(name="Admins", can_admin=False)
         future_admin_group.save()
         future_admin_group.members.add(self.second_user)
@@ -481,7 +467,7 @@ class PortalGroups(AnonymousTestCase):
         self.second_user.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_user.is_staff, False)
 
-    def test_can_admin_add_remove_user(self):
+    def test_admin_attrib_add_remove_user(self):
         # Create admin group
         admin_group = models.PortalGroup(name="Admins", can_admin=True)
         admin_group.save()
@@ -499,7 +485,7 @@ class PortalGroups(AnonymousTestCase):
         self.second_user.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_user.is_staff, False)
 
-    def test_two_can_admin_groups(self):
+    def test_admin_attrib_multiple(self):
         # create two admin groups
         admin_group1 = models.PortalGroup(name="Admins1", can_admin=True)
         admin_group1.save()
@@ -523,7 +509,7 @@ class PortalGroups(AnonymousTestCase):
         self.second_user.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_user.is_staff, False)
 
-    def test_auto_add_new_group(self):
+    def test_auto_add_new(self):
         # Creating an auto_add_new group should not change its member list.
         group = models.PortalGroup(name="All users", auto_add_new=True)
         group.save()
@@ -538,7 +524,31 @@ class PortalGroups(AnonymousTestCase):
         self.third_admin.save()
         self.assertEquals(group.members.count(), 1)
 
+    def test_auto_add_approved(self):
+        # Creating an auto_add_approved group should not change its member list.
+        group = models.PortalGroup(name="All users", auto_add_approved=False)
+        group.save()
+        self.assertEquals(group.members.count(), 0)
+        # Create a new user should not change the member list
+        User = get_user_model()
+        self.third_admin = User(username="Hugo")
+        self.third_admin.save()
+        self.assertEquals(group.members.count(), 0)
+        # Approving the new user should change the member list
+        url = reverse('welcome') 
+        request = self.factory.get(url)
+        request_response = self.third_admin.send_access_request(request)
+        self.assertEquals(request_response.status_code, 200)
+        approve_link = self.third_admin.approve_link()
+        approve_response = self.c.get(approve_link)
+        self.assertEquals(approve_response.status_code, 200)
+        self.assertEquals(group.members.count(), 1)
+
+
     def test_forward_relation_change(self):
+        '''
+        Test the case that a user get her groups changed, not the other way around.
+        '''
         admin_group = models.PortalGroup(name="Admins", can_admin=True)
         admin_group.save()
         self.assertEquals(admin_group.members.count(), 0)

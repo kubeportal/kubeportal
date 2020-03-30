@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger('KubePortal')
 
 @receiver(post_save, sender=User)
-def handle_user_creation(sender, instance, created, **kwargs):
+def handle_user_change(sender, instance, created, **kwargs):
     '''
     Handle changes of user attributes.
     Group membership are handled separately.
@@ -23,6 +23,12 @@ def handle_user_creation(sender, instance, created, **kwargs):
                 group.save()
     else:
         logger.debug("Change of user {0} detected.".format(instance))
+        if instance.has_access_approved:
+            for group in PortalGroup.objects.all():
+                if group.auto_add_approved:
+                    logger.debug("Making sure that user {0} is in auto-add-approved group {1}".format(instance, group))
+                    group.members.add(instance)
+                    group.save()
 
 
 def _set_staff_status(user):
