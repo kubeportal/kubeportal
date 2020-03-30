@@ -162,7 +162,7 @@ class Common(Configuration):
 
     ADMIN_NAME = values.Value(environ_prefix='KUBEPORTAL')
     ADMIN_EMAIL = values.Value(environ_prefix='KUBEPORTAL')
-    ADMINS = [(ADMIN_NAME, ADMIN_EMAIL), ]
+    ADMINS = [(str(ADMIN_NAME), str(ADMIN_EMAIL)), ]
 
     OIDC_AFTER_USERLOGIN_HOOK = 'kubeportal.security.oidc_login_hook'
 
