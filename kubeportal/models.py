@@ -147,7 +147,7 @@ class User(AbstractUser):
 
     def can_subauth(self):
         for group in self.portal_groups.all():
-            if group.subauth:
+            if group.can_subauth:
                 logger.debug(
                     "Sub authentication allowed for {0} by membership in group {1}".format(self, group))
                 return True

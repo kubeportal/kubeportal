@@ -63,7 +63,7 @@ class AdminLoggedOutTestCase(BaseTestCase):
         User = get_user_model()
         self.admin = User(**admin_data)
         self.admin.save()
-        self.admin_group = models.PortalGroup(name="Admins", auto_admin=True)
+        self.admin_group = models.PortalGroup(name="Admins", can_admin=True)
         self.admin_group.save()
         self.admin_group.members.add(self.admin)
         self.admin_group.save()
@@ -88,6 +88,7 @@ class FrontendAnonymous(AnonymousTestCase):
     '''
     Tests for frontend functionality when nobody is logged in.
     '''
+
     def test_index_view(self):
         response = self.c.get('/')
         self.assertEqual(response.status_code, 200)
@@ -102,6 +103,7 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
     Tests for frontend functionality when admin is logged in,
     and she is approved for cluster access.
     '''
+
     def setUp(self):
         super().setUp()
         os.system("(minikube status | grep Running) || minikube start")
@@ -132,7 +134,7 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_subauth_view_enabled(self):
-        self.admin_group.subauth = True
+        self.admin_group.can_subauth = True
         self.admin_group.save()
         response = self.c.get('/subauthreq/')
         self.assertEqual(response.status_code, 200)
@@ -143,6 +145,7 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
     Tests for frontend functionality when admin is logged in,
     and she is NOT approved for cluster access.
     '''
+
     def test_index_view(self):
         # User is already logged in, expecting welcome redirect
         response = self.c.get('/')
@@ -191,6 +194,7 @@ class FrontendOidc(AdminLoggedOutTestCase):
     Tests for frontend functionality when admin is NOT logged in,
     and she authenticates through OpenID Connect.
     '''
+
     def setUp(self):
         super().setUp()
         self.factory = RequestFactory()
@@ -251,13 +255,13 @@ class FrontendOidc(AdminLoggedOutTestCase):
 
         return token
 
-    def _create_group(self, name, member=None, app=None, auto_add=False):
-        group = PortalGroup(name=name, auto_add=auto_add)
+    def _create_group(self, name, member=None, app=None, auto_add_new=False):
+        group = PortalGroup(name=name, auto_add_new=auto_add_new)
         group.save()
         if member:
             group.members.add(member)
         if app:
-            group.web_applications.add(app)
+            group.can_web_applications.add(app)
         group.save()
         return group
 
@@ -304,9 +308,9 @@ class FrontendOidc(AdminLoggedOutTestCase):
         with self.assertRaises(PermissionDenied):
             self._authenticate(self.client[1])
 
-    def test_no_group_auto_add_on_deny(self):
+    def test_no_group_auto_add_new_on_deny(self):
         auto_group = self._create_group(
-            name="Auto-add group", auto_add=True)
+            name="Auto-add group", auto_add_new=True)
         with self.assertRaises(PermissionDenied):
             self._authenticate(self.client[0])
         self.assertEquals(auto_group.members.all().count(), 0)
@@ -326,6 +330,7 @@ class Backend(AdminLoggedInTestCase):
     '''
     Tests for backend functionality when admin is logged in.
      '''
+
     def setUp(self):
         super().setUp()
         os.system("(minikube status | grep Running) || minikube start")
@@ -388,6 +393,7 @@ class PortalGroups(AnonymousTestCase):
     '''
     Test cases for group functionality.
     '''
+
     def setUp(self):
         super().setUp()
         User = get_user_model()
@@ -399,7 +405,7 @@ class PortalGroups(AnonymousTestCase):
         '''
         Make sure that the signal handler is called.
         '''
-        admin_group = models.PortalGroup(name="Admins", auto_admin=True)
+        admin_group = models.PortalGroup(name="Admins", can_admin=True)
         # Note: We cannot patch the original signal handler:
         # https://stackoverflow.com/questions/13112302/how-do-i-mock-a-django-signal-handler
         with patch('kubeportal.signals._set_staff_status') as mocked_handle_group_change:
@@ -409,29 +415,29 @@ class PortalGroups(AnonymousTestCase):
             admin_group.save()
             mocked_handle_group_change.assert_called()
 
-    def test_auto_admin_add_remove_user(self):
+    def test_can_admin_add_remove_user(self):
         # Create admin group
-        admin_group = models.PortalGroup(name="Admins", auto_admin=True)
+        admin_group = models.PortalGroup(name="Admins", can_admin=True)
         admin_group.save()
         # Non-member should not become admin
-        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.second_admin.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_admin.is_staff, False)
         # make member, should become admin
         admin_group.members.add(self.second_admin)
         admin_group.save()
-        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.second_admin.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_admin.is_staff, True)
         # remove again from group, shopuld lose admin status
         admin_group.members.remove(self.second_admin)
         admin_group.save()
-        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.second_admin.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_admin.is_staff, False)
 
-    def test_two_auto_admin_groups(self):
+    def test_two_can_admin_groups(self):
         # create two admin groups
-        admin_group1 = models.PortalGroup(name="Admins1", auto_admin=True)
+        admin_group1 = models.PortalGroup(name="Admins1", can_admin=True)
         admin_group1.save()
-        admin_group2 = models.PortalGroup(name="Admins2", auto_admin=True)
+        admin_group2 = models.PortalGroup(name="Admins2", can_admin=True)
         admin_group2.save()
         # add same person to both groups
         admin_group1.members.add(self.second_admin)
@@ -439,25 +445,25 @@ class PortalGroups(AnonymousTestCase):
         admin_group1.save()
         admin_group2.save()
         # person should be admin now
-        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.second_admin.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_admin.is_staff, True)
         # remove from first group, should still be admin
         admin_group1.members.remove(self.second_admin)
         admin_group1.save()
-        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.second_admin.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_admin.is_staff, True)
         # remove from second group, should lose admin status
         admin_group2.members.remove(self.second_admin)
-        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.second_admin.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_admin.is_staff, False)
 
-    def test_auto_add_group(self):
-        # Creating an auto_add group should not change its member list.
-        group = models.PortalGroup(name="All users", auto_add=True)
+    def test_auto_add_new_group(self):
+        # Creating an auto_add_new group should not change its member list.
+        group = models.PortalGroup(name="All users", auto_add_new=True)
         group.save()
         self.assertEquals(group.members.count(), 0)
         # Changing an existing user should not change its member list.
-        self.second_admin.is_staff=not self.second_admin.is_staff
+        self.second_admin.is_staff = not self.second_admin.is_staff
         self.second_admin.save()
         self.assertEquals(group.members.count(), 0)
         # Adding a new user chould change the member list
@@ -467,7 +473,7 @@ class PortalGroups(AnonymousTestCase):
         self.assertEquals(group.members.count(), 1)
 
     def test_forward_relation_change(self):
-        admin_group = models.PortalGroup(name="Admins", auto_admin=True)
+        admin_group = models.PortalGroup(name="Admins", can_admin=True)
         admin_group.save()
         self.assertEquals(admin_group.members.count(), 0)
         self.second_admin.portal_groups.add(admin_group)
@@ -476,20 +482,20 @@ class PortalGroups(AnonymousTestCase):
 
     def test_dont_touch_superuser(self):
         '''
-        The auto_admin magic should not be applied to superusers,
+        The can_admin signal handler magic should not be applied to superusers,
         otherwise they may loose the backend access when not
         be a member of an admin group.
         '''
-        self.second_admin.is_superuser =True
-        self.second_admin.is_staff =True
+        self.second_admin.is_superuser = True
+        self.second_admin.is_staff = True
         self.second_admin.username = "NewNameToTriggerSignalHandler"
         self.second_admin.save()
         self.assertEquals(self.second_admin.is_superuser, True)
         self.assertEquals(self.second_admin.is_staff, True)
-        non_admin_group = models.PortalGroup(name="NonAdmins", auto_admin=False)
+        non_admin_group = models.PortalGroup(
+            name="NonAdmins", can_admin=False)
         non_admin_group.save()
         self.second_admin.portal_groups.add(non_admin_group)
-        self.second_admin.refresh_from_db() # catch changes from signal handlers
+        self.second_admin.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_admin.is_superuser, True)
         self.assertEquals(self.second_admin.is_staff, True)
-

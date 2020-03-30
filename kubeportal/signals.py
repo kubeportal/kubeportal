@@ -4,7 +4,6 @@ from django.dispatch import receiver
 from kubeportal.models import User
 from kubeportal.models import PortalGroup
 
-from django.contrib.auth.models import Group, Permission
 import logging
 
 logger = logging.getLogger('KubePortal')
@@ -22,17 +21,17 @@ def handle_user_change(sender, instance, created, **kwargs):
 
     logger.debug("Change of user detected.")
 
-    member_of_auto_admin_group = False
+    member_of_can_admin_group = False
     for group in PortalGroup.objects.all():
-        if group.auto_add and created:
-            logger.debug("Making sure that new user {0} is in auto-add group {1}".format(instance, group))
+        if group.auto_add_new and created:
+            logger.debug("Making sure that new user {0} is in auto-add-new group {1}".format(instance, group))
             group.members.add(instance)
             group.save()
-        if group.auto_admin and group.has_member(instance):
+        if group.can_admin and group.has_member(instance):
             # Remember that we found the user in one of the admin groups.
             # Fix staff flag, if needed.
-            member_of_auto_admin_group = True
-            logger.debug("User {0} is in auto_admin group {1}".format(instance, group))
+            member_of_can_admin_group = True
+            logger.debug("User {0} is in can_admin group {1}".format(instance, group))
             if not instance.is_staff:
                 logger.debug("Enabling missing admin rights for user {0} due to group membership in {1}".format(instance, group))
                 instance.is_staff = True
@@ -42,14 +41,15 @@ def handle_user_change(sender, instance, created, **kwargs):
                 finally:
                     del instance._dirty
 
-    if not member_of_auto_admin_group and instance.is_staff:
-        logger.debug("Disabling admin rights for user {0}, not in any auto-admin group".format(instance))
+    if not member_of_can_admin_group and instance.is_staff:
+        logger.debug("Disabling admin rights for user {0}, not in any can_admin group".format(instance))
         instance.is_staff = False
         try:
             instance._dirty = True
             instance.save()
         finally:
             del instance._dirty
+
 
 def _set_staff_status(user):
     '''
@@ -59,13 +59,13 @@ def _set_staff_status(user):
     if user.is_superuser:
         return
 
-    in_auto_admin_group = user.portal_groups.filter(auto_admin=True).exists()
-    logger.debug("User {0} in auto_admin group: {1}".format(user, in_auto_admin_group))
-    if not in_auto_admin_group and user.is_staff:
+    in_can_admin_group = user.portal_groups.filter(can_admin=True).exists()
+    logger.debug("User {0} in auto_admin group: {1}".format(user, in_can_admin_group))
+    if not in_can_admin_group and user.is_staff:
         logger.info("Disabling existing admin rights for user {0} due to group membership change.".format(user))
         user.is_staff = False
         user.save()
-    if in_auto_admin_group and not user.is_staff:
+    if in_can_admin_group and not user.is_staff:
         logger.info("Enabling missing admin rights for user {0} due to group membership change.".format(user))
         user.is_staff = True
         user.save()
