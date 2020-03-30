@@ -285,8 +285,20 @@ def get_namespaces():
     core_v1, rbac_v1 = _load_config()
     try:
         return core_v1.list_namespace().items
-    except Exception as e:
-        logger.error("Exception: {0}".format(e))
+    except Exception:
+        logger.exception("Error while fetching namespaces from Kubernetes")
+        return None
+
+
+def get_service_accounts():
+    '''
+    Returns the list of service accounts.
+    '''
+    core_v1, rbac_v1 = _load_config()
+    try:
+        return core_v1.list_service_account_for_all_namespaces().items
+    except Exception:
+        logger.exception("Error while fetching service accounts from Kubernetes")
         return None
 
 

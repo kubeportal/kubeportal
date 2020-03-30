@@ -94,6 +94,26 @@ class FrontendAnonymous(AnonymousTestCase):
         response = self.c.get('/')
         self.assertEqual(response.status_code, 200)
 
+    @override_settings(AUTH_AD_DOMAIN='example.com')
+    def test_index_view_ad_status_available(self):
+        with patch('kubeportal.social.ad.is_available', return_value = True):
+            response = self.c.get('/')
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('available', str(response.content))
+
+    @override_settings(AUTH_AD_DOMAIN='example.com')
+    def test_index_view_ad_status_unavailable(self):
+        with patch('kubeportal.social.ad.is_available', return_value = False):
+            response = self.c.get('/')
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('unavailable', str(response.content))
+
+    @override_settings(AUTH_AD_DOMAIN=None)
+    def test_index_view_ad_not_given(self):
+        response = self.c.get('/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('no authentication method', str(response.content))
+
     def test_subauth_view(self):
         response = self.c.get('/subauthreq/')
         self.assertEqual(response.status_code, 401)
@@ -145,6 +165,14 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         response = self.c.get('/subauthreq/')
         self.assertEqual(response.status_code, 200)
 
+    def test_subauth_view_enabled_k8s_unavailable(self):
+        self.admin_group.can_subauth = True
+        self.admin_group.save()
+        with patch('kubeportal.kubernetes._load_config', return_value=(None, None)):
+            response = self.c.get('/subauthreq/')
+            self.assertEqual(response.status_code, 401)
+
+
 
 class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
     '''
@@ -193,6 +221,11 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
     def test_acess_request_view(self):
         response = self.c.get('/access/request/')
         self.assertRedirects(response, '/welcome/')
+
+    def test_acess_request_view_mail_broken(self):
+        with patch('kubeportal.models.User.send_access_request',return_value = False):
+            response = self.c.get('/access/request/')
+            self.assertRedirects(response, '/welcome/')
 
 
 class FrontendOidc(AdminLoggedOutTestCase):
@@ -375,8 +408,10 @@ class Backend(AdminLoggedInTestCase):
         kubernetes._create_k8s_ns("new-external-ns", core_v1)
         try:
             self._call_sync()
-            self.assertEqual(KubernetesNamespace.objects.filter(
-                name="new-external-ns").count(), 1)
+            new_ns_object = KubernetesNamespace.objects.get(name="new-external-ns")
+            self.assertEqual(new_ns_object.is_synced(), True)
+            for svc_account in new_ns_object.service_accounts.all():
+                self.assertEqual(svc_account.is_synced(), True)
         finally:
             kubernetes._delete_k8s_ns("new-external-ns", core_v1)
 
@@ -386,6 +421,8 @@ class Backend(AdminLoggedInTestCase):
         new_svc = KubernetesServiceAccount(name="foobar", namespace=default_ns)
         new_svc.save()
         self._call_sync()
+        svc_names = [svc.metadata.name for svc in kubernetes.get_service_accounts()]
+        self.assertIn("foobar", svc_names)
 
     def test_admin_index_view(self):
         response = self.c.get('/admin/')
@@ -405,9 +442,15 @@ class PortalGroups(AnonymousTestCase):
     def setUp(self):
         super().setUp()
         User = get_user_model()
-        self.second_admin = User(username="Fred")
-        self.second_admin.save()
-        self.assertEquals(self.second_admin.is_staff, False)
+        self.second_user = User(username="Fred")
+        self.second_user.save()
+        self.assertEquals(self.second_user.is_staff, False)
+
+    def test_model_methods(self):
+        admin_group = models.PortalGroup(name="Admins", can_admin=True)
+        admin_group.save()
+        admin_group.members.add(self.second_user)
+        self.assertEquals(admin_group.has_member(self.second_user), True)
 
     def test_post_save_group_members(self):
         '''
@@ -419,27 +462,42 @@ class PortalGroups(AnonymousTestCase):
         with patch('kubeportal.signals._set_staff_status') as mocked_handle_group_change:
             admin_group.save()
             mocked_handle_group_change.assert_not_called()
-            admin_group.members.add(self.second_admin)
+            admin_group.members.add(self.second_user)
             admin_group.save()
             mocked_handle_group_change.assert_called()
+
+    def test_group_modification_with_members(self):
+        future_admin_group = models.PortalGroup(name="Admins", can_admin=False)
+        future_admin_group.save()
+        future_admin_group.members.add(self.second_user)
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_staff, False)
+        future_admin_group.can_admin = True
+        future_admin_group.save()
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_staff, True)
+        future_admin_group.can_admin = False
+        future_admin_group.save()
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_staff, False)
 
     def test_can_admin_add_remove_user(self):
         # Create admin group
         admin_group = models.PortalGroup(name="Admins", can_admin=True)
         admin_group.save()
         # Non-member should not become admin
-        self.second_admin.refresh_from_db()  # catch changes from signal handlers
-        self.assertEquals(self.second_admin.is_staff, False)
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_staff, False)
         # make member, should become admin
-        admin_group.members.add(self.second_admin)
+        admin_group.members.add(self.second_user)
         admin_group.save()
-        self.second_admin.refresh_from_db()  # catch changes from signal handlers
-        self.assertEquals(self.second_admin.is_staff, True)
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_staff, True)
         # remove again from group, shopuld lose admin status
-        admin_group.members.remove(self.second_admin)
+        admin_group.members.remove(self.second_user)
         admin_group.save()
-        self.second_admin.refresh_from_db()  # catch changes from signal handlers
-        self.assertEquals(self.second_admin.is_staff, False)
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_staff, False)
 
     def test_two_can_admin_groups(self):
         # create two admin groups
@@ -448,22 +506,22 @@ class PortalGroups(AnonymousTestCase):
         admin_group2 = models.PortalGroup(name="Admins2", can_admin=True)
         admin_group2.save()
         # add same person to both groups
-        admin_group1.members.add(self.second_admin)
-        admin_group2.members.add(self.second_admin)
+        admin_group1.members.add(self.second_user)
+        admin_group2.members.add(self.second_user)
         admin_group1.save()
         admin_group2.save()
         # person should be admin now
-        self.second_admin.refresh_from_db()  # catch changes from signal handlers
-        self.assertEquals(self.second_admin.is_staff, True)
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_staff, True)
         # remove from first group, should still be admin
-        admin_group1.members.remove(self.second_admin)
+        admin_group1.members.remove(self.second_user)
         admin_group1.save()
-        self.second_admin.refresh_from_db()  # catch changes from signal handlers
-        self.assertEquals(self.second_admin.is_staff, True)
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_staff, True)
         # remove from second group, should lose admin status
-        admin_group2.members.remove(self.second_admin)
-        self.second_admin.refresh_from_db()  # catch changes from signal handlers
-        self.assertEquals(self.second_admin.is_staff, False)
+        admin_group2.members.remove(self.second_user)
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_staff, False)
 
     def test_auto_add_new_group(self):
         # Creating an auto_add_new group should not change its member list.
@@ -471,8 +529,8 @@ class PortalGroups(AnonymousTestCase):
         group.save()
         self.assertEquals(group.members.count(), 0)
         # Changing an existing user should not change its member list.
-        self.second_admin.is_staff = not self.second_admin.is_staff
-        self.second_admin.save()
+        self.second_user.is_staff = not self.second_user.is_staff
+        self.second_user.save()
         self.assertEquals(group.members.count(), 0)
         # Adding a new user chould change the member list
         User = get_user_model()
@@ -484,9 +542,11 @@ class PortalGroups(AnonymousTestCase):
         admin_group = models.PortalGroup(name="Admins", can_admin=True)
         admin_group.save()
         self.assertEquals(admin_group.members.count(), 0)
-        self.second_admin.portal_groups.add(admin_group)
-        self.second_admin.save()
+        self.assertEquals(self.second_user.is_staff, False)
+        self.second_user.portal_groups.add(admin_group)
+        self.second_user.save()
         self.assertEquals(admin_group.members.count(), 1)
+        self.assertEquals(self.second_user.is_staff, True)
 
     def test_dont_touch_superuser(self):
         '''
@@ -494,16 +554,16 @@ class PortalGroups(AnonymousTestCase):
         otherwise they may loose the backend access when not
         be a member of an admin group.
         '''
-        self.second_admin.is_superuser = True
-        self.second_admin.is_staff = True
-        self.second_admin.username = "NewNameToTriggerSignalHandler"
-        self.second_admin.save()
-        self.assertEquals(self.second_admin.is_superuser, True)
-        self.assertEquals(self.second_admin.is_staff, True)
+        self.second_user.is_superuser = True
+        self.second_user.is_staff = True
+        self.second_user.username = "NewNameToTriggerSignalHandler"
+        self.second_user.save()
+        self.assertEquals(self.second_user.is_superuser, True)
+        self.assertEquals(self.second_user.is_staff, True)
         non_admin_group = models.PortalGroup(
             name="NonAdmins", can_admin=False)
         non_admin_group.save()
-        self.second_admin.portal_groups.add(non_admin_group)
-        self.second_admin.refresh_from_db()  # catch changes from signal handlers
-        self.assertEquals(self.second_admin.is_superuser, True)
-        self.assertEquals(self.second_admin.is_staff, True)
+        self.second_user.portal_groups.add(non_admin_group)
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        self.assertEquals(self.second_user.is_superuser, True)
+        self.assertEquals(self.second_user.is_staff, True)
