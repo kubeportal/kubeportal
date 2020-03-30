@@ -25,7 +25,7 @@
     <div class="card-header">{% settings_value "BRANDING" %}</div>
     <div class="card-body">
       {%if not auth_ad_domain and not auth_twitter_key and not auth_google_key and not auth_oidc_key %}
-        <p style="text-align: center">Installation error: There is not authentication method configured.</p>
+        <p style="text-align: center">Installation error: There is no authentication method configured.</p>
       {% else %}
         {% if auth_ad_domain %}
           {% ad_status as ad_status_cached %}
