@@ -337,13 +337,16 @@ class Backend(AdminLoggedInTestCase):
     Tests for backend functionality when admin is logged in.
      '''
 
+    def _call_sync(self):
+        response = self.c.get(reverse('admin:sync'))
+        self.assertRedirects(response, reverse('admin:index'))
+
     def setUp(self):
         super().setUp()
         os.system("(minikube status | grep Running) || minikube start")
 
     def test_kube_sync_view(self):
-        response = self.c.get(reverse('admin:sync'))
-        self.assertRedirects(response, reverse('admin:index'))
+        self._call_sync()
 
     def test_kube_ns_changelist(self):
         response = self.c.get(
@@ -362,38 +365,36 @@ class Backend(AdminLoggedInTestCase):
     def test_new_ns_sync(self):
         new_ns = KubernetesNamespace(name="foo")
         new_ns.save()
-        self.c.get(reverse('admin:sync'))
+        self._call_sync()
         ns_names = [ns.metadata.name for ns in kubernetes.get_namespaces()]
         self.assertIn("foo", ns_names)
 
     def test_new_external_ns_sync(self):
-        self.c.get(reverse('admin:sync'))
+        self._call_sync()
         core_v1, rbac_v1 = kubernetes._load_config()
         kubernetes._create_k8s_ns("new-external-ns", core_v1)
         try:
-            self.c.get(reverse('admin:sync'))
+            self._call_sync()
             self.assertEqual(KubernetesNamespace.objects.filter(
                 name="new-external-ns").count(), 1)
         finally:
             kubernetes._delete_k8s_ns("new-external-ns", core_v1)
 
     def test_new_svc_sync(self):
-        self.c.get(reverse('admin:sync'))
+        self._call_sync()
         default_ns = KubernetesNamespace.objects.get(name="default")
         new_svc = KubernetesServiceAccount(name="foobar", namespace=default_ns)
         new_svc.save()
-        self.c.get(reverse('admin:sync'))
+        self._call_sync()
 
     def test_admin_index_view(self):
         response = self.c.get('/admin/')
         self.assertEqual(response.status_code, 200)
 
-    def test_k8s_sync_error(self):
-        response = self.c.get(reverse('admin:sync'))
-        assert(response.context)
-        messages = list(response.context['messages'])
-        self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), 'my message')
+    def test_k8s_sync_error_no_crash(self):
+        with patch('kubeportal.kubernetes._load_config', return_value=(None, None)):
+            # K8S login mocked away, view should not crash
+            self._call_sync()
 
 
 class PortalGroups(AnonymousTestCase):
