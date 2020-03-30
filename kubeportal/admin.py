@@ -196,7 +196,7 @@ class PortalGroupAdmin(admin.ModelAdmin):
     members_list.short_description = "Members"
 
     def app_list(self, instance):
-        return ', '.join(instance.web_applications.all().values_list('name', flat=True))
+        return ', '.join(instance.can_web_applications.all().values_list('name', flat=True))
     app_list.short_description = "Web applications"
 
 
