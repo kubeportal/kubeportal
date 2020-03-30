@@ -1,21 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import PermissionDenied
-from django.core.management import call_command
 from django.test import TestCase, client, override_settings, RequestFactory
 from django.urls import reverse
-from django.utils import timezone
 from kubeportal import kubernetes, models
 from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount, WebApplication, PortalGroup
-from kubeportal.views import WelcomeView
 from oidc_provider.lib.utils.token import create_token, create_id_token
-from oidc_provider.models import Client, ResponseType, Token
-from oidc_provider.views import userinfo, TokenIntrospectionView, AuthorizeView
+from oidc_provider.models import Client, ResponseType
+from oidc_provider.views import userinfo, AuthorizeView
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
 from unittest.mock import patch
 from urllib.parse import urlencode
-import json
 import logging
 import os
 import random
@@ -98,14 +94,14 @@ class FrontendAnonymous(AnonymousTestCase):
 
     @override_settings(AUTH_AD_DOMAIN='example.com')
     def test_index_view_ad_status_available(self):
-        with patch('kubeportal.social.ad.is_available', return_value = True):
+        with patch('kubeportal.social.ad.is_available', return_value=True):
             response = self.c.get('/')
             self.assertEqual(response.status_code, 200)
             self.assertIn('available', str(response.content))
 
     @override_settings(AUTH_AD_DOMAIN='example.com')
     def test_index_view_ad_status_unavailable(self):
-        with patch('kubeportal.social.ad.is_available', return_value = False):
+        with patch('kubeportal.social.ad.is_available', return_value=False):
             response = self.c.get('/')
             self.assertEqual(response.status_code, 200)
             self.assertIn('unavailable', str(response.content))
@@ -175,7 +171,6 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
             self.assertEqual(response.status_code, 401)
 
 
-
 class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
     '''
     Tests for frontend functionality when admin is logged in,
@@ -225,7 +220,7 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
         self.assertRedirects(response, '/welcome/')
 
     def test_acess_request_view_mail_broken(self):
-        with patch('kubeportal.models.User.send_access_request',return_value = False):
+        with patch('kubeportal.models.User.send_access_request', return_value=False):
             response = self.c.get('/access/request/')
             self.assertRedirects(response, '/welcome/')
 
@@ -320,9 +315,9 @@ class FrontendOidc(AdminLoggedOutTestCase):
             mocked_oidc_login_hook.assert_called()
 
     def test_multiple_groups_one_allowed(self):
-        group1 = self._create_group(
+        self._create_group(
             name="Users for chat only", member=self.admin, app=self.app[0])
-        group2 = self._create_group(
+        self._create_group(
             name="Users for chat only", member=self.admin, app=None)
         response = self._authenticate(self.client[0])
         self.assertTrue(response.status_code, 302)
@@ -330,9 +325,9 @@ class FrontendOidc(AdminLoggedOutTestCase):
             self._authenticate(self.client[1])
 
     def test_multiple_groups_multiple_allowed(self):
-        group1 = self._create_group(
+        self._create_group(
             name="Users for chat only", member=self.admin, app=self.app[0])
-        group2 = self._create_group(
+        self._create_group(
             name="Users for chat only", member=self.admin, app=self.app[1])
         response = self._authenticate(self.client[0])
         self.assertTrue(response.status_code, 302)
@@ -340,9 +335,9 @@ class FrontendOidc(AdminLoggedOutTestCase):
         self.assertTrue(response.status_code, 302)
 
     def test_multiple_groups_none_allowed(self):
-        group1 = self._create_group(
+        self._create_group(
             name="Users for chat only", member=self.admin, app=None)
-        group2 = self._create_group(
+        self._create_group(
             name="Users for chat only", member=self.admin, app=None)
         with self.assertRaises(PermissionDenied):
             self._authenticate(self.client[0])
@@ -411,7 +406,8 @@ class Backend(AdminLoggedInTestCase):
         kubernetes._create_k8s_ns("new-external-ns", core_v1)
         try:
             self._call_sync()
-            new_ns_object = KubernetesNamespace.objects.get(name="new-external-ns")
+            new_ns_object = KubernetesNamespace.objects.get(
+                name="new-external-ns")
             self.assertEqual(new_ns_object.is_synced(), True)
             for svc_account in new_ns_object.service_accounts.all():
                 self.assertEqual(svc_account.is_synced(), True)
@@ -424,7 +420,8 @@ class Backend(AdminLoggedInTestCase):
         new_svc = KubernetesServiceAccount(name="foobar", namespace=default_ns)
         new_svc.save()
         self._call_sync()
-        svc_names = [svc.metadata.name for svc in kubernetes.get_service_accounts()]
+        svc_names = [
+            svc.metadata.name for svc in kubernetes.get_service_accounts()]
         self.assertIn("foobar", svc_names)
 
     def test_admin_index_view(self):
@@ -438,12 +435,13 @@ class Backend(AdminLoggedInTestCase):
 
     def test_auto_add_approved(self):
         # Creating an auto_add_approved group should not change its member list.
-        group = models.PortalGroup(name="Approved users", auto_add_approved=True)
+        group = models.PortalGroup(
+            name="Approved users", auto_add_approved=True)
         group.save()
         self.assertEquals(group.members.count(), 0)
         # Create a new user should not change the member list
         User = get_user_model()
-        u = User(username="Hugo")
+        u = User(username="Hugo", email="a@b.de")
         u.save()
         self.assertEquals(group.members.count(), 0)
         # walk through approval workflow
@@ -472,6 +470,29 @@ class Backend(AdminLoggedInTestCase):
         u.save()
         # Should lead to addition of user to the add_approved group
         self.assertEquals(group.members.count(), 1)
+
+    def test_user_rejection(self):
+        User = get_user_model()
+        u = User(username="Hugo", email="a@b.de")
+        u.save()
+        # walk through rejection workflow
+        url = reverse('welcome')
+        request = self.factory.get(url)
+        u.send_access_request(request)
+        u.save()
+        # Build full-fledged request object for logged-in admin
+        url = reverse('admin:index')
+        request = self.factory.get(url)
+        request.user = self.admin
+        middleware = SessionMiddleware()
+        middleware.process_request(request)
+        request.session.save()
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        # Perform rejection
+        assert(u.reject(request))
+        u.save()
+        assert(u.has_access_rejected())
 
 
 class PortalGroups(AnonymousTestCase):
