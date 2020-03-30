@@ -30,6 +30,9 @@ class KubernetesNamespace(models.Model):
     def is_synced(self):
         return self.uid is not None
 
+    def get_default_account(self):
+        return self.service_accounts.get(name='default')
+
 
 class KubernetesServiceAccount(models.Model):
     '''
@@ -154,12 +157,15 @@ class User(AbstractUser):
         return False
 
     def has_access_approved(self):
+        logger.debug("User {0} has access approved.".format(self))
         return self.state == UserState.ACCESS_APPROVED and self.service_account
 
     def has_access_rejected(self):
+        logger.debug("User {0} has access rejected.".format(self))
         return self.state == UserState.ACCESS_REJECTED
 
     def has_access_requested(self):
+        logger.debug("User {0} has access requested.".format(self))
         return self.state == UserState.ACCESS_REQUESTED and self.approval_id
 
     @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED, UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)

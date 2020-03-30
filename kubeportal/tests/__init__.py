@@ -11,6 +11,8 @@ from kubeportal.views import WelcomeView
 from oidc_provider.lib.utils.token import create_token, create_id_token
 from oidc_provider.models import Client, ResponseType, Token
 from oidc_provider.views import userinfo, TokenIntrospectionView, AuthorizeView
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.contrib.sessions.middleware import SessionMiddleware
 from unittest.mock import patch
 from urllib.parse import urlencode
 import json
@@ -376,6 +378,7 @@ class Backend(AdminLoggedInTestCase):
 
     def setUp(self):
         super().setUp()
+        self.factory = RequestFactory()
         os.system("(minikube status | grep Running) || minikube start")
 
     def test_kube_sync_view(self):
@@ -432,6 +435,43 @@ class Backend(AdminLoggedInTestCase):
         with patch('kubeportal.kubernetes._load_config', return_value=(None, None)):
             # K8S login mocked away, view should not crash
             self._call_sync()
+
+    def test_auto_add_approved(self):
+        # Creating an auto_add_approved group should not change its member list.
+        group = models.PortalGroup(name="Approved users", auto_add_approved=True)
+        group.save()
+        self.assertEquals(group.members.count(), 0)
+        # Create a new user should not change the member list
+        User = get_user_model()
+        u = User(username="Hugo")
+        u.save()
+        self.assertEquals(group.members.count(), 0)
+        # walk through approval workflow
+        url = reverse('welcome')
+        request = self.factory.get(url)
+        u.send_access_request(request)
+        u.save()
+        # Just sending an approval request should not change to member list
+        self.assertEquals(group.members.count(), 0)
+        # Build full-fledged request object for logged-in admin
+        url = reverse('admin:index')
+        request = self.factory.get(url)
+        request.user = self.admin
+        middleware = SessionMiddleware()
+        middleware.process_request(request)
+        request.session.save()
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        # Prepare K8S namespace
+        ns = KubernetesNamespace(name="default")
+        ns.save()
+        new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
+        new_svc.save()
+        # Perform approval
+        assert(u.approve(request, new_svc))
+        u.save()
+        # Should lead to addition of user to the add_approved group
+        self.assertEquals(group.members.count(), 1)
 
 
 class PortalGroups(AnonymousTestCase):
@@ -523,27 +563,6 @@ class PortalGroups(AnonymousTestCase):
         self.third_admin = User(username="Hugo")
         self.third_admin.save()
         self.assertEquals(group.members.count(), 1)
-
-    def test_auto_add_approved(self):
-        # Creating an auto_add_approved group should not change its member list.
-        group = models.PortalGroup(name="All users", auto_add_approved=False)
-        group.save()
-        self.assertEquals(group.members.count(), 0)
-        # Create a new user should not change the member list
-        User = get_user_model()
-        self.third_admin = User(username="Hugo")
-        self.third_admin.save()
-        self.assertEquals(group.members.count(), 0)
-        # Approving the new user should change the member list
-        url = reverse('welcome') 
-        request = self.factory.get(url)
-        request_response = self.third_admin.send_access_request(request)
-        self.assertEquals(request_response.status_code, 200)
-        approve_link = self.third_admin.approve_link()
-        approve_response = self.c.get(approve_link)
-        self.assertEquals(approve_response.status_code, 200)
-        self.assertEquals(group.members.count(), 1)
-
 
     def test_forward_relation_change(self):
         '''

@@ -8,6 +8,7 @@ import logging
 
 logger = logging.getLogger('KubePortal')
 
+
 @receiver(post_save, sender=User)
 def handle_user_change(sender, instance, created, **kwargs):
     '''
@@ -23,20 +24,18 @@ def handle_user_change(sender, instance, created, **kwargs):
                 group.save()
     else:
         logger.debug("Change of user {0} detected.".format(instance))
-        if instance.has_access_approved:
+        if instance.has_access_approved():
             for group in PortalGroup.objects.all():
                 if group.auto_add_approved:
                     logger.debug("Making sure that user {0} is in auto-add-approved group {1}".format(instance, group))
                     group.members.add(instance)
-                    group.save()
 
 
 def _set_staff_status(user):
     '''
     Check if the user should have staff status, and set it accordingly.
     '''
-    # Do not touch the is_staff attribute of superusers 
-    if user.is_superuser:
+    if user.is_superuser:      # Do not touch the is_staff attribute of superusers
         return
 
     in_can_admin_group = user.portal_groups.filter(can_admin=True).exists()
