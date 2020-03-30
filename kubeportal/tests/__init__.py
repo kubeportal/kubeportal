@@ -40,6 +40,7 @@ class BaseTestCase(TestCase):
     '''
 
     def setUp(self):
+        super().setUp()
         self.c = client.Client()
 
 
@@ -128,6 +129,11 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
     def test_stats_view(self):
         response = self.c.get('/stats/')
         self.assertEqual(response.status_code, 200)
+
+    def test_stats_with_broken_k8s_view(self):
+        with patch('kubeportal.kubernetes._load_config'):
+            response = self.c.get('/stats/')
+            self.assertEqual(response.status_code, 200)
 
     def test_subauth_view_not_enabled(self):
         response = self.c.get('/subauthreq/')
@@ -382,8 +388,9 @@ class Backend(AdminLoggedInTestCase):
         response = self.c.get('/admin/')
         self.assertEqual(response.status_code, 200)
 
-    def k8s_sync_error(self):
+    def test_k8s_sync_error(self):
         response = self.c.get(reverse('admin:sync'))
+        assert(response.context)
         messages = list(response.context['messages'])
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), 'my message')

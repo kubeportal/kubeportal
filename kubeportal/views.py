@@ -32,8 +32,8 @@ class StatsView(LoginRequiredMixin, TemplateView):
         context['version'] = settings.VERSION
         try:
             context['stats'] = kubernetes.get_stats()
-        except Exception as e:
-            logger.error("Failed to fetch Kubernetes stats: " + e)
+        except Exception:
+            logger.exception("Failed to fetch Kubernetes stats")
             context['stats'] = None
 
         return context
