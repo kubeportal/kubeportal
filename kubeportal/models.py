@@ -63,7 +63,8 @@ class WebApplication(models.Model):
         null=True, blank=True,
         verbose_name="Link URL",
         help_text="The URL of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
-    oidc_client = models.OneToOneField(Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Client settings")
+    oidc_client = models.OneToOneField(
+        Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Client settings")
 
     class Meta:
         verbose_name = 'web application'
@@ -77,15 +78,30 @@ class PortalGroup(models.Model):
     A group of portal users.
     '''
     name = models.CharField(
-        max_length=100, verbose_name='Name')
-    web_applications = models.ManyToManyField(
-        WebApplication, blank=True, verbose_name='Web applications', help_text="Group members can access the chosen web applications.", related_name='portal_groups')
-    auto_add = models.BooleanField(
-        verbose_name="Add all new users", help_text="Enabling this makes all new users automatically a member of this group. Existing users are not modified.", default=False)
-    subauth = models.BooleanField(
-        verbose_name="Enable sub-authentication", help_text="Enabling this allows all group members the token-based sub-authentication with their Kubernetes credentials.", default=False)
-    auto_admin = models.BooleanField(
-        verbose_name="Administrators", help_text="Enabling this gives all group members administrative access in the backend.", default=False)
+        max_length=100,
+        verbose_name='Name')
+    auto_add_new = models.BooleanField(
+        verbose_name="Add all new users automatically",
+        help_text="Enabling this makes all new users automatically a member of this group. Existing users are not modified.",
+        default=False)
+    auto_add_approved = models.BooleanField(
+        verbose_name="Add all approved users automatically",
+        help_text="Enabling this makes all approved Kubernetes users automatically a member of this group. Existing users are not modified.",
+        default=False)
+    can_subauth = models.BooleanField(
+        verbose_name="Allow sub-authentication for members",
+        help_text="Enabling this allows group members to perform token-based sub-authentication with their Kubernetes account.",
+        default=False)
+    can_admin = models.BooleanField(
+        verbose_name="Allow administration for members",
+        help_text="Enabling this allows group members to access the administrative backend.",
+        default=False)
+    can_web_applications = models.ManyToManyField(
+        WebApplication,
+        blank=True,
+        verbose_name='Web applications',
+        help_text="Web applications that are accessible for group members.",
+        related_name='portal_groups')
 
     def __str__(self):
         return self.name
@@ -95,6 +111,7 @@ class PortalGroup(models.Model):
 
     class Meta:
         verbose_name = "User Group"
+
 
 class UserState():
     NEW = 'not requested'
@@ -125,14 +142,14 @@ class User(AbstractUser):
     portal_groups = models.ManyToManyField(
         PortalGroup, blank=True, verbose_name='Groups', help_text="The user groups this account belongs to.", related_name='members')
 
-
     service_account = models.ForeignKey(
         KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
 
     def can_subauth(self):
         for group in self.portal_groups.all():
             if group.subauth:
-                logger.debug("Sub authentication allowed for {0} by membership in group {1}".format(self, group))
+                logger.debug(
+                    "Sub authentication allowed for {0} by membership in group {1}".format(self, group))
                 return True
         return False
 
@@ -270,6 +287,3 @@ class User(AbstractUser):
             return get_token(self.service_account)
         except Exception:
             return None
-
-
-

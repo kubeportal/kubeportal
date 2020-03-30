@@ -25,11 +25,6 @@ class Migration(migrations.Migration):
             old_name='name',
             new_name='link_name'
         ),
-        migrations.AlterField(
-            model_name='webapplication',
-            name='link_name',
-            field=models.CharField(blank=True, help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100, null=True, verbose_name='Link title')
-        ),
         migrations.AddField(
             model_name='WebApplication',
             name='name',
@@ -42,8 +37,13 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='webapplication',
+            name='link_name',
+            field=models.CharField(blank=True, help_text="The title of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100, null=True, verbose_name='Link title'),
+        ),
+        migrations.AlterField(
+            model_name='webapplication',
             name='link_url',
-            field=models.URLField(blank=True, help_text="You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.", null=True, verbose_name='Link URL')
+            field=models.URLField(blank=True, help_text="The URL of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.", null=True, verbose_name='Link URL'),
         ),
         migrations.AddField(
             model_name='webapplication',
@@ -54,29 +54,6 @@ class Migration(migrations.Migration):
             model_name='webapplication',
             name='oidc_client',
             field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='oidc_provider.Client', verbose_name='Client settings'),
-        ),
-
-        migrations.CreateModel(
-            name='PortalGroup',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, verbose_name='Name for the user group')),
-                ('auto_add', models.BooleanField(default=False, verbose_name='Add new users automatically to this group')),
-                ('auto_admin', models.BooleanField(default=False, verbose_name='Users in this group are admins')),
-                ('subauth', models.BooleanField(default=False, help_text='Enable sub-authentication with Kubernetes Bearer token.', verbose_name='Enable sub-authentication'))
-            ],
-            options={'verbose_name': 'User Group'},
-        ),
-
-        migrations.AddField(
-            model_name='portalgroup',
-            name='web_applications',
-            field=models.ManyToManyField(blank=True, related_name='portal_groups', to='kubeportal.WebApplication', verbose_name='Web applications enabled for this user group'),
-        ),
-        migrations.AddField(
-            model_name='user',
-            name='portal_groups',
-            field=models.ManyToManyField(blank=True, related_name='members', to='kubeportal.PortalGroup', verbose_name='Groups of the user'),
         ),
     ]
 
