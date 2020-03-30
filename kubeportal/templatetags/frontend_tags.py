@@ -36,6 +36,12 @@ def settings_value_normalized(name):
 
 @register.simple_tag(takes_context=True)
 def placeholder_replace(context, text):
-    with_ns = text.replace("{{namespace}}", context.request.user.service_account.namespace.name)
-    with_both = with_ns.replace("{{serviceaccount}}", context.request.user.service_account.name)
+    try:
+        ns = context.request.user.service_account.namespace.name
+        svc = context.request.user.service_account.name
+    except:
+        ns = ""
+        svc = ""
+    with_ns = text.replace("{{namespace}}", ns)
+    with_both = with_ns.replace("{{serviceaccount}}", svc)
     return with_both

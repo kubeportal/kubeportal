@@ -34,26 +34,21 @@
 {% if user.has_access_approved %}
 <div class="card-columns">
   {% for app in clusterapps %}
+  {% if app.link_show %}
+  <a target="_new" href="{% placeholder_replace app.link_url %}">
   <div display="inline-block">
     <div class="card mb-3 text-white bg-{% cycle 'primary' 'success' 'warning' %}">
       <div class="card-body">
         <div class="card-body-icon">
           <i class="fas fa-fw fa-external-link-alt"></i>
         </div>
-        <div>{% placeholder_replace app.name %}</div>
+        <div>{% placeholder_replace app.link_name %}</div>
       </div>
-      <a target="_new" href="{% placeholder_replace app.url %}">
-        <div class="card-footer text-white clearfix small">
-          <span class="float-left">Start</span>
-          <span class="float-right">
-            <i class="fas fa-angle-right"></i>
-          </span>
-        </div>
-      </a>
     </div>
   </div>
+  </a>
+  {% endif %}
   {% endfor %}
-
 </div>
 {% endif %}
 
