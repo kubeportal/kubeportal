@@ -7,8 +7,7 @@ Changelog
 v0.3.0 Release
 ===============
 
-  * User groups and web applications were added as new concept, and replace the former direct OpenID connect handling.
-    Check the documentation for details (:issue:`4`, :issue:`6`)
+  * User groups and web applications were added as new concept, and replace the former direct OpenID connect handling. Check the documentation for details (:issue:`4`, :issue:`6`)
   * Backend permissions are now solely handled by group membership (:issue:`52`).
   * The Kubernetes namespace list in the backend now has some usage statistics, in order to find zombie namespaces  (:issue:`43`).
   * The Kubernetes namespace list in the backend now supports some bulk actions (:issue:`24`, :issue:`18`).
