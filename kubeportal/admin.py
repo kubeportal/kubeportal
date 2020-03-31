@@ -179,15 +179,6 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
         return qs
 
 
-def reject(modeladmin, request, queryset):
-    for user in queryset:
-        if user.reject(request):
-            user.save()
-
-
-reject.short_description = "Reject access request for selected users"
-
-
 class PortalGroupAdmin(admin.ModelAdmin):
     list_display = ('name', 'members_list', 'app_list')
 
@@ -200,6 +191,25 @@ class PortalGroupAdmin(admin.ModelAdmin):
     app_list.short_description = "Web applications"
 
 
+def make_assign_to_group_action(group):
+    def assign_to_group(modeladmin, request, queryset):
+        for user in queryset:
+            user.portal_groups.add(group)
+            messages.info(request, "User '{0}' is now member of '{1}'".format(user, group))
+
+    assign_to_group.short_description = "Assign to group '{0}'".format(group)
+    assign_to_group.__name__ = 'assign_to_group_{0}'.format(group.pk)
+
+    return assign_to_group
+
+
+def reject(modeladmin, request, queryset):
+    for user in queryset:
+        if user.reject(request):
+            user.save()
+
+
+reject.short_description = "Reject access request for selected users"
 
 
 class PortalUserAdmin(UserAdmin):
@@ -213,6 +223,17 @@ class PortalUserAdmin(UserAdmin):
         (None, {'fields': ('portal_groups',)})
     )
     actions = [reject]
+
+    def get_actions(self, request):
+        actions = super(PortalUserAdmin, self).get_actions(request)
+
+        for group in models.PortalGroup.objects.all():
+            action = make_assign_to_group_action(group)
+            actions[action.__name__] = (action,
+                                        action.__name__,
+                                        action.short_description)
+        return actions
+
 
     def formfield_for_manytomany(self, db_field, request=None, **kwargs):
         kwargs['widget'] = SortedFilteredSelectMultiple(attrs = {'verbose_name': 'user groups'})
