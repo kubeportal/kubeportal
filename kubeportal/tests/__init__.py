@@ -116,6 +116,11 @@ class FrontendAnonymous(AnonymousTestCase):
         response = self.c.get('/subauthreq/')
         self.assertEqual(response.status_code, 401)
 
+    def test_django_secret_generation(self):
+        with patch('os.path.isfile', return_value=False):
+            response = self.c.get('/stats/')
+            self.assertEqual(response.status_code, 302)
+
 
 class FrontendLoggedInApproved(AdminLoggedInTestCase):
     '''
@@ -126,7 +131,7 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
     def setUp(self):
         super().setUp()
         os.system("(minikube status | grep Running) || minikube start")
-        response = self.c.get(reverse('admin:sync'))
+        self.c.get(reverse('admin:sync'))
         default_ns = KubernetesNamespace.objects.get(name='default')
         self.admin.service_account = default_ns.service_accounts.get(
             name='default')
@@ -135,6 +140,34 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
     def test_welcome_view(self):
         response = self.c.get('/welcome/')
         self.assertEqual(response.status_code, 200)
+
+    def test_webapp_user_not_in_group(self):
+        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
+        app1.save()
+        response = self.c.get('/welcome/')
+        # User is not in a group that has this web app enabled
+        self.assertNotContains(response, "http://www.heise.de")
+
+    def test_webapp_user_in_group(self):
+        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
+        app1.save()
+        group = PortalGroup()
+        group.save()
+        self.admin.portal_groups.add(group)
+        response = self.c.get('/welcome/')
+        # User is in group, but this group has the web app not enabled
+        self.assertNotContains(response, "http://www.heise.de")
+
+        group.can_web_applications.add(app1)
+        response = self.c.get('/welcome/')
+        # User is now in a group that has this web app enabled
+        self.assertContains(response, "http://www.heise.de")
+
+        app1.link_show = False
+        app1.save()
+        response = self.c.get('/welcome/')
+        # User is now in a group that has this web app, but disabled
+        self.assertNotContains(response, "http://www.heise.de")
 
     def test_config_view(self):
         response = self.c.get(reverse('config'))
