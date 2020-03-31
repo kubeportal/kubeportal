@@ -36,6 +36,9 @@ def settings_value_normalized(name):
 
 @register.simple_tag(takes_context=True)
 def placeholder_replace(context, text):
+    if text == None:
+        return ""
+
     try:
         ns = context.request.user.service_account.namespace.name
         svc = context.request.user.service_account.name
