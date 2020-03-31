@@ -181,7 +181,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
 
 class PortalGroupAdmin(admin.ModelAdmin):
-    list_display = ('name', 'app_list', 'members_list')
+    list_display = ('name', 'members_list', 'auto_add_new', 'auto_add_approved', 'can_admin', 'app_list')
 
     def members_list(self, instance):
         from django.urls import reverse
