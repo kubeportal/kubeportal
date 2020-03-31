@@ -84,12 +84,12 @@ class PortalGroup(models.Model):
         max_length=100,
         verbose_name='Name')
     auto_add_new = models.BooleanField(
-        verbose_name="Add all new users automatically",
-        help_text="Enabling this makes all new users automatically a member of this group. Existing users are not modified.",
+        verbose_name="Add users on creation",
+        help_text="Enabling this makes all newly created users automatically a member of this group. Existing users are not modified.",
         default=False)
     auto_add_approved = models.BooleanField(
-        verbose_name="Add all approved users automatically",
-        help_text="Enabling this makes all approved Kubernetes users automatically a member of this group. Existing users are not modified.",
+        verbose_name="Add users on approval",
+        help_text="Enabling this makes all newly approved Kubernetes users automatically a member of this group. Existing users are not modified. Users with cluster approval being removed stay in this group.",
         default=False)
     can_subauth = models.BooleanField(
         verbose_name="Allow sub-authentication for members",
@@ -97,13 +97,13 @@ class PortalGroup(models.Model):
         default=False)
     can_admin = models.BooleanField(
         verbose_name="Allow administration for members",
-        help_text="Enabling this allows group members to access the administrative backend.",
+        help_text="Enabling this allows members of this group to access the administrative backend.",
         default=False)
     can_web_applications = models.ManyToManyField(
         WebApplication,
         blank=True,
         verbose_name='Web applications',
-        help_text="Web applications that are accessible for group members.",
+        help_text="Web applications that are accessible for members of this group.",
         related_name='portal_groups')
 
     def __str__(self):
