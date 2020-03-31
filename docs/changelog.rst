@@ -2,9 +2,9 @@ Changelog
 #########
 
 
-.. _v0.3.0:
+.. _v0.3.3:
 
-v0.3.0 Release
+v0.3.3 Release
 ===============
 
   * User groups and web applications were added as new concept, and replace the former direct OpenID connect handling. Check the documentation for details (:issue:`4`, :issue:`6`)
