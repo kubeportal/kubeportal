@@ -31,10 +31,8 @@
   </div>
 </div>
 
-{% if user.has_access_approved %}
 <div class="card-columns">
   {% for app in clusterapps %}
-  {% if app.link_show %}
   <a target="_new" href="{% placeholder_replace app.link_url %}">
   <div display="inline-block">
     <div class="card mb-3 text-white bg-{% cycle 'primary' 'success' 'warning' %}">
@@ -47,10 +45,8 @@
     </div>
   </div>
   </a>
-  {% endif %}
   {% endfor %}
 </div>
-{% endif %}
 
 
 

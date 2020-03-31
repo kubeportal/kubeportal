@@ -44,7 +44,15 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['clusterapps'] = WebApplication.objects.all()
+        # I am too tired to do this in a single Django query
+        allowed_apps = []
+        for group in self.request.user.portal_groups.all():
+            for app in group.can_web_applications.all():
+                if app.link_show:
+                    allowed_apps.append(app)
+                else:
+                    logger.debug('Not showing link to app "{0}" in welcome view. Although user "{1}"" is in group "{2}", link_show is set to False.'.format(app, self.request.user, group))
+        context['clusterapps'] = allowed_apps
         return context
 
 
