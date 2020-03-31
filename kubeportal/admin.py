@@ -74,7 +74,7 @@ make_invisible.short_description = "Mark as non-visible"
 
 
 class WebApplicationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'link_show', 'client_id',
+    list_display = ['name', 'portal_group_list', 'link_show', 'client_id',
                     'client_secret', 'client_redirect_uris']
 
     fieldsets = (
@@ -88,6 +88,16 @@ class WebApplicationAdmin(admin.ModelAdmin):
             'fields': ('oidc_client', ),
         }),
     )
+
+    def portal_group_list(self, instance):
+        from django.urls import reverse
+        html_list = []
+        for group in instance.portal_groups.all():
+            group_url = reverse('admin:kubeportal_portalgroup_change', args=[group.id,])
+            html_list.append(format_html('<a href="{}">{}</a>', group_url, group.name))
+        return format_html(', '.join(html_list))
+    portal_group_list.short_description = "Allowed for"
+
 
     def client_id(self, instance):
         return instance.oidc_client.client_id if instance.oidc_client else ""
@@ -194,7 +204,7 @@ class PortalGroupAdmin(admin.ModelAdmin):
 
     def app_list(self, instance):
         return ', '.join(instance.can_web_applications.all().values_list('name', flat=True))
-    app_list.short_description = "Web applications"
+    app_list.short_description = "Can use"
 
 
 def make_assign_to_group_action(group):
