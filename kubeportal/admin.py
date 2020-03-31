@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.urls import path
+from django.utils.html import format_html
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
@@ -180,10 +181,15 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
 
 class PortalGroupAdmin(admin.ModelAdmin):
-    list_display = ('name', 'members_list', 'app_list')
+    list_display = ('name', 'app_list', 'members_list')
 
     def members_list(self, instance):
-        return ', '.join(instance.members.values_list('username', flat=True))
+        from django.urls import reverse
+        html_list = []
+        for user in instance.members.all():
+            user_url = reverse('admin:kubeportal_user_change', args=[user.id,])
+            html_list.append(format_html('<a href="{}">{}</a>', user_url, user.username))
+        return format_html(', '.join(html_list))
     members_list.short_description = "Members"
 
     def app_list(self, instance):
