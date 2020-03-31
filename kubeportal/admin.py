@@ -219,7 +219,6 @@ reject.short_description = "Reject access request for selected users"
 
 
 class PortalUserAdmin(UserAdmin):
-    readonly_fields = ['username', 'email', 'is_superuser']
     list_display = ('username', 'first_name', 'last_name',
                     'is_staff', 'state', 'answered_by', 'comments', 'email', 'approve_link')
     fieldsets = (
@@ -245,8 +244,14 @@ class PortalUserAdmin(UserAdmin):
         kwargs['widget'] = SortedFilteredSelectMultiple(attrs = {'verbose_name': 'user groups'})
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
+    def get_readonly_fields(self, request, obj=None):
+        if request.user.is_superuser:
+            return []
+        else:
+            return ['username', 'email', 'is_superuser']
+
     def has_add_permission(self, request, obj=None):
-        return False
+        return request.user.is_superuser
 
     def delete_model(self, request, obj):
         super().delete_model(request, obj)
@@ -259,8 +264,8 @@ class PortalUserAdmin(UserAdmin):
             request, "KubePortal never deletes namespaces or service accounts in Kubernetes. You must do that manually.")
 
     def render_change_form(self, request, context, *args, **kwargs):
-        context['adminform'].form.fields['service_account'].queryset = models.KubernetesServiceAccount.objects.filter(
-            namespace__visible=True)
+        if 'service_account' in context['adminform'].form.fields:
+            context['adminform'].form.fields['service_account'].queryset = models.KubernetesServiceAccount.objects.filter(namespace__visible=True)
         return super().render_change_form(request, context, *args, **kwargs)
 
     def get_urls(self):
