@@ -219,8 +219,8 @@ reject.short_description = "Reject access request for selected users"
 
 
 class PortalUserAdmin(UserAdmin):
-    list_display = ('username', 'first_name', 'last_name',
-                    'is_staff', 'state', 'answered_by', 'comments', 'email', 'approve_link')
+    list_display = ('username', 'first_name', 'last_name', 'email', 'comments',
+                    'portal_group_list', 'state', 'answered_by', 'approve_link')
     fieldsets = (
         (None, {'fields': ('username', 'first_name',
                            'last_name', 'email', 'comments', 'is_staff')}),
@@ -228,6 +228,17 @@ class PortalUserAdmin(UserAdmin):
         (None, {'fields': ('portal_groups',)})
     )
     actions = [reject]
+    list_filter = ()
+
+    def portal_group_list(self, instance):
+        from django.urls import reverse
+        html_list = []
+        for group in instance.portal_groups.all():
+            group_url = reverse('admin:kubeportal_portalgroup_change', args=[group.id,])
+            html_list.append(format_html('<a href="{}">{}</a>', group_url, group.name))
+        return format_html(', '.join(html_list))
+    portal_group_list.short_description = "Groups"
+
 
     def get_actions(self, request):
         actions = super(PortalUserAdmin, self).get_actions(request)
