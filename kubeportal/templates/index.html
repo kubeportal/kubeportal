@@ -30,15 +30,10 @@
         {% if auth_ad_domain %}
           {% ad_status as ad_status_cached %}
           {% if ad_status_cached == "available" %}
-            <form method="POST" action="/social/complete/username/">
+            <form method="POST" action="{% url 'social:complete' 'username' %}{% if 'next' in request.GET %}?next={{ request.GET.next }}{% endif %}">
             {% csrf_token %}
             <div class="form-group">
               <div class="form-label-group">
-                {% if 'next' in request.GET %}
-                  <input type="hidden" name="next" value="{{ request.GET.next }}" />
-                {% elif 'rd' in request.GET %}
-                  <input type="hidden" name="next" value="{{ request.GET.rd }}" />
-                {% endif %}
                 <input type="text" id="username" name="username" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
                 <label for="username">User name</label>
               </div>
