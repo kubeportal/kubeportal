@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.urls import path
+from django.urls import path, reverse
 from django.utils.html import format_html
 from django.shortcuts import redirect, get_object_or_404
 from django.contrib import admin, messages
@@ -36,13 +36,18 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
     list_display_links = None
 
     def has_delete_permission(self, request, obj=None):
+        '''
+        Disable deletion, even for superusers.
+        '''
         return False
 
     def has_change_permission(self, request, obj=None):
-        return False
+        if not request.user.is_superuser:
+            return False
 
     def has_add_permission(self, request, obj=None):
-        return False
+        if not request.user.is_superuser:
+            return False
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
@@ -74,8 +79,8 @@ make_invisible.short_description = "Mark as non-visible"
 
 
 class WebApplicationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'portal_group_list', 'link_show', 'client_id',
-                    'client_secret', 'client_redirect_uris']
+    list_display = ['name', 'link_show', 'client_id',
+                    'client_secret', 'client_redirect_uris', 'subauth_url', 'portal_group_list']
 
     fieldsets = (
         (None, {
@@ -84,13 +89,27 @@ class WebApplicationAdmin(admin.ModelAdmin):
         ('Portal frontend', {
             'fields': ('link_show', 'link_name', 'link_url'),
         }),
-        ('OpenID Connect', {
-            'fields': ('oidc_client', ),
+        ('Security', {
+            'fields': ('oidc_client', 'can_subauth'),
         }),
     )
 
+    def get_queryset(self, request):
+        '''
+        Helper implementation to have a request object somewhere else.
+        '''
+        qs = super().get_queryset(request)
+        self.request = request
+        return qs
+
+    def subauth_url(self, instance):
+        if instance.can_subauth:
+            return self.request.build_absolute_uri(reverse('subauthreq', args=[instance.pk]))
+        else:
+            return ""
+
+
     def portal_group_list(self, instance):
-        from django.urls import reverse
         html_list = []
         for group in instance.portal_groups.all():
             group_url = reverse('admin:kubeportal_portalgroup_change', args=[group.id,])
@@ -145,10 +164,12 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
     number_of_pods.short_description = "Number of pods"
 
     def has_change_permission(self, request, obj=None):
-        return False
+        if not request.user.is_superuser:
+            return False
 
     def has_add_permission(self, request, obj=None):
-        return False
+        if not request.user.is_superuser:
+            return False
 
     def get_readonly_fields(self, request, obj=None):
         '''

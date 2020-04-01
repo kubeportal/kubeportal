@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 
 from kubeportal.models import WebApplication
 from kubeportal import kubernetes
@@ -81,32 +82,41 @@ class SubAuthRequestView(View):
         logger.debug("  POST parameters: " + str(request.POST))
 
     def get(self, request, *args, **kwargs):
+        webapp = get_object_or_404(WebApplication, pk=kwargs['webapp_pk'])
         if (not request.user) or (not request.user.is_authenticated):
             logger.debug(
-                "Rejecting authorization through subrequest, user is not authenticated.")
+                "Rejecting authorization for {} through sub-request, user is anonymous / not authenticated.".format(webapp))
             self._dump_request_info(request)
             # 401 is the expected fail code in ingress-nginx
             return HttpResponse(status=401)
-        elif not request.user.service_account:
+        elif not webapp.can_subauth:
             logger.debug(
-                "Rejecting authorization through subrequest, user {0} has no service account.".format(request.user))
+                "Rejecting authorization for {0} through sub-request for user {1}, subauth is not enabled for this app.".format(webapp, request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
-        elif not request.user.can_subauth():
+        elif not request.user.service_account:
             logger.debug(
-                "Rejecting authorization through subrequest, forbidden for user {0} through group membership.".format(request.user))
+                "Rejecting authorization for {0} through sub-request, user {1} has no service account.".format(webapp, request.user))
+            self._dump_request_info(request)
+            return HttpResponse(status=401)
+        elif not request.user.can_subauth(webapp):
+            logger.debug(
+                "Rejecting authorization for {0} through sub-request, forbidden for user {1} through group membership constellation.".format(webapp, request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         else:
-            logger.debug("Allowing authorization through subrequest for user {0} with service account '{1}:{2}'.".format(
-                request.user, request.user.service_account.namespace.name, request.user.service_account.name))
+            logger.debug("Allowing authorization for {0} through sub-request (user {1}, service account '{2}:{3}').".format(
+                webapp,
+                request.user,
+                request.user.service_account.namespace.name,
+                request.user.service_account.name))
             response = HttpResponse()
             token = request.user.token
             if token:
                 response['Authorization'] = 'Bearer ' + token
                 return response
             else:
-                logger.error("Error while fetching Kubernetes secret bearer token for user, must reject valid request.")
+                logger.error("Error while fetching Kubernetes secret bearer token for user {0}, must reject valid  authorization for {1} through subrequest.".format(request.user, webapp))
                 return HttpResponse(status=401)
 
 

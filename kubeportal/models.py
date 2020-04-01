@@ -4,6 +4,7 @@ from django.db import models
 from django_fsm import FSMField, transition
 from django.core.mail import send_mail
 from django.urls import reverse
+from django.utils.text import slugify
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags, mark_safe
@@ -30,9 +31,6 @@ class KubernetesNamespace(models.Model):
     def is_synced(self):
         return self.uid is not None
 
-    def get_default_account(self):
-        return self.service_accounts.get(name='default')
-
 
 class KubernetesServiceAccount(models.Model):
     '''
@@ -44,9 +42,6 @@ class KubernetesServiceAccount(models.Model):
     namespace = models.ForeignKey(
         KubernetesNamespace, related_name="service_accounts", on_delete=models.CASCADE)
 
-    def __str__(self):
-        return "{1}:{0}".format(self.name, self.namespace)
-
     def is_synced(self):
         return self.uid is not None
 
@@ -57,17 +52,23 @@ class WebApplication(models.Model):
     '''
     name = models.CharField(max_length=100)
     link_show = models.BooleanField(
-        verbose_name="Show link on welcome page", default=False)
+        verbose_name="Show link",
+        default=False,
+        help_text="Show link on the landing page when user has access rights.")
     link_name = models.CharField(
         null=True, blank=True,
         verbose_name="Link title",
-        help_text="The title of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the title.", max_length=100)
+        help_text="The title of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}'.", max_length=100)
     link_url = models.URLField(
         null=True, blank=True,
         verbose_name="Link URL",
-        help_text="The URL of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}' in the URL.")
+        help_text="The URL of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}'.")
     oidc_client = models.OneToOneField(
-        Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="Client settings")
+        Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="OpenID Connect Client")
+    can_subauth = models.BooleanField(
+        verbose_name="Enable sub-authentication URL",
+        help_text="Enables an URL to allow proxy sub-authentication for this web application.",
+        default=False)
 
     class Meta:
         verbose_name = 'web application'
@@ -90,10 +91,6 @@ class PortalGroup(models.Model):
     auto_add_approved = models.BooleanField(
         verbose_name="Auto-add approved users",
         help_text="Enabling this makes all newly approved Kubernetes users automatically a member of this group. Existing users are not modified. Users with cluster approval being removed stay in this group.",
-        default=False)
-    can_subauth = models.BooleanField(
-        verbose_name="Allow sub-authentication for members",
-        help_text="Enabling this allows group members to perform token-based sub-authentication with their Kubernetes account.",
         default=False)
     can_admin = models.BooleanField(
         verbose_name="Backend access",
@@ -148,13 +145,15 @@ class User(AbstractUser):
     service_account = models.ForeignKey(
         KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
 
-    def can_subauth(self):
-        for group in self.portal_groups.all():
-            if group.can_subauth:
-                logger.debug(
-                    "Sub authentication allowed for {0} by membership in group {1}".format(self, group))
-                return True
-        return False
+    def can_subauth(self, webapp):
+        user_groups_with_this_app = self.portal_groups.filter(can_web_applications__in=[webapp.pk])
+        allowed = user_groups_with_this_app.count() > 0
+        if allowed:
+            logger.debug("Subauth allowed for app {} with user {} due to membership in groups".format(webapp, self))
+            return True
+        else:
+            logger.debug("Subauth not allowed for user {}, none of the user groups allows the app {}".format(self, webapp))
+            return False
 
     def has_access_approved(self):
         logger.debug("User {0} has access approved.".format(self))

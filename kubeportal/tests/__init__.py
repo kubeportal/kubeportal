@@ -112,8 +112,14 @@ class FrontendAnonymous(AnonymousTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('no authentication method', str(response.content))
 
-    def test_subauth_view(self):
-        response = self.c.get('/subauthreq/')
+    def test_subauth_view_nonexistent_app(self):
+        response = self.c.get('/subauthreq/42/')
+        self.assertEqual(response.status_code, 404)
+
+    def test_subauth_view_existent_app(self):
+        app1 = WebApplication(name="app1")
+        app1.save()
+        response = self.c.get('/subauthreq/{}/'.format(app1.pk))
         self.assertEqual(response.status_code, 401)
 
     def test_django_secret_generation(self):
@@ -186,21 +192,64 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
             response = self.c.get('/stats/')
             self.assertEqual(response.status_code, 200)
 
-    def test_subauth_view_not_enabled(self):
-        response = self.c.get('/subauthreq/')
-        self.assertEqual(response.status_code, 401)
+    def _prepare_subauth_test(self, user_in_group1, user_in_group2, app_in_group1, app_in_group2, app_enabled):
+        group1 = PortalGroup()
+        group1.save()
+        if user_in_group1:
+            self.admin.portal_groups.add(group1)
 
-    def test_subauth_view_enabled(self):
-        self.admin_group.can_subauth = True
-        self.admin_group.save()
-        response = self.c.get('/subauthreq/')
-        self.assertEqual(response.status_code, 200)
+        group2 = PortalGroup()
+        group2.save()
+        if user_in_group2:
+            self.admin.portal_groups.add(group2)
 
-    def test_subauth_view_enabled_k8s_unavailable(self):
+        app1 = WebApplication(name="app1", can_subauth=app_enabled)
+        app1.save()
+
+        if app_in_group1:
+            group1.can_web_applications.add(app1)
+
+        if app_in_group2:
+            group2.can_web_applications.add(app1)
+
+        return self.c.get('/subauthreq/{}/'.format(app1.pk))
+
+    def test_subauth_invalid_cases(self):
+        # Constellations for group membership of user and app
+        # The expected result value assumes that the app is enabled
+        cases = (
+            # User is in both groups
+            ((True, True, False, False), 401),
+            ((True, True, True, False), 200),
+            ((True, True, False, True), 200),
+            ((True, True, True, True), 200),
+            # User is in one of the) groups
+            ((True, False, False, False), 401),
+            ((True, False, True, False), 200),
+            ((True, False, False, True), 401),
+            ((True, False, True, True), 200),
+            # User is in none of the) groups
+            ((False, False, False, False), 401),
+            ((False, False, True, False), 401),
+            ((False, False, False, True), 401),
+            ((False, False, True, True), 401),
+        )
+        for case, expected in cases:
+            with self.subTest(case=case, expected=expected):
+                response = self._prepare_subauth_test(*case, True)
+                self.assertEqual(response.status_code, expected)
+
+        # When the app is disabled, sub-auth should never succeed
+        for case, expected in cases:
+            with self.subTest(case=case):
+                response = self._prepare_subauth_test(*case, False)
+                self.assertEqual(response.status_code, 401)
+
+    def test_subauth_k8s_broken(self):
         self.admin_group.can_subauth = True
         self.admin_group.save()
         with patch('kubeportal.kubernetes._load_config', return_value=(None, None)):
-            response = self.c.get('/subauthreq/')
+            response = self._prepare_subauth_test(True, True, True, True, True)
             self.assertEqual(response.status_code, 401)
 
 
@@ -240,7 +289,15 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_subauth_view(self):
-        response = self.c.get('/subauthreq/')
+        group1 = PortalGroup()
+        group1.save()
+        self.admin.portal_groups.add(group1)
+
+        app1 = WebApplication(name="app1", can_subauth=True)
+        app1.save()
+
+        response = self.c.get('/subauthreq/{}/'.format(app1.pk))
+
         self.assertEqual(response.status_code, 401)
 
     def test_logout_view(self):
@@ -409,15 +466,14 @@ class Backend(AdminLoggedInTestCase):
         self.factory = RequestFactory()
         os.system("(minikube status | grep Running) || minikube start")
 
-    def test_kube_sync_view(self):
-        self._call_sync()
-
     def test_kube_ns_changelist(self):
+        self._call_sync()
         response = self.c.get(
             reverse('admin:kubeportal_kubernetesnamespace_changelist'))
         self.assertEqual(response.status_code, 200)
 
     def test_kube_svc_changelist(self):
+        self._call_sync()
         response = self.c.get(
             reverse('admin:kubeportal_kubernetesserviceaccount_changelist'))
         self.assertEqual(response.status_code, 200)
@@ -504,7 +560,7 @@ class Backend(AdminLoggedInTestCase):
         # Should lead to addition of user to the add_approved group
         self.assertEquals(group.members.count(), 1)
 
-    def test_user_rejection(self):
+    def _test_user_rejection(self):
         User = get_user_model()
         u = User(username="Hugo", email="a@b.de")
         u.save()
@@ -522,11 +578,16 @@ class Backend(AdminLoggedInTestCase):
         request.session.save()
         messages = FallbackStorage(request)
         setattr(request, '_messages', messages)
-        # Perform rejection
         assert(u.reject(request))
         u.save()
         assert(u.has_access_rejected())
 
+    def test_user_rejection(self):
+        self._test_user_rejection()
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend', EMAIL_HOST_PASSWORD='sdsds')
+    def test_user_rejection_mail_broken(self):
+        self._test_user_rejection()
 
 class PortalGroups(AnonymousTestCase):
     '''
