@@ -32,7 +32,7 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
     # Connect to AD LDAP
     # Currently does not perform certificate check
     # Also, assume that all domain controllers support ldaps
-    username = strategy.request_data()['username']
+    username = strategy.request_data()['username'].lower()
     password = strategy.request_data()['password']
     # User Principal Name
     upn = "{}@{}".format(username, domainname)
