@@ -4,7 +4,6 @@ from django.db import models
 from django_fsm import FSMField, transition
 from django.core.mail import send_mail
 from django.urls import reverse
-from django.utils.text import slugify
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags, mark_safe
@@ -44,6 +43,12 @@ class KubernetesServiceAccount(models.Model):
 
     def is_synced(self):
         return self.uid is not None
+
+    def __str__(self):
+        '''
+        Used on welcome page for showing the users Kubernetes account.
+        '''
+        return "{1}:{0}".format(self.name, self.namespace)
 
 
 class WebApplication(models.Model):
