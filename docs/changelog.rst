@@ -2,9 +2,11 @@ Changelog
 #########
 
 
-.. _v0.3.3:
 
-v0.3.3 Release
+
+.. _v0.3.6:
+
+v0.3.6 Release
 ===============
 
   * User groups and web applications were added as new concept, and replace the former direct OpenID connect handling. Check the documentation for details (:issue:`4`, :issue:`6`)
@@ -13,6 +15,8 @@ v0.3.3 Release
   * The Kubernetes namespace list in the backend now supports some bulk actions (:issue:`24`, :issue:`18`).
   * The welcome page is now mobile-friendly (:issue:`46`).
   * The test coverage was greatly extended (:issue:`34`).
+  * Sub-authentication can now be separately enabled / disabled per web application. The overview pages were updated accordingly.
+  * User names for active directory logins are now converted to lower case.
 
 .. _v0.2.7:
 
