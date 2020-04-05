@@ -48,7 +48,7 @@ coverage: venv
 
 # Update version numbers, commit and tag
 release-bumpversion:
-	bumpversion --verbose patch
+	./venv/bin/bumpversion --verbose patch
 
 release: release-build release-push
 
