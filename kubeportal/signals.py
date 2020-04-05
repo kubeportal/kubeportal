@@ -1,5 +1,6 @@
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
+from django.contrib.auth.models import Permission
 
 from kubeportal.models import User
 from kubeportal.models import PortalGroup
@@ -47,7 +48,11 @@ def _set_staff_status(user):
         logger.info("Enabling missing admin rights for user {0}.".format(user))
         user.is_staff = True
         user.save()
-
+        # This is a safe guard for cases where new backend models came after
+        # the user was created. Otherwise, the backend user still would not have
+        # the model permissions for seing the admin pages accordingly.
+        all_perms = Permission.objects.all()
+        user.user_permissions.add(*all_perms)
 
 @receiver(m2m_changed, sender=User.portal_groups.through)
 def handle_group_members_change(instance, action, pk_set, reverse, **kwargs):
