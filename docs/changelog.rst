@@ -3,6 +3,12 @@ Changelog
 
 
 
+.. _v0.3.7:
+
+v0.3.7 Release
+===============
+
+  * Fix a problem with existing users not seing the new portal group and web app admin pages.
 
 .. _v0.3.6:
 
