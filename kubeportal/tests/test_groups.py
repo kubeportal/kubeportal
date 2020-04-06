@@ -1,6 +1,7 @@
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from kubeportal import models
 from kubeportal.tests import AnonymousTestCase
-from django.contrib.auth import get_user_model
 
 
 class PortalGroups(AnonymousTestCase):
@@ -92,6 +93,18 @@ class PortalGroups(AnonymousTestCase):
         self.third_admin = User(username="Hugo")
         self.third_admin.save()
         self.assertEquals(group.members.count(), 1)
+
+    def test_permission_adjustment(self):
+        self.assertEquals(self.second_user.user_permissions.all().count(), 0)
+        # Create admin group
+        admin_group = models.PortalGroup(name="Admins", can_admin=True)
+        admin_group.save()
+        # make member, should get all model permissions
+        admin_group.members.add(self.second_user)
+        admin_group.save()
+        self.second_user.refresh_from_db()  # catch changes from signal handlers
+        perm_count = Permission.objects.count()
+        self.assertEquals(self.second_user.user_permissions.all().count(), perm_count)
 
     def test_forward_relation_change(self):
         '''
