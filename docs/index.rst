@@ -7,9 +7,15 @@ KubePortal Documentation
 
 .. _index:
 
-Kubeportal is a web application to get a single sign-on Kubernetes experience. It operates as synchronizing entity between a portal user base and Kubernetes service accounts resp. namespaces.
+Kubeportal is a single sign-on portal for Kubernetes clusters. It offers the following main features:
 
-After portal login, users can download their kubectl config file directly from the web site. Their service accounts and namespaces are configured by administrative users in the backend.
+  * User login through multiple authentication methods (Active Directory, Google, Twitter, ...)
+  * Landing page with quick links
+  * User-friendly process for requesting Kubernetes cluster credentials
+  * Admin backend for user management
+  * Portal login protection for web applications running in the cluster
+
+After approval, users can download their kubectl config file directly from the portal site. Their service accounts and namespaces are configured by administrative users in the backend.
 
 Kubeportal acts as OAuth2 and WebHook authentication provider. This enables other web applications to use it as authorization service.
 
@@ -26,7 +32,7 @@ Kubeportal acts as OAuth2 and WebHook authentication provider. This enables othe
     Kubernetes access and become a *cluster user*.
 
 
-.. figure:: static/kubeportal1.png
+.. figure:: static/front_landing.png
     :alt: KubePortal landing page for cluster users.
 
     For approved cluster users, the portal offers a list of links to other web
