@@ -1,5 +1,7 @@
 # Kubeportal
 
+The official documenation is available here: https://kubeportal.readthedocs.io/en/latest/
+
 Kubeportal is a web application to get a single sign-on Kubernetes experience. It operates as synchronizing entity between a portal user base and Kubernetes service accounts resp. namespaces.
 
 After portal login, users can download their `kubectl` config file directly from the web site. Their service accounts and namespaces are configured by administrative users in the backend. 
@@ -47,7 +49,6 @@ Kubeportal acts as OAuth2 and WebHook authentication provider. This enables othe
 +-------+                                  
 
 ```
-The official documenation is available here: https://kubeportal.readthedocs.io/en/latest/
 
 ## Who needs that?
 
