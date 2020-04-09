@@ -3,13 +3,15 @@ copyright = '2019, Peter Tröger'
 author = 'Peter Tröger'
 release = 'v0.3.7'
 extensions = [
-	'sphinx_issues'
+	'sphinx_issues',
+    'sphinx.ext.autosectionlabel'	
 ]
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = "sphinx_rtd_theme"
-html_static_path = ['_static']
 master_doc = 'index'
+
+autosectionlabel_prefix_document = False
 
 issues_github_path = 'troeger/kubeportal'
 

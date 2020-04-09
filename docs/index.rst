@@ -7,22 +7,21 @@ KubePortal Documentation
 
 .. _index:
 
-KubePortal is a single sign-on welcome portal for Kubernetes clusters. It offers the following main features:
+KubePortal is a web portal for Kubernetes clusters. It offers the following main features:
 
-  * User login through external authentication provider (Active Directory, Google, Twitter, ...)
-  * Landing page with quick links for users
+  * User login with existing credentials (Active Directory, Google, Twitter, ...)
+  * Landing page with quick links to web applications (Grafana, K8S Dashboard, ...)
   * User-friendly process for requesting Kubernetes cluster access
+  * Self-service download of ``kubectl`` config file
+  * Login for web applications through the portal  
   * Admin backend for user permission management
-  * Acts as authentication page for web applications (OIDC, Bearer Token) 
-  * Runs in Docker / Kubernetes
 
 Here are some screenshots:
 
 .. figure:: static/front_login.png
     :alt: KubePortal frontend login screen.
 
-    Portal users can use their organizational Active Directory, Google,
-    or Twitter login.
+    Portal users can use an existing account to enter the cluster portal.
 
 .. figure:: static/front_landing_new.png
     :alt: KubePortal landing page.
@@ -57,9 +56,8 @@ Here are some screenshots:
 
    installation
    users
+   groups
    links
-   webhook
-   oidc
    api
    dev-env
    changelog

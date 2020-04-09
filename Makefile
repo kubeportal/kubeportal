@@ -27,7 +27,7 @@ staging-run: staging-build minikube-start
 	kubectl -n kubeportal port-forward svc/kubeportal 8000:8000
 
 # Clean temporary files
-clean: minikube-stop
+clean: 
 	find . -name "*.bak" -delete
 	find . -name "__pycache__" -delete
 	make -C docs clean
