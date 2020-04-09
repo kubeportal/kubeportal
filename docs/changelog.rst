@@ -2,6 +2,15 @@ Changelog
 #########
 
 
+.. _v0.3.8:
+
+v0.3.8 Release
+===============
+
+  * Fix a problem with 'next=' parameter forwarding on OIDC login from web applications.
+  * Fix some small glitches in the user administration backend.
+  * The documentation now reflects the latest features (web apps, user groups, installation methods).
+
 
 .. _v0.3.7:
 
