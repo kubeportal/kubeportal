@@ -12,3 +12,13 @@ html_static_path = ['_static']
 master_doc = 'index'
 
 issues_github_path = 'troeger/kubeportal'
+
+html_theme_options = {
+    'display_version': True,
+    # Toc options
+    'collapse_navigation': True,
+    'sticky_navigation': True,
+    'navigation_depth': 4,
+    'includehidden': True,
+    'titles_only': False
+}

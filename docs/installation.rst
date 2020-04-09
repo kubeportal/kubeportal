@@ -3,13 +3,12 @@
 Installation
 ############
 
-The latest official release of KubePortal is available as `Docker image <https://hub.docker.com/r/troeger/kubeportal/>`__. 
+The latest official release of KubePortal is always available as `Docker image <https://hub.docker.com/r/troeger/kubeportal/>`__. 
 
-KubePortal is expected to run inside the Kubernetes cluster it works as a frontend for. The service account and API server are auto-detected from the pod it is running in. 
+Step 1: Define a configuration 
+------------------------------
 
-Example YML files for a Kustomize-based deployment are available in the `source code repository <https://github.com/troeger/kubeportal/tree/master/deployment/k8s>`_. You most likely need to add in Ingress definition for external reachability.
-
-The application can be configured through environment variables:
+Create a configuration file, e.g. `.env`, which contains all relevant settings as environment variables. The options are:
 
 ===================================== ============================================================================
 Environment variable                  Description
@@ -47,7 +46,58 @@ It is recommended to configure at least the following settings in production:
 
   - One authentication method (``KUBEPORTAL_AUTH_...``)
   - A reasonable path for the SQLite database in ``KUBEPORTAL_DATABASE_URL``, so that your user database persists on a mounted Kubernetes volume.
-  - The externally visible URL of your Kubernetes API server (``KUBEPORTAL_API_SERVER_EXTERNAL``)
 
-The log output of the KubePortal pod shows you the generated password for the *root* account. This account **only** works for the backend login page, which is available at `<KubePortal URL>/admin/`.
+Example for *.env* file:
 
+.. code-block:: bash
+
+  KUBEPORTAL_DATABASE_URL=sqlite:////data/kubeportal.sqlite3
+  KUBEPORTAL_AUTH_AD_DOMAIN=example.com
+  KUBEPORTAL_AUTH_AD_SERVER=1.2.3.4
+
+Step 2: Create the config map
+-----------------------------
+KubePortal runs in the namespace `kubeportal`. This namespace must contain a config map with all your settings, which can be easily created from your `.env` file from the last step:
+
+.. code-block:: bash
+
+   kubectl create namespace kubeportal
+   kubectl -n kubeportal create configmap kubeportal --from-env-file=.env
+
+Step 3: Install in the cluster
+------------------------------
+KubePortal is expected to run inside a Kubernetes cluster. The service account and API server are auto-detected from the pod it is running in. Permissions for creating Kubernetes namespaces therefore must be given to its namespace. 
+
+YML files for an according Kustomize-based deployment are available in the `source code repository <https://github.com/troeger/kubeportal/tree/master/deployment/k8s>`_. They also establish the neccessary RBAC settings for the application.
+
+Please note that these Kustomize files already create a persistent volume claim to keep the database between restarts of the containers.
+
+Step 4: Create an ingress
+-------------------------
+To make KubePortal reachable for your users, you must create a matching Ingress definition. The particular configuration depends on your environment.
+
+Example:
+
+.. code-block:: yml
+
+   apiVersion: extensions/v1beta1
+   kind: Ingress
+   metadata:
+     name: kubeportal
+     namespace: kubeportal
+     annotations:
+       kubernetes.io/ingress.class: nginx
+       cert-manager.io/cluster-issuer: letsencrypt
+   spec:
+     tls:
+     - secretName: "cluster-subdomain-tls"
+       hosts:
+       - "cluster.example.com"
+     rules:
+     - host: "cluster.example.com"
+       http: 
+         paths: 
+         - path: 
+           backend:
+             serviceName: kubeportal
+             servicePort: 8000
