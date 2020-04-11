@@ -1,3 +1,5 @@
+from django import forms
+from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.conf import settings
 from django.urls import path, reverse
 from django.utils.html import format_html
@@ -108,15 +110,15 @@ class WebApplicationAdmin(admin.ModelAdmin):
         else:
             return ""
 
-
     def portal_group_list(self, instance):
         html_list = []
         for group in instance.portal_groups.all():
-            group_url = reverse('admin:kubeportal_portalgroup_change', args=[group.id,])
-            html_list.append(format_html('<a href="{}">{}</a>', group_url, group.name))
+            group_url = reverse(
+                'admin:kubeportal_portalgroup_change', args=[group.id, ])
+            html_list.append(format_html(
+                '<a href="{}">{}</a>', group_url, group.name))
         return format_html(', '.join(html_list))
     portal_group_list.short_description = "Allowed for"
-
 
     def client_id(self, instance):
         return instance.oidc_client.client_id if instance.oidc_client else ""
@@ -211,15 +213,56 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
         return qs
 
 
+class PortalGroupAdminForm(forms.ModelForm):
+    exclude = ()
+    members = forms.ModelMultipleChoiceField(
+        queryset=User.objects.all(),
+        required=False,
+        widget=FilteredSelectMultiple(
+            verbose_name=('Members'),
+            is_stacked=False
+        )
+    )
+
+    class Meta:
+        model = models.PortalGroup
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk:
+            self.fields['members'].initial = self.instance.members.all()
+
+    def save(self, commit=True):
+        group = super().save(commit=False)
+
+        if commit:
+            group.save()
+
+        if topping.pk:
+            group.members = self.cleaned_data['members']
+            self.save_m2m()
+
+        return group
+
+
 class PortalGroupAdmin(admin.ModelAdmin):
-    list_display = ('name', 'members_list', 'auto_add_new', 'auto_add_approved', 'can_admin', 'app_list')
+    form = PortalGroupAdminForm
+
+    list_display = ('name', 'members_list', 'can_admin', 'app_list')
+    fieldsets = (
+        ('General', {'fields': ('name', 'can_admin')}),
+        (None, {'fields': ('can_web_applications',)}),
+    )
 
     def members_list(self, instance):
         from django.urls import reverse
         html_list = []
         for user in instance.members.all():
-            user_url = reverse('admin:kubeportal_user_change', args=[user.id,])
-            html_list.append(format_html('<a href="{}">{}</a>', user_url, user.username))
+            user_url = reverse(
+                'admin:kubeportal_user_change', args=[user.id, ])
+            html_list.append(format_html(
+                '<a href="{}">{}</a>', user_url, user.username))
         return format_html(', '.join(html_list))
     members_list.short_description = "Members"
 
@@ -232,7 +275,8 @@ def make_assign_to_group_action(group):
     def assign_to_group(modeladmin, request, queryset):
         for user in queryset:
             user.portal_groups.add(group)
-            messages.info(request, "User '{0}' is now member of '{1}'".format(user, group))
+            messages.info(
+                request, "User '{0}' is now member of '{1}'".format(user, group))
 
     assign_to_group.short_description = "Assign to group '{0}'".format(group)
     assign_to_group.__name__ = 'assign_to_group_{0}'.format(group.pk)
@@ -265,11 +309,12 @@ class PortalUserAdmin(UserAdmin):
         from django.urls import reverse
         html_list = []
         for group in instance.portal_groups.all():
-            group_url = reverse('admin:kubeportal_portalgroup_change', args=[group.id,])
-            html_list.append(format_html('<a href="{}">{}</a>', group_url, group.name))
+            group_url = reverse(
+                'admin:kubeportal_portalgroup_change', args=[group.id, ])
+            html_list.append(format_html(
+                '<a href="{}">{}</a>', group_url, group.name))
         return format_html(', '.join(html_list))
     portal_group_list.short_description = "Groups"
-
 
     def get_actions(self, request):
         actions = super(PortalUserAdmin, self).get_actions(request)
@@ -281,9 +326,9 @@ class PortalUserAdmin(UserAdmin):
                                         action.short_description)
         return actions
 
-
     def formfield_for_manytomany(self, db_field, request=None, **kwargs):
-        kwargs['widget'] = SortedFilteredSelectMultiple(attrs = {'verbose_name': 'user groups'})
+        kwargs['widget'] = SortedFilteredSelectMultiple(
+            attrs={'verbose_name': 'user groups'})
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def get_readonly_fields(self, request, obj=None):
@@ -307,7 +352,8 @@ class PortalUserAdmin(UserAdmin):
 
     def render_change_form(self, request, context, *args, **kwargs):
         if 'service_account' in context['adminform'].form.fields:
-            context['adminform'].form.fields['service_account'].queryset = models.KubernetesServiceAccount.objects.filter(namespace__visible=True)
+            context['adminform'].form.fields['service_account'].queryset = models.KubernetesServiceAccount.objects.filter(
+                namespace__visible=True)
         return super().render_change_form(request, context, *args, **kwargs)
 
     def get_urls(self):
