@@ -80,18 +80,58 @@ def make_invisible(modeladmin, request, queryset):
 make_invisible.short_description = "Mark as non-visible"
 
 
+class WebApplicationAdminForm(forms.ModelForm):
+    portal_groups = forms.ModelMultipleChoiceField(
+        queryset=models.PortalGroup.objects.all(),
+        required=False,
+        widget=FilteredSelectMultiple(
+            verbose_name=('Groups'),
+            is_stacked=False
+        )
+    )
+
+    class Meta:
+        model = models.WebApplication
+        fields = ('name', 'link_show', 'link_name',
+                  'link_url', 'oidc_client', 'can_subauth')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.instance and self.instance.pk:
+            self.fields['portal_groups'].initial = self.instance.portal_groups.all()
+
+    def save(self, commit=True):
+        webapp = super().save(commit=False)
+
+        if commit:
+            webapp.save()
+
+        if webapp.pk:
+            webapp.portal_groups.set(self.cleaned_data['portal_groups'])
+            self.save_m2m()
+
+        return webapp
+
+
 class WebApplicationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'link_show', 'client_id',
-                    'client_secret', 'client_redirect_uris', 'subauth_url', 'portal_group_list']
+    form = WebApplicationAdminForm
+
+    list_display = ['name', 'portal_group_list', 'link_show', 'client_id',
+                    'client_secret', 'client_redirect_uris',
+                    'subauth_url', ]
 
     fieldsets = (
         (None, {
             'fields': ('name',)
         }),
-        ('Portal frontend', {
+        ('Access allowed', {
+            'fields': ('portal_groups',),
+        }),
+        ('Visibility', {
             'fields': ('link_show', 'link_name', 'link_url'),
         }),
-        ('Security', {
+        ('Integration', {
             'fields': ('oidc_client', 'can_subauth'),
         }),
     )
@@ -214,7 +254,6 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
 
 class PortalGroupAdminForm(forms.ModelForm):
-    exclude = ()
     members = forms.ModelMultipleChoiceField(
         queryset=User.objects.all(),
         required=False,
@@ -226,7 +265,7 @@ class PortalGroupAdminForm(forms.ModelForm):
 
     class Meta:
         model = models.PortalGroup
-        fields = ('name','can_admin')
+        fields = ('name', 'can_admin')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
