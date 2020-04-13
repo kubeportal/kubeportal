@@ -226,6 +226,7 @@ class PortalGroupAdminForm(forms.ModelForm):
 
     class Meta:
         model = models.PortalGroup
+        fields = ('name','can_admin')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -239,8 +240,8 @@ class PortalGroupAdminForm(forms.ModelForm):
         if commit:
             group.save()
 
-        if topping.pk:
-            group.members = self.cleaned_data['members']
+        if group.pk:
+            group.members.set(self.cleaned_data['members'])
             self.save_m2m()
 
         return group
@@ -251,8 +252,9 @@ class PortalGroupAdmin(admin.ModelAdmin):
 
     list_display = ('name', 'members_list', 'can_admin', 'app_list')
     fieldsets = (
-        ('General', {'fields': ('name', 'can_admin')}),
-        (None, {'fields': ('can_web_applications',)}),
+        (None, {'fields': ('name',)}),
+        ('Members', {'fields': ('members',)}),
+        ('Permissions', {'fields': ('can_admin', 'can_web_applications',)}),
     )
 
     def members_list(self, instance):
