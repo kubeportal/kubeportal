@@ -13,23 +13,28 @@ logger = logging.getLogger('KubePortal')
 @receiver(post_save, sender=User)
 def handle_user_change(sender, instance, created, **kwargs):
     '''
-    Handle changes of user attributes.
-    Group membership are handled separately.
+    Handle changes of user attributes:
+    - New user comes to the system, must be member of "all" special group.
+    - User gets approval state change, must be reflected in "k8s" special group.
     '''
-    if created:
-        logger.debug("Creation of user {0} detected.".format(instance))
-        for group in PortalGroup.objects.all():
-            if group.auto_add_new:
-                logger.debug("Making sure that new user {0} is in auto-add-new group {1}".format(instance, group))
-                group.members.add(instance)
-                group.save()
-    else:
-        logger.debug("Change of user {0} detected.".format(instance))
-        if instance.has_access_approved():
-            for group in PortalGroup.objects.all():
-                if group.auto_add_approved:
-                    logger.debug("Making sure that user {0} is in auto-add-approved group {1}".format(instance, group))
-                    group.members.add(instance)
+    logger.debug("Change of user {0} detected.".format(instance))
+
+    # The index is just a safeguard for broken databases
+    # There should be only one of them per type
+    all_group = PortalGroup.objects.filter(special_all_acounts=True)[0]
+    k8s_group = PortalGroup.objects.filter(special_k8s_acounts=True)[0]
+
+    if not instance.portal_groups.filter(pk=all_group.pk).exists():
+        logger.info("Putting user {0} into special group for all users".format(instance))
+        all_group.members.add(instance)
+
+    if instance.has_access_approved() and not instance.portal_groups.filter(pk=k8s_group.pk).exists():
+        logger.info("Putting user {0} into special group for Kubernetes users".format(instance))
+        k8s_group.members.add(instance)
+
+    if not instance.has_access_approved() and instance.portal_groups.filter(pk=k8s_group.pk).exists():
+        logger.info("Removing user {0} from special group for Kubernetes users".format(instance))
+        k8s_group.members.remove(instance)
 
 
 def _set_staff_status(user):

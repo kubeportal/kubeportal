@@ -107,6 +107,10 @@ class PortalGroup(models.Model):
     def __str__(self):
         return self.name
 
+    def is_special_group(self):
+        ''' Returns if this is a special group with automatic member management.'''
+        return self.special_k8s_acounts or self.special_all_acounts
+
     def has_member(self, user):
         return self.members.filter(pk=user.pk).exists()
 
@@ -157,16 +161,19 @@ class User(AbstractUser):
             return False
 
     def has_access_approved(self):
-        logger.debug("User {0} has access approved.".format(self))
-        return self.state == UserState.ACCESS_APPROVED and self.service_account
+        result = (self.state == UserState.ACCESS_APPROVED and self.service_account)
+        logger.debug("Access approved for user {0}: {1}".format(self, result))
+        return result
 
     def has_access_rejected(self):
-        logger.debug("User {0} has access rejected.".format(self))
-        return self.state == UserState.ACCESS_REJECTED
+        result = (self.state == UserState.ACCESS_REJECTED)
+        logger.debug("Access rejected for user {0}: {1}".format(self, result))
+        return result
 
     def has_access_requested(self):
-        logger.debug("User {0} has access requested.".format(self))
-        return self.state == UserState.ACCESS_REQUESTED and self.approval_id
+        result = (self.state == UserState.ACCESS_REQUESTED and self.approval_id)
+        logger.debug("Access requested by user {0}: {1}".format(self, result))
+        return result
 
     @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED, UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
     def send_access_request(self, request):

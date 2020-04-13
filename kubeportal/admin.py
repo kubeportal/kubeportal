@@ -270,7 +270,7 @@ class PortalGroupAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if self.instance and self.instance.pk:
+        if self.instance and self.instance.pk and 'members' in self.fields:
             self.fields['members'].initial = self.instance.members.all()
 
     def save(self, commit=True):
@@ -287,14 +287,37 @@ class PortalGroupAdminForm(forms.ModelForm):
 
 
 class PortalGroupAdmin(admin.ModelAdmin):
-    form = PortalGroupAdminForm
+    '''
+    The group edit form disables name editing and membership management
+    when a special group is shown. This is intended to prevent people
+    from messing with group that have automated member management -
+    users should only change the related mechanisms.
+
+    In case something goes wrong, the superuser still has full edit rights.
+    '''
+    form = PortalGroupAdminForm     # implement reverse member management
 
     list_display = ('name', 'members_list', 'can_admin', 'app_list')
-    fieldsets = (
-        (None, {'fields': ('name',)}),
-        ('Members', {'fields': ('members',)}),
-        ('Permissions', {'fields': ('can_admin', 'can_web_applications',)}),
-    )
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            if obj.is_special_group()  and not request.user.is_superuser:
+                return ('name', 'members')
+        return ()
+
+    def get_fieldsets(self, request, obj=None):
+        if obj:
+            if obj.is_special_group() and not request.user.is_superuser:
+                return (
+                    (None, {'fields': ('name',)}),
+                    ('Permissions', {'fields': ('can_admin', 'can_web_applications',)}),
+                )
+        return (
+            (None, {'fields': ('name',)}),
+            ('Members', {'fields': ('members',)}),
+            ('Permissions', {'fields': ('can_admin', 'can_web_applications',)}),
+        )
+
 
     def members_list(self, instance):
         from django.urls import reverse
