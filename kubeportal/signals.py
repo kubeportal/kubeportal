@@ -21,8 +21,8 @@ def handle_user_change(sender, instance, created, **kwargs):
 
     # The index is just a safeguard for broken databases
     # There should be only one of them per type
-    all_group = PortalGroup.objects.filter(special_all_acounts=True)[0]
-    k8s_group = PortalGroup.objects.filter(special_k8s_acounts=True)[0]
+    all_group = PortalGroup.objects.filter(special_all_accounts=True)[0]
+    k8s_group = PortalGroup.objects.filter(special_k8s_accounts=True)[0]
 
     if not instance.portal_groups.filter(pk=all_group.pk).exists():
         logger.info("Putting user {0} into special group for all users".format(instance))

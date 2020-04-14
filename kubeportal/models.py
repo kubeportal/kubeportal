@@ -109,7 +109,7 @@ class PortalGroup(models.Model):
 
     def is_special_group(self):
         ''' Returns if this is a special group with automatic member management.'''
-        return self.special_k8s_acounts or self.special_all_acounts
+        return self.special_k8s_acounts or self.special_all_accounts
 
     def has_member(self, user):
         return self.members.filter(pk=user.pk).exists()

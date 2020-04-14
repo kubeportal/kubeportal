@@ -7,13 +7,13 @@ def add_special_groups(apps, schema_editor):
     # We can't import the model directly as it may be a newer
     # version than this migration expects. We use the historical version.
     PortalGroup = apps.get_model('kubeportal', 'PortalGroup')
-    has_all_group = PortalGroup.objects.filter(special_all_acounts=True).exists()
+    has_all_group = PortalGroup.objects.filter(special_all_accounts=True).exists()
     if not has_all_group:
-    	all_group = PortalGroup(name="All users", special_all_acounts=True)
+    	all_group = PortalGroup(name="All users", special_all_accounts=True)
     	all_group.save()
-    has_k8s_group = PortalGroup.objects.filter(special_k8s_acounts=True).exists()
+    has_k8s_group = PortalGroup.objects.filter(special_k8s_accounts=True).exists()
     if not has_k8s_group:
-    	k8s_group = PortalGroup(name="Kubernetes users", special_k8s_acounts=True)
+    	k8s_group = PortalGroup(name="Kubernetes users", special_k8s_accounts=True)
     	k8s_group.save()
 
 
