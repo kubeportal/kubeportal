@@ -82,8 +82,8 @@ class FrontendOidc(AdminLoggedOutTestCase):
 
         return token
 
-    def _create_group(self, name, member=None, app=None, auto_add_new=False):
-        group = models.PortalGroup(name=name, auto_add_new=auto_add_new)
+    def _create_group(self, name, member=None, app=None):
+        group = models.PortalGroup(name=name)
         group.save()
         if member:
             group.members.add(member)
@@ -134,13 +134,6 @@ class FrontendOidc(AdminLoggedOutTestCase):
             self._authenticate(self.client[0])
         with self.assertRaises(PermissionDenied):
             self._authenticate(self.client[1])
-
-    def test_no_group_auto_add_new_on_deny(self):
-        auto_group = self._create_group(
-            name="Auto-add group", auto_add_new=True)
-        with self.assertRaises(PermissionDenied):
-            self._authenticate(self.client[0])
-        self.assertEquals(auto_group.members.all().count(), 0)
 
     def test_token_auth(self):
         url = reverse('oidc_provider:userinfo')

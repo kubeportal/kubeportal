@@ -79,21 +79,6 @@ class PortalGroups(AnonymousTestCase):
         self.second_user.refresh_from_db()  # catch changes from signal handlers
         self.assertEquals(self.second_user.is_staff, False)
 
-    def test_auto_add_new(self):
-        # Creating an auto_add_new group should not change its member list.
-        group = models.PortalGroup(name="All users", auto_add_new=True)
-        group.save()
-        self.assertEquals(group.members.count(), 0)
-        # Changing an existing user should not change its member list.
-        self.second_user.is_staff = not self.second_user.is_staff
-        self.second_user.save()
-        self.assertEquals(group.members.count(), 0)
-        # Adding a new user chould change the member list
-        User = get_user_model()
-        self.third_admin = User(username="Hugo")
-        self.third_admin.save()
-        self.assertEquals(group.members.count(), 1)
-
     def test_permission_adjustment(self):
         self.assertEquals(self.second_user.user_permissions.all().count(), 0)
         # Create admin group

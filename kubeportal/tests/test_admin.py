@@ -84,11 +84,9 @@ class Backend(AdminLoggedInTestCase):
             # K8S login mocked away, view should not crash
             self._call_sync()
 
-    def test_auto_add_approved(self):
+    def test_special_k8s_approved(self):
         # Creating an auto_add_approved group should not change its member list.
-        group = models.PortalGroup(
-            name="Approved users", auto_add_approved=True)
-        group.save()
+        group = models.PortalGroup.objects.get(special_k8s_acounts=True)
         self.assertEquals(group.members.count(), 0)
         # Create a new user should not change the member list
         User = get_user_model()
@@ -121,6 +119,27 @@ class Backend(AdminLoggedInTestCase):
         u.save()
         # Should lead to addition of user to the add_approved group
         self.assertEquals(group.members.count(), 1)
+
+
+    def test_special_k8s_unapproved(self):
+        group = models.PortalGroup.objects.get(special_k8s_acounts=True)
+        ns = KubernetesNamespace(name="default")
+        ns.save()
+        new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
+        new_svc.save()
+        User = get_user_model()
+        # create approved user
+        u = User(username="Hugo", 
+                 email="a@b.de", 
+                 state=models.UserState.ACCESS_APPROVED,
+                 service_account = new_svc)
+        u.save()
+        self.assertEquals(group.members.count(), 1)
+        # unapprove
+        u.state=models.UserState.ACCESS_REJECTED
+        u.save()
+        self.assertEquals(group.members.count(), 0)
+
 
     def _test_user_rejection(self):
         User = get_user_model()
