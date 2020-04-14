@@ -89,9 +89,9 @@ class PortalGroup(models.Model):
     name = models.CharField(
         max_length=100,
         verbose_name='Name')
-    special_k8s_acounts = models.BooleanField(
+    special_k8s_accounts = models.BooleanField(
         default=False)  # special group, automatically contains all k8s account holders
-    special_all_acounts = models.BooleanField(
+    special_all_accounts = models.BooleanField(
         default=False)  # special group, automatically contains all accounts
     can_admin = models.BooleanField(
         verbose_name="Backend access",

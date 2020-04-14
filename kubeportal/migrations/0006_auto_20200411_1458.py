@@ -20,12 +20,12 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='portalgroup',
-            name='special_all_acounts',
+            name='special_all_accounts',
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
             model_name='portalgroup',
-            name='special_k8s_acounts',
+            name='special_k8s_accounts',
             field=models.BooleanField(default=False),
         ),
     ]
