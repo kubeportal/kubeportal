@@ -372,7 +372,7 @@ class PortalUserAdmin(UserAdmin):
     def portal_group_list(self, instance):
         from django.urls import reverse
         html_list = []
-        for group in instance.portal_groups.all():
+        for group in instance.portal_groups.filter(special_k8s_accounts=False, special_all_accounts=False):
             group_url = reverse(
                 'admin:kubeportal_portalgroup_change', args=[group.id, ])
             html_list.append(format_html(
