@@ -86,7 +86,7 @@ class Backend(AdminLoggedInTestCase):
 
     def test_special_k8s_approved(self):
         # Creating an auto_add_approved group should not change its member list.
-        group = models.PortalGroup.objects.get(special_k8s_acounts=True)
+        group = models.PortalGroup.objects.get(special_k8s_accounts=True)
         self.assertEquals(group.members.count(), 0)
         # Create a new user should not change the member list
         User = get_user_model()
@@ -122,7 +122,7 @@ class Backend(AdminLoggedInTestCase):
 
 
     def test_special_k8s_unapproved(self):
-        group = models.PortalGroup.objects.get(special_k8s_acounts=True)
+        group = models.PortalGroup.objects.get(special_k8s_accounts=True)
         ns = KubernetesNamespace(name="default")
         ns.save()
         new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
