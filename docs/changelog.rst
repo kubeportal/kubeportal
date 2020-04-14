@@ -2,6 +2,16 @@ Changelog
 #########
 
 
+.. _v0.3.12:
+
+v0.3.12 Release
+===============
+
+  * Allow reverse member management in backend at different places (:issue:`61`)(:issue:`62`)
+  * Fix bug with duplicate web apps being shown
+  * "All users" and "Kubernetes users" are not automatically created and managed groups
+
+
 .. _v0.3.8:
 
 v0.3.8 Release
