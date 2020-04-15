@@ -1,6 +1,14 @@
 Changelog
 #########
 
+.. _v0.3.13:
+
+v0.3.13 Release
+===============
+
+  * Fix sync with pre-existing namespaces of the same name in K8S
+  * Fix sync with illegal namespace names after approval
+
 
 .. _v0.3.12:
 
