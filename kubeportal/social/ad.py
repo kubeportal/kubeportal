@@ -67,10 +67,15 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
             except KeyError:
                 pass
 
+
 def alt_mails(strategy, user, is_new=False, *args, details, backend, **kwargs):
-    print(details)
     current_user = get_user_model()
     if current_user:
+        # strip unix prefixes of normal email addresses
+        # unix:user@domain.tld -> user@domain.tld
+        details['alt_mails'] = [i.lower().replace("unix:", "") for i in details['alt_mails']]
         current_user.alt_mails = details['alt_mails']
+        logger.info("Updated alternative email addresses of user \"{}\""
+                    .format(details['fullname']))
     else:
-        print("COULDN'T GET USER REEEEE")
+        logger.info("Couldn't get user model to add alternative emails!")
