@@ -19,9 +19,23 @@ class Backend(AdminLoggedInTestCase):
     Tests for backend functionality when admin is logged in.
      '''
 
-    def _call_sync(self):
-        response = self.c.get(reverse('admin:sync'))
-        self.assertRedirects(response, reverse('admin:index'))
+    def _build_full_request_mock(self, short_url):
+        url = reverse(short_url)
+        request = self.factory.get(url)
+        request.user = self.admin
+        middleware = SessionMiddleware()
+        middleware.process_request(request)
+        request.session.save()
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        return request
+
+    def _call_sync(self, expect_success=True):
+        # We are calling the sync method directly here, and not through the view,
+        # so that the result of sync is directly analyzed
+        request = self._build_full_request_mock('admin:index')
+        sync_success = kubernetes.sync(request)
+        self.assertEquals(sync_success, expect_success)
 
     def setUp(self):
         super().setUp()
@@ -51,19 +65,41 @@ class Backend(AdminLoggedInTestCase):
         ns_names = [ns.metadata.name for ns in kubernetes.get_namespaces()]
         self.assertIn("foo", ns_names)
 
+    def test_new_ns_broken_name_sync(self):
+        core_v1, rbac_v1 = kubernetes._load_config()
+        new_ns = KubernetesNamespace(name="foo_bar")
+        new_ns.save()
+        self._call_sync()
+        ns_names = [ns.metadata.name for ns in kubernetes.get_namespaces()]
+        self.assertNotIn("foo_bar", ns_names)
+        self.assertIn("foobar", ns_names)
+        self.assertEquals(KubernetesNamespace.objects.filter(name="foobar").exists(), True)
+        kubernetes._delete_k8s_ns("foobar", core_v1)
+
     def test_new_external_ns_sync(self):
         self._call_sync()
         core_v1, rbac_v1 = kubernetes._load_config()
-        kubernetes._create_k8s_ns("new-external-ns", core_v1)
+        kubernetes._create_k8s_ns("new-external-ns1", core_v1)
         try:
             self._call_sync()
             new_ns_object = KubernetesNamespace.objects.get(
-                name="new-external-ns")
+                name="new-external-ns1")
             self.assertEqual(new_ns_object.is_synced(), True)
             for svc_account in new_ns_object.service_accounts.all():
                 self.assertEqual(svc_account.is_synced(), True)
         finally:
-            kubernetes._delete_k8s_ns("new-external-ns", core_v1)
+            kubernetes._delete_k8s_ns("new-external-ns1", core_v1)
+
+    def test_exists_both_sides_sync(self):
+        self._call_sync()
+        core_v1, rbac_v1 = kubernetes._load_config()
+        kubernetes._create_k8s_ns("new-external-ns2", core_v1)
+        new_ns = KubernetesNamespace(name="new-external-ns2")
+        new_ns.save()
+        try:
+            self._call_sync()
+        finally:
+            kubernetes._delete_k8s_ns("new-external-ns2", core_v1)
 
     def test_new_svc_sync(self):
         self._call_sync()
@@ -101,14 +137,7 @@ class Backend(AdminLoggedInTestCase):
         # Just sending an approval request should not change to member list
         self.assertEquals(group.members.count(), 0)
         # Build full-fledged request object for logged-in admin
-        url = reverse('admin:index')
-        request = self.factory.get(url)
-        request.user = self.admin
-        middleware = SessionMiddleware()
-        middleware.process_request(request)
-        request.session.save()
-        messages = FallbackStorage(request)
-        setattr(request, '_messages', messages)
+        request = self._build_full_request_mock('admin:index')
         # Prepare K8S namespace
         ns = KubernetesNamespace(name="default")
         ns.save()
@@ -151,14 +180,7 @@ class Backend(AdminLoggedInTestCase):
         u.send_access_request(request)
         u.save()
         # Build full-fledged request object for logged-in admin
-        url = reverse('admin:index')
-        request = self.factory.get(url)
-        request.user = self.admin
-        middleware = SessionMiddleware()
-        middleware.process_request(request)
-        request.session.save()
-        messages = FallbackStorage(request)
-        setattr(request, '_messages', messages)
+        request = self._build_full_request_mock('admin:index')
         assert(u.reject(request))
         u.save()
         assert(u.has_access_rejected())

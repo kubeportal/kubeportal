@@ -16,6 +16,7 @@ from kubernetes import client, config
 from base64 import b64decode
 import json
 import logging
+import re
 
 from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount
 
@@ -29,10 +30,16 @@ HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 def _create_k8s_ns(name, core_v1):
     logger.info(
         "Creating Kubernetes namespace '{0}'".format(name))
-    k8s_ns = client.V1Namespace(
-        api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=name))
-    core_v1.create_namespace(k8s_ns)
-    # Fetch UID and store it in portal record
+    try:
+        k8s_ns = client.V1Namespace(
+            api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=name))
+        core_v1.create_namespace(k8s_ns)
+    except client.rest.ApiException as e:
+        # Race condition or earlier sync error - the K8S namespace is already there
+        if e.status == 409:
+            logger.warning("Tried to create already existing Kubernetes namespace {}. Skipping the creation and using the existing one.".format(name))
+        else:
+            raise e
     return core_v1.read_namespace(name=name)
 
 
@@ -107,6 +114,15 @@ def _sync_namespaces(request, core_v1, rbac_v1):
                         request, "Namespace '{0}' no longer exists in Kubernetes and was removed.".format(portal_ns.name))
             else:
                 # Portal namespaces without UID are new and should be created in K8S
+                logger.debug("Namespace record {} has no UID, creating it in Kubernetes ...".format(portal_ns.name))
+                # Sanitize name, K8S only allows DNS names for namespaces
+                sanitized_name = re.sub('[^a-zA-Z0-9]', '', portal_ns.name)
+                if sanitized_name !=  portal_ns.name:
+                    logger.warning("Given name '{}' for new Kubernetes namespace is invalid, replacing it with '{}'".format(portal_ns.name, sanitized_name))
+                    messages.warning(request, "Given name '{}' for new Kubernetes namespace was invalid, chosen name is now '{}'".format(portal_ns.name, sanitized_name))
+                    # TODO: May already exist?
+                    portal_ns.name = sanitized_name
+                    portal_ns.save()
                 created_k8s_ns = _create_k8s_ns(portal_ns.name, core_v1)
                 portal_ns.uid = created_k8s_ns.metadata.uid
                 portal_ns.save()
