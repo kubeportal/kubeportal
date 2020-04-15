@@ -8,6 +8,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags, mark_safe
 from oidc_provider.models import Client
+from multi_email_field.fields import MultiEmailField
 import uuid
 import logging
 
@@ -144,6 +145,7 @@ class User(AbstractUser):
         'User', help_text="Which user approved the cluster access for this user.", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
     comments = models.CharField(
         max_length=150, default="", null=True, blank=True)
+    alt_mails = MultiEmailField(default=None, null=True, blank=True)
     portal_groups = models.ManyToManyField(
         PortalGroup, blank=True, verbose_name='Groups', help_text="The user groups this account belongs to.", related_name='members')
 

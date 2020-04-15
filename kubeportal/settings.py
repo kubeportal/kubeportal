@@ -21,6 +21,7 @@ class Common(Configuration):
         'social_django',
         'rest_framework',
         'rest_framework.authtoken',
+        'multi_email_field',
         'kubeportal',
     ]
 
@@ -92,6 +93,7 @@ class Common(Configuration):
 
     SOCIAL_AUTH_PIPELINE = (
         'kubeportal.social.ad.user_password',
+        'kubeportal.social.ad.alt_mails',
         'social_core.pipeline.social_auth.social_details',
         'social_core.pipeline.social_auth.social_uid',
         'social_core.pipeline.social_auth.auth_allowed',

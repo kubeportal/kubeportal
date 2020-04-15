@@ -3,7 +3,6 @@ import logging
 
 logger = logging.getLogger('KubePortal')
 
-
 def permission_check(user, client):
     for group in user.portal_groups.all():
         for app in group.can_web_applications.all():
