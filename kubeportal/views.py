@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 
 from kubeportal.models import WebApplication
 from kubeportal import kubernetes
@@ -120,7 +120,6 @@ class SubAuthRequestView(View):
                 return HttpResponse(status=401)
 
 
-
 class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'config.txt'
 
@@ -151,3 +150,19 @@ class ConfigView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         Allow config view only if a K8S service account is set.
         '''
         return self.request.user.service_account is not None
+
+
+class SettingsView(LoginRequiredMixin, TemplateView):
+    template_name = "portal_settings.html"
+
+    def update_settings(request):
+        if request.method == "POST":
+            user = request.user
+            alt_mails = user.alt_mails
+            new_default_email = request.POST['default-email']
+            if new_default_email in alt_mails:
+                user.email = new_default_email
+                user.save()
+                logger.info("Changed default email of user \"{}\" to \"{}\""
+                            .format(user.username, new_default_email))
+        return redirect("settings")
