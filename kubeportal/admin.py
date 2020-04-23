@@ -254,7 +254,7 @@ class PortalUserAdmin(UserAdmin):
                     'portal_group_list', 'state', 'answered_by', 'approve_link')
     fieldsets = (
         (None, {'fields': ('username', 'first_name',
-                           'last_name', 'email', 'comments', 'alt_mails', 'is_staff')}),
+                           'last_name', 'email', 'comments', 'is_staff')}),
         (None, {'fields': ('state', 'answered_by', 'service_account', 'is_superuser')}),
         (None, {'fields': ('portal_groups',)})
     )
