@@ -5,9 +5,9 @@
 
 <form action="/settings/update" method="POST">
     {% csrf_token %}
-    <div class="submit-row">
+    <div class="form-group">
         <label for="default-email">Default Email:</label>
-        <select name="default-email" id="default-email-selection">
+        <select class="form-control" name="default-email" id="default-email-selection">
             {% for address in user.alt_mails %}
             {% if address == user.email %}
             <option value="{% filter lower %}{{ address }}{% endfilter %}" selected> {{ address }} </option>
@@ -16,7 +16,7 @@
             {% endif %}
             {% endfor %}
         </select>
-        <button type="submit" value="OK"> Save </button>
+        <button class="btn btn-primary mt-4" type="submit" value="OK"> Save </button>
     </div>
 </form>
 
