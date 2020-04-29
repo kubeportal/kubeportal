@@ -464,7 +464,7 @@ class PortalUserAdmin(UserAdmin):
             if request.POST['choice'] == "reject":
                 if user.reject(request):
                     user.save()
-            return redirect('admin:kubeportal_user_changelist')
+            return redirect("logout")
         else:
             if user.has_access_approved or user.has_access_rejected:
                 context['answered_decision'] = user.state
