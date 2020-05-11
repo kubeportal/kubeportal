@@ -35,6 +35,9 @@
             {% if 'next' in request.GET %}
               <input type="hidden" name="next" value="{{ request.GET.next }}"/>
             {% endif %}
+            {% if 'rd' in request.GET %}
+              <input type="hidden" name="next" value="{{ request.GET.next }}"/>
+            {% endif %}
             <div class="form-group">
               <div class="form-label-group">
                 <input type="text" id="username" name="username" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
