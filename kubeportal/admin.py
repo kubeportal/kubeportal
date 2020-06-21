@@ -355,12 +355,12 @@ def reject(modeladmin, request, queryset):
             user.save()
 reject.short_description = "Reject access request for selected users"
 
-def merge_users(modeladmin, request, users):
-    if len(users) != 2:
+def merge_users(modeladmin, request, queryset):
+    if len(queryset) != 2:
         messages.warning(
             request, "Please choose exactly two users to merge.")
         return reverse('admin:index')
-    primary, secondary = users.order_by('date_joined')
+    primary, secondary = queryset.order_by('date_joined')
 
     # first check if any of the two accounts are rejected.
     # if any are, make sure to reject both as well.
@@ -386,8 +386,8 @@ def merge_users(modeladmin, request, users):
     joined_groups = [str(g) for g in joined_groups]
     if joined_groups:
         messages.info(request, F"User '{primary.username}' joined the group(s) {joined_groups}")
-    if not primary.comments:
-        if secondary.comments:
+    if primary.comments == "" or primary.comments == None:
+        if  secondary.comments != "" and secondary.comments is not None:
             primary.comments = secondary.comments
     primary.save()
     secondary.delete()
