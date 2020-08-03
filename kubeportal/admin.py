@@ -12,7 +12,7 @@ from oidc_provider.models import Client
 from sortedm2m_filter_horizontal_widget.forms import SortedFilteredSelectMultiple
 import logging
 import uuid
-from . import models
+from . import models, admin_views
 from kubeportal import kubernetes
 
 
@@ -26,11 +26,11 @@ class CustomAdminSite(admin.AdminSite):
 
     def get_urls(self):
         urls = super().get_urls()
-        return urls + [path('sync/', self.admin_view(self.sync_view), name='sync'), ]
-
-    def sync_view(self, request):
-        kubernetes.sync(request)
-        return redirect('admin:index')
+        urls += [
+                path('cleanup/', admin_views.CleanupView.as_view(), name='cleanup'),
+                path('sync/', admin_views.sync_view, name='sync')
+                ]
+        return urls
 
 
 class KubernetesServiceAccountAdmin(admin.ModelAdmin):
