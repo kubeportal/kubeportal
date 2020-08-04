@@ -18,6 +18,8 @@ urlpatterns = [
     path('config/download/', views.ConfigDownloadView.as_view(content_type='text/plain'), name='config_download'),
     path('', views.IndexView.as_view(), name="index"),
     path('welcome/', views.WelcomeView.as_view(), name="welcome"),
+    path('settings/', views.SettingsView.as_view(), name="settings"),
+    path('settings/update', views.SettingsView.update_settings, name="update_settings"),
     path('access/request/', views.AccessRequestView.as_view(), name="access_request"),
     path('logout/', LogoutView.as_view(), name="logout"),
     path('social/', include('social_django.urls')),				# AD login, if available

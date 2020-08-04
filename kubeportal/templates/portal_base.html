@@ -20,6 +20,12 @@
           <span>Welcome</span>
         </a>
       </li>
+      <li class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+        <a class="nav-link" href="{% url 'settings' %}">
+          <i class="fas fa-fw fa-chart-pie"></i>
+          <span>Settings</span>
+        </a>
+      </li>
       {% if user.has_access_approved %}
       <li class="nav-item {% if request.resolver_match.url_name == 'config' %}active{% endif %}">
         <a class="nav-link" href="{% url 'config' %}">

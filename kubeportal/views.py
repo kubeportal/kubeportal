@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 
 from kubeportal.models import WebApplication
 from kubeportal import kubernetes
@@ -56,6 +56,22 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
                         logger.debug('Not showing link to app "{0}" in welcome view. Although user "{1}"" is in group "{2}", link_show is set to False.'.format(app, self.request.user, group))
         context['clusterapps'] = allowed_apps
         return context
+
+
+class SettingsView(LoginRequiredMixin, TemplateView):
+    template_name = "portal_settings.html"
+
+    def update_settings(request):
+        if request.method == "POST":
+            user = request.user
+            alt_mails = user.alt_mails
+            new_default_email = request.POST['default-email']
+            if new_default_email in alt_mails:
+                user.email = new_default_email
+                user.save()
+                logger.info("Changed default email of user \"{}\" to \"{}\""
+                            .format(user.username, new_default_email))
+        return redirect("settings")
 
 
 class AccessRequestView(LoginRequiredMixin, RedirectView):
