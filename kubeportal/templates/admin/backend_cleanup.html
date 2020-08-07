@@ -1,11 +1,8 @@
-{% extends 'admin/index.html' %}
-{% load i18n admin_urls %}
+{% extends 'admin/custom_backend_view.html' %}
 
 {% block content %}
 
 <div id="content-main">
-
-  <h1>Cleanup report</h1>
 
   <h2>Visible K8S namespaces without assigned users:</h2>
   {% if namespaces_no_portal_users %}

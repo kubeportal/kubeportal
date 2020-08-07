@@ -12,12 +12,14 @@ def sync_view(request):
     kubernetes.sync(request)
     return redirect('admin:index')
 
-class CleanupView(admin.AdminSite, LoginRequiredMixin, TemplateView):
-    template_name = "admin/cleanup.html"
-    site_header = settings.BRANDING + " (Admin Backend)"
+class CleanupView(LoginRequiredMixin, TemplateView):
+    template_name = "admin/backend_cleanup.html"
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
+        context['site_header'] = settings.BRANDING + " (Admin Backend)"
+        context['title'] = "Clean Up"
+
         User = get_user_model()
 
         visible_namespaces = KubernetesNamespace.objects.filter(visible=True)
