@@ -42,12 +42,13 @@
   {% if old_service_accounts %}
   <table class="table table-striped table-responsive-sm">
     <tr>
-      <th>Username</th><th>E-Mail</th><th>Comments</th>
+      <th>Username</th><th>E-Mail</th><th>Creation Date</th><th>Comments</th>
     </tr>
     {% for s in old_service_accounts %}
     <tr>
       <td>{{ s.username }}</td>
       <td>{{ s.email }}</td>
+      <td>{{ s.date_joined }}</td>
       <td>{{ s.comments }}</td>
     </tr>
     {% endfor %}
