@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.conf import settings
 from django.contrib import admin
+from django.db.models import Count
 from kubeportal import kubernetes, models
 from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount
 from datetime import datetime, timedelta
@@ -23,11 +24,11 @@ class CleanupView(LoginRequiredMixin, TemplateView):
         User = get_user_model()
 
         visible_namespaces = KubernetesNamespace.objects.filter(visible=True)
-        context['namespaces_no_portal_users'] = [ns for ns in visible_namespaces if ns.service_accounts.count() == 1]
+        counted_service_accounts = visible_namespaces.annotate(Count('service_accounts'))
+        context['namespaces_no_portal_users'] = [ns for ns in counted_service_accounts if ns.service_accounts__count == 1]
 
         context['namespaces_no_pods'] = []
         pod_list = kubernetes.get_pods()
-        print(visible_namespaces)
         for ns in visible_namespaces:
             ns_has_pods = False
             for pod in pod_list:
