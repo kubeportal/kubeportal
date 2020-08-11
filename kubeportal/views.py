@@ -22,7 +22,6 @@ class IndexView(LoginView):
     def get_success_url_allowed_hosts(self):
         return settings.REDIRECT_HOSTS
 
-
 class StatsView(LoginRequiredMixin, TemplateView):
     template_name = 'portal_stats.html'
 

@@ -13,6 +13,13 @@
         <caption>
             <a href="{{ app.app_url }}" class="section" title="{% blocktrans with name=app.name %}Models in the {{ name }} application{% endblocktrans %}">{{ app.name }}</a>
         </caption>
+
+        <tr>
+          <th scope="row"><a href="/admin/cleanup">Housekeeping</a></th>
+          <td>&nbsp;</td>
+          <td><a class="btn btn-primary viewlink" href="/admin/cleanup">{% trans 'Clean' %}</a></td>
+        </tr>
+
         {% for model in app.models %}
             <tr class="model-{{ model.object_name|lower }}">
             {% if model.admin_url %}
@@ -49,7 +56,6 @@
 {% csrf_token %}
 <div class="submit-row"><input type="submit" value="Synchronize with Kubernetes"/></div>
 </form>
-
 </div>
 
 {% endblock %}
