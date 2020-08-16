@@ -7,9 +7,12 @@ from kubeportal.secret import get_secret_key
 class Common(Configuration):
     VERSION = '0.3.14'
 
+    SITE_ID = 1
+
     SECRET_KEY = get_secret_key()
 
     INSTALLED_APPS = [
+        'django.contrib.sites',
         'django.contrib.admin',
         'django.contrib.auth',
         'django.contrib.contenttypes',
@@ -18,11 +21,17 @@ class Common(Configuration):
         'django.contrib.staticfiles',
         'sortedm2m_filter_horizontal_widget',
         'oidc_provider',
-        'social_django',
         'rest_framework',
         'rest_framework.authtoken',
+        'dj_rest_auth',
+        'dj_rest_auth.registration',
         'multi_email_field',
-        'kubeportal',
+        'kubeportal',    # positioned here to override allauth view templates
+        'allauth',
+        'allauth.account',
+        'allauth.socialaccount',
+        'allauth.socialaccount.providers.google',
+        'allauth.socialaccount.providers.oauth2',
     ]
 
     MIDDLEWARE = [
@@ -33,9 +42,7 @@ class Common(Configuration):
         'django.middleware.csrf.CsrfViewMiddleware',
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
-        'django.middleware.clickjacking.XFrameOptionsMiddleware',
-        'kubeportal.middleware.AuthExceptionMiddleware'
-    ]
+        'django.middleware.clickjacking.XFrameOptionsMiddleware'    ]
 
     ROOT_URLCONF = 'kubeportal.urls'
 
@@ -47,11 +54,9 @@ class Common(Configuration):
             'OPTIONS': {
                 'context_processors': [
                     'django.template.context_processors.debug',
-                    'django.template.context_processors.request',
                     'django.contrib.auth.context_processors.auth',
                     'django.contrib.messages.context_processors.messages',
-                    'social_django.context_processors.backends',
-                    'social_django.context_processors.login_redirect',
+                    'django.template.context_processors.request',
                 ],
             },
         },
@@ -84,36 +89,23 @@ class Common(Configuration):
     ]
 
     AUTHENTICATION_BACKENDS = (
-        'social_core.backends.username.UsernameAuth',
         'django.contrib.auth.backends.ModelBackend',
-        'social_core.backends.twitter.TwitterOAuth',
-        'social_core.backends.google.GoogleOAuth2',
-        'kubeportal.social.oidc.GenericOidc'
+        'kubeportal.ad.ActiveDirectoryBackend',
+        'allauth.account.auth_backends.AuthenticationBackend'
     )
 
-    SOCIAL_AUTH_PIPELINE = (
-        'kubeportal.social.ad.user_password',
-        'kubeportal.social.ad.alt_mails',
-        'social_core.pipeline.social_auth.social_details',
-        'social_core.pipeline.social_auth.social_uid',
-        'social_core.pipeline.social_auth.auth_allowed',
-        'social_core.pipeline.social_auth.social_user',
-        'social_core.pipeline.user.get_username',
-        'social_core.pipeline.user.create_user',
-        'social_core.pipeline.social_auth.associate_user',
-        'social_core.pipeline.social_auth.associate_user',
-        'social_core.pipeline.social_auth.load_extra_data',
-        'social_core.pipeline.user.user_details',
-    )
+    SOCIALACCOUNT_PROVIDERS = {
+        'google': {
+            'APP': {
+                # 'client_id': '123',
+                'secret': values.Value(None, environ_name='AUTH_GOOGLE_SECRET', environ_prefix='KUBEPORTAL'),
+                'key': values.Value(None, environ_name='AUTH_GOOGLE_KEY', environ_prefix='KUBEPORTAL')
+            }
+        }
+    }
 
-    SOCIAL_AUTH_USERNAME_FORM_URL = '/login-form/'
-    SOCIAL_AUTH_USERNAME_FORM_HTML = 'login_form.html'
-    SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/welcome'
     LOGIN_REDIRECT_URL = '/welcome'
-    SOCIAL_AUTH_LOGIN_ERROR_URL = '/'
-    LOGIN_ERROR_URL = '/'
-    LOGIN_URL = '/'
-    LOGOUT_REDIRECT_URL = 'index'
+    LOGOUT_REDIRECT_URL = '/'
     STATIC_URL = '/static/'
 
     USE_I18N = True
@@ -125,9 +117,7 @@ class Common(Configuration):
     ALLOWED_HOSTS = ['*']
 
     AUTH_USER_MODEL = 'kubeportal.User'
-    SOCIAL_AUTH_USER_MODEL = 'kubeportal.User'
 
-    OIDC_USERINFO = 'kubeportal.social.oidc.userinfo'
     OIDC_TEMPLATES = {
         'authorize': 'oidc_authorize.html',
         'error': 'oidc_error.html'
@@ -136,25 +126,8 @@ class Common(Configuration):
     SESSION_COOKIE_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     NAMESPACE_CLUSTERROLES = values.ListValue([], environ_prefix='KUBEPORTAL')
 
-    SOCIAL_AUTH_TWITTER_KEY = values.Value(
-        None, environ_name='AUTH_TWITTER_KEY', environ_prefix='KUBEPORTAL')
-    SOCIAL_AUTH_TWITTER_SECRET = values.Value(
-        None, environ_name='AUTH_TWITTER_SECRET', environ_prefix='KUBEPORTAL')
-    SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = values.Value(
-        None, environ_name='AUTH_GOOGLE_KEY', environ_prefix='KUBEPORTAL')
-    SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = values.Value(
-        None, environ_name='AUTH_GOOGLE_SECRET', environ_prefix='KUBEPORTAL')
-    SOCIAL_AUTH_GENERICOIDC_ENDPOINT = values.Value(
-        None, environ_name='AUTH_OIDC_ENDPOINT', environ_prefix='KUBEPORTAL')
-    SOCIAL_AUTH_GENERICOIDC_KEY = values.Value(
-        None, environ_name='AUTH_OIDC_KEY', environ_prefix='KUBEPORTAL')
-    SOCIAL_AUTH_GENERICOIDC_SECRET = values.Value(
-        None, environ_name='AUTH_OIDC_SECRET', environ_prefix='KUBEPORTAL')
-    SOCIAL_AUTH_GENERICOIDC_TITLE = values.Value(
-        None, environ_name='AUTH_OIDC_TITLE', environ_prefix='KUBEPORTAL')
     AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
-    SOCIAL_AUTH_SANITIZE_REDIRECTS = False   # let Django handle this
 
     API_SERVER_EXTERNAL = values.Value(None, environ_prefix='KUBEPORTAL')
 
@@ -217,11 +190,6 @@ class Development(Common):
                 'level': 'DEBUG',
                 'propagate': True
             },
-            'social': {
-                'handlers': ['console', ],
-                'level': 'DEBUG',
-                'propagate': True
-            },
         }
     }
 
@@ -241,13 +209,11 @@ class Production(Common):
     EMAIL_HOST = values.Value('localhost', environ_prefix='KUBEPORTAL')
 
     LOG_LEVEL_PORTAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
-    LOG_LEVEL_SOCIAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
     LOG_LEVEL_REQUEST = values.Value('ERROR', environ_prefix='KUBEPORTAL')
     
     # read the environment variables immediately because they're used to
     # configure the loggers below
     LOG_LEVEL_PORTAL.setup('LOG_LEVEL_PORTAL')
-    LOG_LEVEL_SOCIAL.setup('LOG_LEVEL_SOCIAL')
     LOG_LEVEL_REQUEST.setup('LOG_LEVEL_REQUEST')
     
     LOGGING = {
@@ -279,11 +245,6 @@ class Production(Common):
             'KubePortal': {
                 'handlers': ['mail_admins', 'console', ],
                 'level': LOG_LEVEL_PORTAL.value,
-                'propagate': True
-            },
-            'social': {
-                'handlers': ['mail_admins', 'console', ],
-                'level': LOG_LEVEL_SOCIAL.value,
                 'propagate': True
             },
         }

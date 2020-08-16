@@ -1,5 +1,4 @@
 from django.views.generic.base import TemplateView, View, RedirectView
-from django.contrib.auth.views import LoginView
 from django.http.response import HttpResponse
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -14,13 +13,6 @@ import logging
 
 logger = logging.getLogger('KubePortal')
 
-
-class IndexView(LoginView):
-    template_name = 'index.html'
-    redirect_authenticated_user = True
-
-    def get_success_url_allowed_hosts(self):
-        return settings.REDIRECT_HOSTS
 
 class StatsView(LoginRequiredMixin, TemplateView):
     template_name = 'portal_stats.html'
@@ -134,7 +126,6 @@ class SubAuthRequestView(View):
             else:
                 logger.error("Error while fetching Kubernetes secret bearer token for user {0}, must reject valid  authorization for {1} through subrequest.".format(request.user, webapp))
                 return HttpResponse(status=401)
-
 
 
 class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):

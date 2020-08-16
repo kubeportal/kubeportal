@@ -1,90 +1,52 @@
 {% extends 'base.html' %}
 {% load frontend_tags %}
+{% load account socialaccount %}
 
 {% block content %}
 
-{% settings_value "AUTH_AD_DOMAIN" as auth_ad_domain %}
-{% settings_value "SOCIAL_AUTH_TWITTER_KEY" as auth_twitter_key %}
-{% settings_value "SOCIAL_AUTH_GOOGLE_OAUTH2_KEY" as auth_google_key %}
-{% settings_value "SOCIAL_AUTH_GENERICOIDC_ENDPOINT" as auth_oidc_endpoint %}
-{% settings_value "SOCIAL_AUTH_GENERICOIDC_TITLE" as auth_oidc_title %}
-
 <div class="container">
-  {% if messages %}
-  {% for message in messages %}
-  <div class="alert alert-info alert-dismissible fade show" role="alert">
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
-    </button>
-    {{ message }}
-  </div>
-  {% endfor %}
-  {% endif %}
-
   <div class="card card-login mx-auto mt-5 mb-5">
     <div class="card-header">{% settings_value "BRANDING" %}</div>
     <div class="card-body">
-      {%if not auth_ad_domain and not auth_twitter_key and not auth_google_key and not auth_oidc_key %}
-        <p style="text-align: center">Installation error: There is no authentication method configured.</p>
-      {% else %}
-        {% if auth_ad_domain %}
-          {% ad_status as ad_status_cached %}
-          {% if ad_status_cached == "available" %}
-            <form method="POST" action="{% url 'social:complete' 'username' %}">
-            {% csrf_token %}
-            {% if 'next' in request.GET %}
-              <input type="hidden" name="next" value="{{ request.GET.next }}"/>
-            {% endif %}
-            {% if 'rd' in request.GET %}
-              <input type="hidden" name="next" value="{{ request.GET.next }}"/>
-            {% endif %}
-            <div class="form-group">
-              <div class="form-label-group">
-                <input type="text" id="username" name="username" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
-                <label for="username">User name</label>
-              </div>
-            </div>
-            <div class="form-group">
-              <div class="form-label-group">
-                <input type="password" id="password" name="password" class="form-control" placeholder="Password" required="required">
-                <label for="password">Password</label>
-              </div>
-            </div>
-            <input type="submit" value="Sign In" class="btn btn-primary btn-block"/>
-            </form>
-          {% endif %}
-          <div class="text-center">
-            <div class="d-block small mt-3 text-secondary">
-                    {% if ad_status_cached == "unconfigured" %}
-                      Status: <span class='text-warning'>Organizational login not configured</span>
-                    {% endif %}
-                    {% if ad_status_cached == "available" %}
-                      Status: <i>{{ auth_ad_domain }}</i> login is <span class='text-success'>available</span>
-                    {% endif %}
-                    {% if ad_status_cached == "unavailable" %}
-                      Status: <i>{{ auth_ad_domain }}</i> login is <span class='text-danger'>unavailable</span>
-                    {% endif %}
-            </div> 
-          </div>
-          <hr/>
-        {% endif %}  
-        <div class="d-flex justify-content-around">
-        {% if auth_twitter_key %}
-          <a href="{% url 'social:begin' 'twitter' %}?next={{ next }}" style="color: white" id="twitter-button" class="btn btn-sm btn-primary">
-            <i class="fab fa-twitter"></i> Sign in with Twitter
-          </a>
-        {% endif %}
-          <a href="{% url 'social:begin' 'google-oauth2' %}?next={{ request.path }}" style="color: white" id="google-button" class="btn btn-sm btn-primary">
-            <i class="fab fa-google"></i> Sign in with Google
-          </a>
-        {% if auth_oidc_endpoint %}
-          <a href="{% url 'social:begin' 'genericoidc' %}?next={{ request.path }}" style="color: white" id="oidc-button" class="btn btn-sm btn-primary">
-            <i class="fab fa-openid"></i> {{ auth_oidc_title|default:"Sign in with OIDC" }}
-          </a>
-        {% endif %}
-        </div>
+      <form method="POST" action="{% url 'account_login' %}">
+
+      {% csrf_token %}
+      {% if 'next' in request.GET %}
+        <input type="hidden" name="next" value="{{ request.GET.next }}"/>
       {% endif %}
+      {% if 'rd' in request.GET %}
+        <input type="hidden" name="next" value="{{ request.GET.next }}"/>
+      {% endif %}
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+      {% endif %}
+
+      <div class="form-group">
+        <div class="form-label-group">
+          <input type="text" id="username" name="login" class="form-control" placeholder="User name" required="required" autofocus="autofocus">
+          <label for="username">User name</label>
+        </div>
       </div>
+      <div class="form-group">
+        <div class="form-label-group">
+          <input type="password" id="password" name="password" class="form-control" placeholder="Password" required="required">
+          <label for="password">Password</label>
+        </div>
+      </div>
+      <input type="submit" value="Sign In" class="btn btn-primary btn-block"/>
+      </form>
+
+      <hr/>
+
+
+      <div class="d-flex justify-content-around">
+        <a href="{% provider_login_url 'google' %}" style="color: white" id="google-button" class="btn btn-sm btn-primary">
+          <i class="fab fa-google"></i> Sign in with Google
+        </a>
+      </div>
+
+
+
     </div>
   </div>
 </div>

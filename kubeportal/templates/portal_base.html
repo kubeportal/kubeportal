@@ -4,7 +4,7 @@
 
 {% block content %}
   <nav class="navbar navbar-expand navbar-dark bg-dark static-top">
-    <a class="navbar-brand mr-1" href="{% url 'index' %}">{% settings_value "BRANDING" %}</a>
+    <a class="navbar-brand mr-1" href="{% url 'account_login' %}">{% settings_value "BRANDING" %}</a>
     <button class="btn btn-link btn-sm text-white order-1 order-sm-0" id="sidebarToggle" href="#">
      <i class="fas fa-bars"></i>
     </button>
@@ -49,7 +49,7 @@
       </li>
       {% endif %}
       <li class="nav-item">
-        <a class="nav-link" href="{% url 'logout' %}">
+        <a class="nav-link" href="{% url 'account_logout' %}">
           <i class="fas fa-fw fa-sign-out-alt"></i>
           <span>Logout</span>
         </a>
