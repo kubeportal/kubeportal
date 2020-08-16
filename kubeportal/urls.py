@@ -20,7 +20,15 @@ urlpatterns = [
     path('settings/', views.SettingsView.as_view(), name="settings"),
     path('settings/update', views.SettingsView.update_settings, name="update_settings"),
     path('access/request/', views.AccessRequestView.as_view(), name="access_request"),
+
+    # disable other default allauth views by redirect
+    path("accounts/password/", RedirectView.as_view(url='/accounts/login/', permanent=True)),
+    path("accounts/email/", RedirectView.as_view(url='/accounts/login/', permanent=True)),
+    path("accounts/confirm-email/", RedirectView.as_view(url='/accounts/login/', permanent=True)),
+    path("accounts/inactive/", RedirectView.as_view(url='/accounts/login/', permanent=True)),
+    path("accounts/signup/", RedirectView.as_view(url='/accounts/login/', permanent=True), name="account_signup"),
     path('accounts/', include('allauth.urls')),
+
     path('', RedirectView.as_view(url='/accounts/login/', permanent=True)),
     path('admin/', admin_site.urls),
     # Note: The OpenID Connect URL is /oidc/authorize
