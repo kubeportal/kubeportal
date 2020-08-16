@@ -95,15 +95,22 @@ class Common(Configuration):
         'allauth.account.auth_backends.AuthenticationBackend'
     )
 
-    SOCIALACCOUNT_PROVIDERS = {
-        'google': {
+    SOCIALACCOUNT_QUERY_EMAIL=True
+    SOCIALACCOUNT_PROVIDERS = {}
+    AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
+    AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = values.Value(
+        None, environ_name='AUTH_GOOGLE_KEY', environ_prefix='KUBEPORTAL')
+    SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = values.Value(
+        None, environ_name='AUTH_GOOGLE_SECRET', environ_prefix='KUBEPORTAL')
+    if SOCIAL_AUTH_GOOGLE_OAUTH2_KEY and SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET:
+        SOCIALACCOUNT_PROVIDERS['google'] = {
             'APP': {
-                # 'client_id': '123',
-                'secret': values.Value(None, environ_name='AUTH_GOOGLE_SECRET', environ_prefix='KUBEPORTAL'),
-                'key': values.Value(None, environ_name='AUTH_GOOGLE_KEY', environ_prefix='KUBEPORTAL')
-            }
+                'secret': SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET,
+                'client_id': SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+            },
+            'SCOPE': ['profile', 'email'],
         }
-    }
 
     LOGIN_REDIRECT_URL = '/welcome'
     LOGOUT_REDIRECT_URL = '/'
@@ -126,9 +133,6 @@ class Common(Configuration):
     OIDC_IDTOKEN_INCLUDE_CLAIMS = True  # include user email etc. in token
     SESSION_COOKIE_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     NAMESPACE_CLUSTERROLES = values.ListValue([], environ_prefix='KUBEPORTAL')
-
-    AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
-    AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
 
     API_SERVER_EXTERNAL = values.Value(None, environ_prefix='KUBEPORTAL')
 
