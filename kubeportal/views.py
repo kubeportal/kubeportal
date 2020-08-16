@@ -5,6 +5,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from dj_rest_auth.registration.views import SocialLoginView
 
 from kubeportal.models import WebApplication
 from kubeportal import kubernetes
@@ -12,6 +14,10 @@ from kubeportal import kubernetes
 import logging
 
 logger = logging.getLogger('KubePortal')
+
+
+class GoogleApiLoginView(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
 
 
 class StatsView(LoginRequiredMixin, TemplateView):

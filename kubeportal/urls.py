@@ -5,6 +5,7 @@ from oidc_provider.views import ProviderInfoView
 
 from kubeportal import views
 from kubeportal.admin import admin_site
+from kubeportal.views import GoogleApiLoginView
 
 from kubeportal.api import views as api_views
 from rest_framework import routers
@@ -34,9 +35,11 @@ urlpatterns = [
     # Note: The OpenID Connect URL is /oidc/authorize
     path('oidc/', include('oidc_provider.urls', namespace='oidc_provider')),
     path('.well-known/openid-configuration', ProviderInfoView.as_view(), name='provider_info'),
-    path('api/', include(router.urls), name='api'),
-    path('dj-rest-auth/', include('dj_rest_auth.urls')),
-    path('dj-rest-auth/registration/', include('dj_rest_auth.registration.urls'))
+
+    path('api/auth/', include('dj_rest_auth.urls')),
+    path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
+    path('api/auth/google/', GoogleApiLoginView.as_view(), name='google_login'),
+    path('api/', include(router.urls), name='api')
 
 
 ]
