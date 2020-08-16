@@ -1,12 +1,11 @@
-from rest_framework.mixins import ListModelMixin
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from django.contrib.auth import get_user_model
 from kubeportal.api.serializers import UserSerializer
 from kubeportal.models import UserState
 
 
-class UserView(ModelViewSet, ListModelMixin):
+class UserView(ReadOnlyModelViewSet):
     '''
     API endpoint that allows for users to queried
     '''
