@@ -1,0 +1,54 @@
+{% extends 'portal_base.html' %}
+{% load frontend_tags %}
+
+
+{% block portal_content %}
+
+<div class="row">
+<div class="col">
+<div class="card mb-3">
+  <div class="card-header">
+    Cluster Statistics
+  </div>
+  <div class="card-body">
+      <table class="table table-striped table-responsive-sm">
+        <tr>
+          <td>Kubernetes</td><td>{{ stats.k8sversion }}</td>
+        </tr>
+        <tr>
+          <td>API Server</td><td>{{ stats.apiserver }}</td>
+        </tr>
+        <tr>
+          <td>Cluster Nodes</td><td>{{ stats.numberofnodes }}</td>
+        </tr>
+        <tr>
+          <td>CPU Cores</td><td>{{ stats.cpusum }}</td>
+        </tr>
+        <tr>
+          <td>Main Memory</td><td>{{ stats.memsum }}Gi</td>
+        </tr>
+        <tr>
+          <td>Deployed Pods</td><td>{{ stats.numberofpods }}</td>
+        </tr>
+        <tr>
+          <td>Allocated Volumes</td><td>{{ stats.numberofvolumes }}</td>
+        </tr>
+        <tr>
+          <td>Portal Users</td><td>{{ usercount }}</td>
+        </tr>
+        <tr>
+          <td><a href="https://kubeportal.readthedocs.io/en/latest/" target="_new">KubePortal</a></td><td>v.{{ version }}</td>
+        </tr>
+        <tr>
+        </tr>
+      </table>
+
+  </div>
+</div>
+</div>
+</div>
+
+
+
+
+{% endblock %}
