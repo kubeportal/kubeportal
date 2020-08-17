@@ -176,12 +176,15 @@ class User(AbstractUser):
         return result
 
     @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED, UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
-    def send_access_request(self, request):
+    def send_access_request(self, request, *args, **kwargs):
         '''
         Requests approval for cluster access.
 
         Note: The user object must be saved by the caller, to reflect the state change,
               when this method returns "True".
+
+        Note: The parameter administrator is an optional argument which can be
+              used to send an access request to a specific super user.
         '''
         self.approval_id = uuid.uuid4()
 
@@ -194,8 +197,14 @@ class User(AbstractUser):
         text_mail = strip_tags(html_mail)
         subject = 'Request for access to "{0}"'.format(settings.BRANDING)
 
-        cluster_admins = User.objects.filter(
-            is_staff=True).values_list('email', flat=True)
+        cluster_admins = []
+
+        # get optional administrator parameter, then check if it is set
+        administrator = kwargs.get('administrator', None)
+        if administrator:
+            cluster_admins.append(User.objects.get(username=administrator))
+        else:
+            cluster_admins.append(User.objects.filter(is_superuser=True))
 
         try:
             send_mail(subject, text_mail, settings.ADMIN_EMAIL,

@@ -64,10 +64,10 @@
                     {% if ad_status_cached == "unavailable" %}
                       Status: <i>{{ auth_ad_domain }}</i> login is <span class='text-danger'>unavailable</span>
                     {% endif %}
-            </div> 
+            </div>
           </div>
           <hr/>
-        {% endif %}  
+        {% endif %}
         <div class="d-flex justify-content-around">
         {% if auth_twitter_key %}
           <a href="{% url 'social:begin' 'twitter' %}?next={{ next }}" style="color: white" id="twitter-button" class="btn btn-sm btn-primary">

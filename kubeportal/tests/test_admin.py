@@ -188,6 +188,29 @@ class Backend(AdminLoggedInTestCase):
     def test_user_rejection(self):
         self._test_user_rejection()
 
+    def test_request_approval_specific_administrator(self):
+        # Create a new user should not change the member list
+        User = get_user_model()
+        u = User(username="Hugo", email="a@b.de")
+        u.save()
+        # walk through approval workflow
+        url = reverse('welcome')
+        request = self.factory.get(url)
+        u.send_access_request(request, "root")
+        u.save()
+        # Build full-fledged request object for logged-in admin
+        request = self._build_full_request_mock('admin:index')
+        # create service account and namespace for user
+        ns = KubernetesNamespace(name="default")
+        ns.save()
+        new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
+        new_svc.save()
+        # Perform approval
+        assert(u.approve(request, new_svc))
+        u.save()
+
+
+
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend', EMAIL_HOST_PASSWORD='sdsds')
     def test_user_rejection_mail_broken(self):
         self._test_user_rejection()
