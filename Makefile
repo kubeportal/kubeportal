@@ -2,8 +2,8 @@ SHELL=/bin/bash
 VERSION=0.3.14
 
 start:
-	docker-compose build .
-	docker-compose run
+	docker-compose build
+	docker-compose up
 
 stop:
 	docker-compose down
