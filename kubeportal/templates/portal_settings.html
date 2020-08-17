@@ -1,0 +1,23 @@
+{% extends 'portal_base.html' %}
+{% load frontend_tags %}
+
+{% block portal_content %}
+
+<form action="/settings/update" method="POST">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="default-email">Default Email:</label>
+        <select class="form-control" name="default-email" id="default-email-selection">
+            {% for address in user.alt_mails %}
+            {% if address == user.email %}
+            <option value="{% filter lower %}{{ address }}{% endfilter %}" selected> {{ address }} </option>
+            {% else %}
+            <option value="{% filter lower %}{{ address }}{% endfilter %}"> {{ address }} </option>
+            {% endif %}
+            {% endfor %}
+        </select>
+        <button class="btn btn-primary mt-4" type="submit" value="OK"> Save </button>
+    </div>
+</form>
+
+{% endblock %}

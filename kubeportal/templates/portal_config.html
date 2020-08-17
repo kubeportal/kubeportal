@@ -1,0 +1,42 @@
+{% extends 'portal_base.html' %}
+
+{% block portal_content %}
+
+<div class="row">
+  <div class="col-sm-6">
+	<div class="card">
+		<div class="card-header">config (<a href="{% url 'config_download' %}">Download</a>)</div>
+		<div class="card-body">
+			<code><pre>{% include 'config.txt'%}</pre></code>
+		</div>
+    </div>
+  </div>
+  <div class="col-sm-6">
+    <p>This configuration file is needed for Kubernetes client tools on your computer.<br/>It contains your personal access token.
+    </p>
+  	<h1 class="h4">Using <a href="https://kubernetes.io/docs/reference/kubectl/overview/" target="_new">kubectl</a></h1>
+  	<h2 class="h5">Windows</h2>
+  	<ul>
+  		<li>Install kubectl <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-on-windows-using-chocolatey-or-scoop">for Windows</a></li>
+  		<li>Navigate to your home directory: <code>cd %USERPROFILE%</code></li>
+  		<li>Create the <code>.kube</code> directory: <code>mkdir .kube</code></li>
+  		<li>Store the <a href="{% url 'config_download' %}">config file</a> as <code>.kube/config</code> </li>
+  	</ul>
+
+  	<h2 class="h5">MacOS X / Linux / Unix</h2>
+  	<ul>
+  		<li>Install kubectl with your <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">package manager</a> </li>
+  		<li>Navigate to your home directory: <code>cd ~</code></li>
+  		<li>Create the <code>.kube</code> directory: <code>mkdir .kube</code></li>
+      <li>Store the <a href="{% url 'config_download' %}">config file</a> as <code>.kube/config</code> </li>
+  	</ul>
+
+  	<p>You can test your installation by calling <code>kubectl cluster-info</code>.</p>
+
+  </div>
+</div>
+
+
+
+
+{% endblock %}

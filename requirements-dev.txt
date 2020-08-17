@@ -1,0 +1,5 @@
+bumpversion
+sphinx_rtd_theme
+sphinx
+sphinx-issues
+coverage
