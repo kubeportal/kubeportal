@@ -1,0 +1,29 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: kubeportal-frontend
+  namespace: sachs
+  labels:
+    app: kubeportal-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubeportal-frontend
+  template:
+    metadata:
+      labels:
+        app: kubeportal-frontend
+    spec:
+      containers:
+      - name: kubeportal-frontend
+        image: registry.datexis.com/ksachs/kubeportal-frontend:latest
+        ports:
+        - name: client-port
+          containerPort: 8080
+        envFrom:
+          - configMapRef:
+              name: kubeportal-frontend-config
+      imagePullSecrets:
+      - name: private-registry-auth
+      schedulerName: default-scheduler
