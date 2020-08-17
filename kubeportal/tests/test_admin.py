@@ -196,7 +196,7 @@ class Backend(AdminLoggedInTestCase):
         # walk through approval workflow
         url = reverse('welcome')
         request = self.factory.get(url)
-        u.send_access_request(request, "root")
+        u.send_access_request(request, self.admin.username)
         u.save()
         # Build full-fledged request object for logged-in admin
         request = self._build_full_request_mock('admin:index')

@@ -65,25 +65,25 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
 class AccessRequestView(View):
     def post(self, request):
         # create a form instance and populate it with data from the request:
-        selected_admin = request.POST['selected-administrator']
-        if selected_admin == "default":
+        admin_username = request.POST['selected-administrator']
+        if admin_username == "default":
             messages.add_message(request, messages.ERROR,
                                  "Please select an administrator from the dropdown menu.")
             return redirect("/welcome/")
 
         # get administrator and don't break if admin username can't be found
         User = get_user_model()
-        administrator = None
+        admin = None
         try:
-            administrator = User.objects.get(username=selected_admin)
+            admin = User.objects.get(username=admin_username)
         except:
-            logger.warning(f"Access request to unknown administrator username ({selected_admin}).")
+            logger.warning(f"Access request to unknown administrator username ({admin_username}).")
 
         # if administrator exists and access request was successfull...
-        if administrator and request.user.send_access_request(request, administrator):
+        if admin and request.user.send_access_request(request, administrator=admin):
             request.user.save()
             messages.add_message(request, messages.INFO,
-                                 f'Your request was sent to {administrator.first_name} {administrator.last_name}.')
+                                 f'Your request was sent to {admin.first_name} {admin.last_name}.')
         else:
             messages.add_message(request, messages.ERROR,
                                  'Sorry, something went wrong. Your request could not be sent.')

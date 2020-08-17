@@ -176,7 +176,7 @@ class User(AbstractUser):
         return result
 
     @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED, UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
-    def send_access_request(self, request, *args, **kwargs):
+    def send_access_request(self, request, administrator=None):
         '''
         Requests approval for cluster access.
 
@@ -199,16 +199,20 @@ class User(AbstractUser):
 
         cluster_admins = []
 
-        # get optional administrator parameter, then check if it is set
-        administrator = kwargs.get('administrator', None)
         if administrator:
             cluster_admins.append(User.objects.get(username=administrator))
+            logger.info(f"Sending access request from '{self.username}' to '{administrator}'")
         else:
-            cluster_admins.append(User.objects.filter(is_superuser=True))
+            for admin in User.objects.filter(is_superuser=True):
+                cluster_admins.append(admin)
+            logger.info(f"Sending access request from '{self.username}' to all administrators")
+
+        cluster_admin_emails = [admin.email for admin in cluster_admins]
 
         try:
             send_mail(subject, text_mail, settings.ADMIN_EMAIL,
-                      cluster_admins, html_message=html_mail, fail_silently=False)
+                      cluster_admin_emails, html_message=html_mail, fail_silently=False)
+
             logger.debug(
                 'Sent email to admins about access request from ' + str(self))
             return True
