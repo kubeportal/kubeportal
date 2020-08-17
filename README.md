@@ -7,6 +7,13 @@ https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt
 
 ```
 git subtree pull --prefix kubeportal-api https://github.com/kubeportal/kubeportal.git fe-api --squash
-git subtree push --prefix kubeportal-api https://github.com/kubeportal/kubeportal.git fe-api --squash
+aka:
+make pull-api
+```
 
 ```
+git subtree push --prefix kubeportal-api https://github.com/kubeportal/kubeportal.git fe-api --squash
+aka:
+make push-api
+```
+
