@@ -23,10 +23,6 @@ class KubeportalStatisticsView(mixins.RetrieveModelMixin, viewsets.GenericViewSe
     API endpoint that returns statistics for the Kubeportal installation.
     '''
     def retrieve(request, *args, **kwargs):
-        # Production tests have shown that some of these Kubernetes calls may take a moment.
-        # Given that, we offer individual API endpoints per single statistic and let the frontend
-        # fetch the stuff async.
-
         key = kwargs['pk']
         if key == 'user_count':
             User = get_user_model()
