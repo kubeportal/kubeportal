@@ -7,8 +7,8 @@ from django.test import client
 from kubeportal import models, kubernetes
 
 logging.getLogger('KubePortal').setLevel(logging.DEBUG)
-logging.getLogger('django.request').setLevel(logging.DEBUG)
-logging.getLogger('social').setLevel(logging.DEBUG)
+logging.getLogger('django.request').setLevel(logging.WARNING)
+logging.getLogger('django').setLevel(logging.WARNING)
 
 admin_clear_password = 'adminäö&%/1`'
 

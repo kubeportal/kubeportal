@@ -65,12 +65,16 @@ class Common(Configuration):
 
     REST_FRAMEWORK = {
             'DEFAULT_AUTHENTICATION_CLASSES': [
-                'rest_framework.authentication.TokenAuthentication',
+                'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
                 ],
             'DEFAULT_PERMISSION_CLASSES': [
                 'rest_framework.permissions.IsAuthenticated',
                 ]
             }
+
+    REST_USE_JWT = True
+    JWT_AUTH_COOKIE = 'kubeportal-auth'
+
 
     WSGI_APPLICATION = 'kubeportal.wsgi.application'
 
@@ -193,6 +197,11 @@ class Development(Common):
             'KubePortal': {
                 'handlers': ['console', ],
                 'level': 'DEBUG',
+                'propagate': True
+            },
+            'django': {
+                'handlers': ['console', ],
+                'level': 'WARNING',
                 'propagate': True
             },
         }
