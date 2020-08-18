@@ -18,7 +18,7 @@ class UserView(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
 
 
-class KubeportalStatisticsView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class KubeportalStatisticsView(mixins.ListModelMixin, mixins.RetrieveModelMixin,  viewsets.GenericViewSet):
     '''
     API endpoint that returns statistics for the Kubeportal installation.
     '''
@@ -32,7 +32,14 @@ class KubeportalStatisticsView(mixins.RetrieveModelMixin, viewsets.GenericViewSe
 
         raise NotFound
 
-class ClusterStatisticsView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    def list(request, *args, **kwargs):
+        return Response(['user_count', 'version'])
+
+    def get_queryset(self):
+        return None
+
+
+class ClusterStatisticsView(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
     '''
     API endpoint that returns statistics for the whole cluster.
     '''
@@ -58,3 +65,9 @@ class ClusterStatisticsView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return Response(kubernetes.get_number_of_volumes())
 
         raise NotFound
+
+    def list(request, *args, **kwargs):
+        return Response(['kubernetes_version', 'apiserver_url', 'node_count', 'cpu_count', 'mainmemory_sum', 'pod_count', 'volume_count'])
+
+    def get_queryset(self):
+        return None
