@@ -13,8 +13,9 @@ from kubeportal.admin import admin_site
 from rest_framework import routers
 router = routers.SimpleRouter()
 router.register('users', api_views.UserView)
-router.register('statistics/kubeportal', api_views.KubeportalStatisticsView, basename='kubeportal_statistics')
-router.register('statistics/cluster', api_views.ClusterStatisticsView, basename='cluster_statistics')
+router.register('kubeportal/statistics', api_views.KubeportalStatisticsView, basename='kubeportal_statistics')
+router.register('kubeportal/webapplications', api_views.WebApplicationView, basename='kubeportal_webapplications')
+router.register('cluster/statistics', api_views.ClusterStatisticsView, basename='cluster_statistics')
 
 urlpatterns = [
     # frontend web views

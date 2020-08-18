@@ -64,6 +64,8 @@ class Common(Configuration):
     ]
 
     REST_FRAMEWORK = {
+            'DEFAULT_VERSIONING_CLASS':
+            'rest_framework.versioning.NamespaceVersioning',
             'DEFAULT_AUTHENTICATION_CLASSES': [
                 'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
                 ],

@@ -4,8 +4,8 @@ from rest_framework.exceptions import NotFound
 
 
 from django.contrib.auth import get_user_model
-from kubeportal.api.serializers import UserSerializer
-from kubeportal.models import UserState
+from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer
+from kubeportal.models import UserState, WebApplication
 from kubeportal import kubernetes
 from django.conf import settings
 
@@ -18,7 +18,17 @@ class UserView(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
 
 
-class KubeportalStatisticsView(mixins.ListModelMixin, mixins.RetrieveModelMixin,  viewsets.GenericViewSet):
+class WebApplicationView(viewsets.ReadOnlyModelViewSet):
+    '''
+    API endpoint that allows for web applications to queried
+
+    @todo: Implement web application filtering
+    '''
+    queryset = WebApplication.objects.all()
+    serializer_class = WebApplicationSerializer
+
+
+class KubeportalStatisticsView(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     '''
     API endpoint that returns statistics for the Kubeportal installation.
     '''
@@ -43,28 +53,25 @@ class ClusterStatisticsView(mixins.RetrieveModelMixin, mixins.ListModelMixin, vi
     '''
     API endpoint that returns statistics for the whole cluster.
     '''
-    def retrieve(request, *args, **kwargs):
+
+    stats = {'kubernetes_version': kubernetes.get_kubernetes_version,
+             'apiserver_url': kubernetes.get_apiserver,
+             'node_count': kubernetes.get_number_of_nodes,
+             'cpu_count': kubernetes.get_number_of_cpus,
+             'mainmemory_sum': kubernetes.get_memory_sum,
+             'pod_count': kubernetes.get_number_of_pods,
+             'volume_count': kubernetes.get_number_of_volumes}
+
+    def retrieve(self, request, *args, **kwargs):
         # Production tests have shown that some of these Kubernetes calls may take a moment.
         # Given that, we offer individual API endpoints per single statistic and let the frontend
         # fetch the stuff async.
 
         key = kwargs['pk']
-        if key == 'kubernetes_version':
-            return Response(kubernetes.get_kubernetes_version())
-        if key == 'apiserver_url':
-            return Response(kubernetes.get_apiserver())
-        if key == 'node_count':
-            return Response(kubernetes.get_number_of_nodes())
-        if key == 'cpu_count':
-            return Response(kubernetes.get_number_of_cpus())
-        if key == 'mainmemory_sum':
-            return Response(kubernetes.get_memory_sum())
-        if key == 'pod_count':
-            return Response(kubernetes.get_number_of_pods())
-        if key == 'volume_count':
-            return Response(kubernetes.get_number_of_volumes())
-
-        raise NotFound
+        if key in self.stats.keys():
+            return Response(self.stats[key]())
+        else:
+            raise NotFound
 
     def list(request, *args, **kwargs):
         return Response(['kubernetes_version', 'apiserver_url', 'node_count', 'cpu_count', 'mainmemory_sum', 'pod_count', 'volume_count'])
