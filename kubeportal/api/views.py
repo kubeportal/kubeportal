@@ -1,7 +1,8 @@
+from abc import ABC
+
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
-
 
 from django.contrib.auth import get_user_model
 from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer
@@ -28,28 +29,39 @@ class WebApplicationView(viewsets.ReadOnlyModelViewSet):
     serializer_class = WebApplicationSerializer
 
 
-class KubeportalStatisticsView(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    '''
-    API endpoint that returns statistics for the Kubeportal installation.
-    '''
-    def retrieve(request, *args, **kwargs):
+class StatisticsView(ABC, mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    stats = {}
+
+    def get_user_count():
+        User = get_user_model()
+        return User.objects.count()
+
+    def get_kubeportal_version():
+        return settings.VERSION
+
+    def retrieve(self, request, *args, **kwargs):
         key = kwargs['pk']
-        if key == 'user_count':
-            User = get_user_model()
-            return Response(User.objects.count())
-        if key == 'version':
-            return Response(settings.VERSION)
+        if key in self.stats.keys():
+            return Response(self.stats[key]())
+        else:
+            raise NotFound
 
-        raise NotFound
-
-    def list(request, *args, **kwargs):
-        return Response(['user_count', 'version'])
+    def list(self, request, *args, **kwargs):
+        return Response(self.stats.keys())
 
     def get_queryset(self):
         return None
 
 
-class ClusterStatisticsView(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+class KubeportalStatisticsView(StatisticsView):
+    '''
+    API endpoint that returns statistics for the Kubeportal installation.
+    '''
+    stats = {'user_count': StatisticsView.get_user_count,
+             'version': StatisticsView.get_kubeportal_version}
+
+
+class ClusterStatisticsView(StatisticsView):
     '''
     API endpoint that returns statistics for the whole cluster.
     '''
@@ -62,19 +74,3 @@ class ClusterStatisticsView(mixins.RetrieveModelMixin, mixins.ListModelMixin, vi
              'pod_count': kubernetes.get_number_of_pods,
              'volume_count': kubernetes.get_number_of_volumes}
 
-    def retrieve(self, request, *args, **kwargs):
-        # Production tests have shown that some of these Kubernetes calls may take a moment.
-        # Given that, we offer individual API endpoints per single statistic and let the frontend
-        # fetch the stuff async.
-
-        key = kwargs['pk']
-        if key in self.stats.keys():
-            return Response(self.stats[key]())
-        else:
-            raise NotFound
-
-    def list(request, *args, **kwargs):
-        return Response(['kubernetes_version', 'apiserver_url', 'node_count', 'cpu_count', 'mainmemory_sum', 'pod_count', 'volume_count'])
-
-    def get_queryset(self):
-        return None

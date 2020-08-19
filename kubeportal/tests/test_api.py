@@ -1,6 +1,7 @@
 from django.test import override_settings
 from rest_framework.test import RequestsClient
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
+from kubeportal.api.views import ClusterStatisticsView, KubeportalStatisticsView
 
 
 class ApiTestCase(AdminLoggedOutTestCase):
@@ -31,10 +32,10 @@ class ApiTestCase(AdminLoggedOutTestCase):
         self.assertEquals(response.status_code, 200)
         # The login API call returns the JWT + extra information as JSON in the body, but also sets a cookie with the JWT.
         # This means that for all test cases here, the JWT must not handed over explicitely,
-        # since Python requests has the cookie anyway.
+        # since the Python http client has the cookie anyway.
         self.jwt = response.json()["access_token"]
         assert('kubeportal-auth' in response.cookies)
-        assert(response.cookies['kubeportal-auth'], self.jwt)
+        self.assertEquals(response.cookies['kubeportal-auth'], self.jwt)
 
 
 class ApiAnonymous(ApiTestCase):
@@ -79,6 +80,18 @@ class ApiLocalUser(ApiTestCase):
     def test_user_list(self):
         response = self.get('/api/users/')
         self.assertEquals(response.status_code, 200)
+
+    def test_cluster_stats(self):
+        for stat in ClusterStatisticsView.stats.keys():
+            with self.subTest(stat=stat):
+                response = self.get('/api/cluster/statistics/{}/'.format(stat))
+                self.assertEquals(response.status_code, 200)
+
+    def test_kubeportal_stats(self):
+        for stat in KubeportalStatisticsView.stats.keys():
+            with self.subTest(stat=stat):
+                response = self.get('/api/kubeportal/statistics/{}/'.format(stat))
+                self.assertEquals(response.status_code, 200)
 
 
 class ApiLogout(ApiTestCase):
