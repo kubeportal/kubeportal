@@ -29,15 +29,24 @@ class WebApplicationView(viewsets.ReadOnlyModelViewSet):
     serializer_class = WebApplicationSerializer
 
 
-class StatisticsView(ABC, mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
-    stats = {}
+def get_user_count():
+    User = get_user_model()
+    return User.objects.count()
 
-    def get_user_count():
-        User = get_user_model()
-        return User.objects.count()
+def get_kubeportal_version():
+    return settings.VERSION
 
-    def get_kubeportal_version():
-        return settings.VERSION
+
+class StatisticsView(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    stats = {'kubernetes_version': kubernetes.get_kubernetes_version,
+             'apiserver_url': kubernetes.get_apiserver,
+             'node_count': kubernetes.get_number_of_nodes,
+             'cpu_count': kubernetes.get_number_of_cpus,
+             'mainmemory_sum': kubernetes.get_memory_sum,
+             'pod_count': kubernetes.get_number_of_pods,
+             'volume_count': kubernetes.get_number_of_volumes,
+             'user_count': get_user_count,
+             'kubeportal_version': get_kubeportal_version}
 
     def retrieve(self, request, *args, **kwargs):
         key = kwargs['pk']
@@ -52,25 +61,4 @@ class StatisticsView(ABC, mixins.RetrieveModelMixin, mixins.ListModelMixin, view
     def get_queryset(self):
         return None
 
-
-class KubeportalStatisticsView(StatisticsView):
-    '''
-    API endpoint that returns statistics for the Kubeportal installation.
-    '''
-    stats = {'user_count': StatisticsView.get_user_count,
-             'version': StatisticsView.get_kubeportal_version}
-
-
-class ClusterStatisticsView(StatisticsView):
-    '''
-    API endpoint that returns statistics for the whole cluster.
-    '''
-
-    stats = {'kubernetes_version': kubernetes.get_kubernetes_version,
-             'apiserver_url': kubernetes.get_apiserver,
-             'node_count': kubernetes.get_number_of_nodes,
-             'cpu_count': kubernetes.get_number_of_cpus,
-             'mainmemory_sum': kubernetes.get_memory_sum,
-             'pod_count': kubernetes.get_number_of_pods,
-             'volume_count': kubernetes.get_number_of_volumes}
 
