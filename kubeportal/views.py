@@ -1,7 +1,7 @@
 from django.views.generic.base import TemplateView, View, RedirectView
 from django.http.response import HttpResponse
 from django.conf import settings
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
@@ -58,52 +58,57 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
                         logger.debug('Not showing link to app "{0}" in welcome view. Although user "{1}"" is in group "{2}", link_show is set to False.'.format(app, self.request.user, group))
         context['clusterapps'] = allowed_apps
 
-        User = get_user_model()
-        context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
         return context
-      
+
 
 class SettingsView(LoginRequiredMixin, TemplateView):
     template_name = "portal_settings.html"
 
     def update_settings(request):
         if request.method == "POST":
-            user = request.user
-            alt_mails = user.alt_mails
             new_default_email = request.POST['default-email']
-            if new_default_email in alt_mails:
+            user = request.user
+            if new_default_email in user.alt_mails:
+                if user.email not in user.alt_mails:
+                    user.alt_mails.append(user.email)
                 user.email = new_default_email
                 user.save()
                 logger.info("Changed default email of user \"{}\" to \"{}\""
                             .format(user.username, new_default_email))
         return redirect("settings")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['groups'] = [g for g in self.request.user.portal_groups.all()]
+        return context
+
 
 class AccessRequestView(LoginRequiredMixin, RedirectView):
     def post(self, request):
         # create a form instance and populate it with data from the request:
-        admin_username = request.POST['selected-administrator']
-        if admin_username == "default":
-            messages.add_message(request, messages.ERROR,
-                                 "Please select an administrator from the dropdown menu.")
-            return redirect("/welcome/")
-        # get administrator and don't break if admin username can't be found
-        User = get_user_model()
-        admin = None
-        try:
-            admin = User.objects.get(username=admin_username)
-        except:
-            logger.warning(f"Access request to unknown administrator username ({admin_username}).")
+        if 'selected-administrator' in request.POST:
+            admin_username = request.POST['selected-administrator']
+            if admin_username == "default":
+                messages.add_message(request, messages.ERROR,
+                                     "Please select an administrator from the dropdown menu.")
+                return redirect("config")
+            # get administrator and don't break if admin username can't be found
+            User = get_user_model()
+            admin = None
+            try:
+                admin = User.objects.get(username=admin_username)
+            except Exception:
+                logger.warning("Access request to unknown administrator username ({admin_username}).")
 
-        # if administrator exists and access request was successfull...
-        if admin and request.user.send_access_request(request, administrator=admin):
-            request.user.save()
-            messages.add_message(request, messages.INFO,
-                                 f'Your request was sent to {admin.first_name} {admin.last_name}.')
-        else:
-            messages.add_message(request, messages.ERROR,
-                                 'Sorry, something went wrong. Your request could not be sent.')
-        return redirect("/welcome/")
+            # if administrator exists and access request was successfull...
+            if admin and request.user.send_access_request(request, administrator=admin):
+                request.user.save()
+                messages.add_message(request, messages.INFO,
+                                     'Your request was sent.')
+            else:
+                messages.add_message(request, messages.ERROR,
+                                     'Sorry, something went wrong. Your request could not be sent.')
+        return redirect("config")
 
 
 class SubAuthRequestView(View):
@@ -155,13 +160,15 @@ class SubAuthRequestView(View):
                 return HttpResponse(status=401)
 
 
-class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ConfigDownloadView(LoginRequiredMixin, TemplateView):
     template_name = 'config.txt'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         username = self.request.user.username
         context['username'] = username
+        User = get_user_model()
+        context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
         return context
 
     def render_to_response(self, context, **response_kwargs):
@@ -169,19 +176,15 @@ class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         response['Content-Disposition'] = 'attachment; filename=config;'
         return response
 
-    def test_func(self):
-        '''
-        Allow config download only if a K8S service account is set.
-        Called by the UserPassesTestMixin.
-        '''
-        return self.request.user.service_account is not None
 
 
-class ConfigView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ConfigView(LoginRequiredMixin, TemplateView):
     template_name = "portal_config.html"
 
-    def test_func(self):
-        '''
-        Allow config view only if a K8S service account is set.
-        '''
-        return self.request.user.service_account is not None
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        username = self.request.user.username
+        context['username'] = username
+        User = get_user_model()
+        context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
+        return context
