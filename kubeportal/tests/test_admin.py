@@ -269,6 +269,8 @@ class Backend(AdminLoggedInTestCase):
     The secondary user should be deleted.
     '''
     def test_user_merge_access_rejected(self):
+        request = self._build_full_request_mock('admin:index')
+
         User = get_user_model()
         primary = User(
                 username="HUGO",
@@ -277,11 +279,12 @@ class Backend(AdminLoggedInTestCase):
 
         ns = KubernetesNamespace(name="default")
         ns.save()
+
         new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
         new_svc.save()
         # Perform approval
-        assert(u.approve(request, new_svc))
-        u.save()
+        assert(primary.approve(request, new_svc))
+        primary.save()
 
         secondary = User(
                 username="hugo",
