@@ -53,10 +53,10 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_acess_request_view(self):
-        response = self.c.get('/access/request/')
+        response = self.c.post('/access/request/', {'selected-administrator' : self.admin.username })
         self.assertRedirects(response, '/welcome/')
 
     def test_acess_request_view_mail_broken(self):
         with patch('kubeportal.models.User.send_access_request', return_value=False):
-            response = self.c.get('/access/request/')
+            response = self.c.post('/access/request/', {'selected-administrator' : self.admin.username })
             self.assertRedirects(response, '/welcome/')

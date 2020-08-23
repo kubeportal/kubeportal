@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
+
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
 
@@ -56,8 +57,11 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
                     else:
                         logger.debug('Not showing link to app "{0}" in welcome view. Although user "{1}"" is in group "{2}", link_show is set to False.'.format(app, self.request.user, group))
         context['clusterapps'] = allowed_apps
-        return context
 
+        User = get_user_model()
+        context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
+        return context
+      
 
 class SettingsView(LoginRequiredMixin, TemplateView):
     template_name = "portal_settings.html"
@@ -76,17 +80,30 @@ class SettingsView(LoginRequiredMixin, TemplateView):
 
 
 class AccessRequestView(LoginRequiredMixin, RedirectView):
-    pattern_name = 'welcome'
+    def post(self, request):
+        # create a form instance and populate it with data from the request:
+        admin_username = request.POST['selected-administrator']
+        if admin_username == "default":
+            messages.add_message(request, messages.ERROR,
+                                 "Please select an administrator from the dropdown menu.")
+            return redirect("/welcome/")
+        # get administrator and don't break if admin username can't be found
+        User = get_user_model()
+        admin = None
+        try:
+            admin = User.objects.get(username=admin_username)
+        except:
+            logger.warning(f"Access request to unknown administrator username ({admin_username}).")
 
-    def get_redirect_url(self, *args, **kwargs):
-        if self.request.user.send_access_request(self.request):
-            self.request.user.save()
-            messages.add_message(self.request, messages.INFO,
-                                 'Your request was sent.')
+        # if administrator exists and access request was successfull...
+        if admin and request.user.send_access_request(request, administrator=admin):
+            request.user.save()
+            messages.add_message(request, messages.INFO,
+                                 f'Your request was sent to {admin.first_name} {admin.last_name}.')
         else:
-            messages.add_message(self.request, messages.ERROR,
+            messages.add_message(request, messages.ERROR,
                                  'Sorry, something went wrong. Your request could not be sent.')
-        return super().get_redirect_url(*args, **kwargs)
+        return redirect("/welcome/")
 
 
 class SubAuthRequestView(View):

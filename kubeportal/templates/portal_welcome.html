@@ -15,16 +15,29 @@
         <p>Full name: {{user.get_full_name}}</p>
         <p>User name: {{user.get_username}}</p>
         {% if user.has_access_approved %}
-        <p>Kubernetes Service Account: {{user.service_account}}</p>
-        {% else %}
-        <p class="text-danger">
-          Sorry, you have no access to the cluster.
-        </p>
-        {% if user.has_access_requested %}
-        Your request for access was sent to the administrators (<a href="{% url 'access_request' %}">re-send</a>). You will be informed by e-email.
-        {% else %}
-        You can send a <a href="{% url 'access_request' %}">request for cluster access</a> to the administrators.
-        {% endif %}
+          <p>Kubernetes Service Account: {{user.service_account}}</p>
+          {% else %}
+          <p class="text-danger">
+            Sorry, you have no access to the cluster.
+          </p>
+          {% if user.has_access_requested %}
+            Your request for access was sent to the administrators. The response will be sent to your preferred E-Mail.<br>
+            If needed, you can resend an access request to an administrator of your choice:
+            {% else %}
+            You can send an access request to an administrator of your choice:
+          {% endif %}
+          <form method="POST" action="{% url 'access_request' %}">
+            {% csrf_token %}
+            <select id="selected-administrator" name="selected-administrator">
+              <option value="default" selected disabled>Select Administrator</option>
+              {% for admin in portal_administrators %}
+              <option value="{{ admin.username }}">
+              {{ admin.first_name }} {{ admin.last_name }} ({{ admin.username }})
+              </option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-secondary">send</button>
+          </form>
         {% endif %}
       </div>
     </div>
