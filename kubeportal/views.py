@@ -23,7 +23,6 @@ class IndexView(LoginView):
     def get_success_url_allowed_hosts(self):
         return settings.REDIRECT_HOSTS
 
-
 class StatsView(LoginRequiredMixin, TemplateView):
     template_name = 'portal_stats.html'
 
@@ -60,9 +59,25 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
         User = get_user_model()
         context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
         return context
+      
+
+class SettingsView(LoginRequiredMixin, TemplateView):
+    template_name = "portal_settings.html"
+
+    def update_settings(request):
+        if request.method == "POST":
+            user = request.user
+            alt_mails = user.alt_mails
+            new_default_email = request.POST['default-email']
+            if new_default_email in alt_mails:
+                user.email = new_default_email
+                user.save()
+                logger.info("Changed default email of user \"{}\" to \"{}\""
+                            .format(user.username, new_default_email))
+        return redirect("settings")
 
 
-class AccessRequestView(View):
+class AccessRequestView(LoginRequiredMixin, RedirectView):
     def post(self, request):
         # create a form instance and populate it with data from the request:
         admin_username = request.POST['selected-administrator']
@@ -70,7 +85,6 @@ class AccessRequestView(View):
             messages.add_message(request, messages.ERROR,
                                  "Please select an administrator from the dropdown menu.")
             return redirect("/welcome/")
-
         # get administrator and don't break if admin username can't be found
         User = get_user_model()
         admin = None

@@ -10,9 +10,10 @@ from django.contrib.auth import get_user_model
 from django.template.response import TemplateResponse
 from oidc_provider.models import Client
 from sortedm2m_filter_horizontal_widget.forms import SortedFilteredSelectMultiple
+from kubeportal.models import UserState as states
 import logging
 import uuid
-from . import models
+from . import models, admin_views
 from kubeportal import kubernetes
 
 
@@ -26,11 +27,11 @@ class CustomAdminSite(admin.AdminSite):
 
     def get_urls(self):
         urls = super().get_urls()
-        return urls + [path('sync/', self.admin_view(self.sync_view), name='sync'), ]
-
-    def sync_view(self, request):
-        kubernetes.sync(request)
-        return redirect('admin:index')
+        urls += [
+                path('cleanup/', admin_views.CleanupView.as_view(), name='cleanup'),
+                path('sync/', admin_views.sync_view, name='sync')
+                ]
+        return urls
 
 
 class KubernetesServiceAccountAdmin(admin.ModelAdmin):
@@ -352,21 +353,58 @@ def reject(modeladmin, request, queryset):
     for user in queryset:
         if user.reject(request):
             user.save()
-
-
 reject.short_description = "Reject access request for selected users"
+
+def merge_users(modeladmin, request, queryset):
+    if len(queryset) != 2:
+        messages.warning(
+            request, "Please choose exactly two users to merge.")
+        return reverse('admin:index')
+    primary, secondary = queryset.order_by('date_joined')
+
+    # first check if any of the two accounts are rejected.
+    # if any are, make sure to reject both as well.
+    if primary.state == states.ACCESS_REJECTED or secondary.state == states.ACCESS_REJECTED:
+        if primary.reject(request):
+            primary.state = states.ACCESS_REJECTED
+            messages.warning(
+                request, F"Rejected cluster access for '{primary.username}'")
+
+    # primary should be default. if secondary has more rights, then
+    # secondary's values should be merged into primary.
+    if primary.state != states.ACCESS_APPROVED and secondary.state == states.ACCESS_APPROVED:
+        primary.state = states.ACCESS_APPROVED
+        primary.approval_id = secondary.approval_id
+        primary.answered_by = secondary.answered_by
+    # iterate through the groups of secondary and add them to primary
+    # if primary is not in group
+    joined_groups = []
+    for group in secondary.portal_groups.all():
+        if group not in primary.portal_groups.all():
+            primary.portal_groups.add(group)
+            joined_groups.append(group)
+    joined_groups = [str(g) for g in joined_groups]
+    if joined_groups:
+        messages.info(request, F"User '{primary.username}' joined the group(s) {joined_groups}")
+    if primary.comments == "" or primary.comments == None:
+        if  secondary.comments != "" and secondary.comments is not None:
+            primary.comments = secondary.comments
+    primary.save()
+    secondary.delete()
+    messages.info(request, F"The Users '{primary.username}' and '{secondary.username}' have been merged into '{primary.username}' and '{secondary.username}' has been deleted.")
+merge_users.short_description = "Merges two users and keeps the one that joined first."
 
 
 class PortalUserAdmin(UserAdmin):
     list_display = ('username', 'first_name', 'last_name', 'comments',
-                    'portal_group_list', 'state', 'answered_by', 'approve_link')
+                    'portal_group_list', 'state', 'answered_by', 'approve_link', 'alt_mails')
     fieldsets = (
         (None, {'fields': ('username', 'first_name',
-                           'last_name', 'email', 'comments')}),
+                           'last_name', 'email', 'comments', 'alt_mails', 'is_staff')}),
         (None, {'fields': ('state', 'answered_by', 'service_account')}),
         (None, {'fields': ('portal_groups',)})
     )
-    actions = [reject]
+    actions = [reject, merge_users]
     list_filter = ()
 
     def portal_group_list(self, instance):

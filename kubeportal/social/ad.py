@@ -1,6 +1,7 @@
 import ldap3
 import social_core.exceptions
 from django.conf import settings
+from django.contrib.auth import get_user_model
 
 import logging
 
@@ -54,7 +55,8 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
     # lookup user attributes by searching for the UPN
     ctx = server.info.other['defaultNamingContext'][0]
     attributes = {'givenName': 'first_name', 'sn': 'last_name',
-                  'displayName': 'fullname', 'mail': 'email'}
+                  'displayName': 'fullname', 'mail': 'email',
+                  'proxyAddresses': 'alt_mails'}
     res = conn.search(ctx, '(userPrincipalName={})'.format(upn),
                       attributes=list(attributes.keys()))
     if res:
@@ -65,3 +67,16 @@ def user_password(strategy, user, is_new=False, *args, details, backend, **kwarg
                 details[socialname] = entry[ldapname].value
             except KeyError:
                 pass
+
+
+def alt_mails(strategy, user, is_new=False, *args, details, backend, **kwargs):
+    current_user = get_user_model()
+    if current_user:
+        # strip unix prefixes of normal email addresses
+        # unix:user@domain.tld -> user@domain.tld
+        details['alt_mails'] = [i.lower().replace("unix:", "") for i in details['alt_mails']]
+        current_user.alt_mails = details['alt_mails']
+        logger.info("Updated alternative email addresses of user \"{}\""
+                    .format(details['fullname']))
+    else:
+        logger.info("Couldn't get user model to add alternative emails!")
