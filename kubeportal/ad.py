@@ -22,8 +22,16 @@ class ActiveDirectoryBackend():
         if not self.server_adr:
             return None
 
-        username = request.POST['login'].lower()
-        password = request.POST['password']
+        if 'login' in request.POST:
+            username = request.POST['login'].lower()
+        elif 'username' in request.POST:
+            username = request.POST['username'].lower()
+        else:
+            return None
+        if 'password' in request.POST:
+            password = request.POST['password']
+        else:
+            return None
 
         # User Principal Name
         upn = "{}@{}".format(username, self.domainname)
