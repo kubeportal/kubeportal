@@ -1,10 +1,10 @@
 <template>
-  <b-card>
+  <b-card class="kubeinstallation">
     <b-card-header>Using Kubectl</b-card-header>
-    <b-card-body>
+    <b-card-body class="kubeinstallation">
       <b-card-text>
-        This configuration file is needed for Kubernetes client tools on your computer.
-        It contains your personal access token.
+        <p class="content">This configuration file is needed for Kubernetes client tools on your computer.
+          It contains your personal access token.</p>
         <div class="row">
           <v-tooltip right>
             <template v-slot:activator="{ on, attrs }">
@@ -56,8 +56,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  div.card {
-    width: 40vw;
+  .kubeinstallation {
+    width: 30vw
   }
   .btn {
     margin: 2vw 0vw 1vw 0vw;
@@ -65,5 +65,13 @@ export default {
   }
   .icon {
     color: floralwhite;
+  }
+  .content {
+    max-width: 80%;
+  }
+  @media (max-device-width: 1519px) {
+    .kubeinstallation {
+      width: 80vw
+    }
   }
 </style>
