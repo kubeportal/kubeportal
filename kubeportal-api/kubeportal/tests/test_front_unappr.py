@@ -14,7 +14,7 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
     def test_index_view(self):
         # User is already logged in, expecting welcome redirect
         response = self.c.get('/')
-        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response.status_code, 302)
 
     def test_welcome_view(self):
         response = self.c.get('/welcome/')
@@ -34,11 +34,11 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
 
     def test_root_redirect_with_next_param(self):
         response = self.c.get('/?next=/config')
-        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response.status_code, 302)
 
     def test_root_redirect_with_rd_param(self):
         response = self.c.get('/?next=/config')
-        self.assertEqual(response.status_code, 301)
+        self.assertEqual(response.status_code, 302)
 
     def test_subauth_view(self):
         group1 = PortalGroup()

@@ -26,14 +26,18 @@ class StatsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         User = get_user_model()
-        context['usercount'] = User.objects.count()
-        context['version'] = settings.VERSION
         try:
-            context['stats'] = kubernetes.get_stats()
-        except Exception:
-            logger.exception("Failed to fetch Kubernetes stats")
-            context['stats'] = None
-
+            context['usercount'] = User.objects.count()
+            context['version'] = settings.VERSION
+            context['k8sversion'] = kubernetes.get_kubernetes_version()
+            context['apiserver'] = kubernetes.get_apiserver()
+            context['numberofnodes'] = kubernetes.get_number_of_nodes()
+            context['cpusum'] = kubernetes.get_number_of_cpus()
+            context['memsum'] = kubernetes.get_memory_sum()
+            context['numberofpods'] = kubernetes.get_number_of_pods()
+            context['numberofvolumes'] = kubernetes.get_number_of_volumes()
+        except Exception as e:
+            logger.exception("Failed to fetch Kubernetes stats: {}".format(e))
         return context
 
 
