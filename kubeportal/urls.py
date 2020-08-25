@@ -2,8 +2,6 @@ from django.views.generic.base import RedirectView
 from django.conf.urls import include
 from django.urls import path
 from oidc_provider.views import ProviderInfoView
-from allauth.account import views as allauth_views
-from allauth.socialaccount.providers.google import views as allauth_google_views
 from dj_rest_auth import views as dj_rest_views
 
 from kubeportal import views
@@ -18,7 +16,7 @@ router.register('webapps', api_views.WebApplicationView, basename='webapplicatio
 
 urlpatterns = [
     # frontend web views
-    path('', RedirectView.as_view(url='/auth/login', permanent=False)),
+    path('', RedirectView.as_view(url='/accounts/login', permanent=False)),
     path('config/', views.ConfigView.as_view(), name='config'),
     path('stats/', views.StatsView.as_view(), name='stats'),
     path('config/download/', views.ConfigDownloadView.as_view(content_type='text/plain'), name='config_download'),
@@ -43,11 +41,5 @@ urlpatterns = [
     path('api/', include(router.urls), name='api'),
 
     # frontend web auth views
-    path("auth/login/", allauth_views.login, name="account_login"),
-    path("auth/logout/", allauth_views.logout, name="account_logout"),
-    path("auth/google/login/", allauth_google_views.oauth2_login, name="google_login"),
-    path("auth/google/login/callback/", allauth_google_views.oauth2_callback, name="google_callback"),
-    # needed by some reverse lookup in the allauth code
-    path("auth/signup/", RedirectView.as_view(url='/signin/', permanent=False), name="account_signup"),
-    path("auth/social/", include('allauth.socialaccount.urls')),
+    path('accounts/', include('allauth.urls')),
 ]
