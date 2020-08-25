@@ -7,13 +7,14 @@ from allauth.socialaccount.providers.google import views as allauth_google_views
 from dj_rest_auth import views as dj_rest_views
 
 from kubeportal import views
-from kubeportal.admin import admin_site
-from kubeportal.views import GoogleApiLoginView
-
 from kubeportal.api import views as api_views
+from kubeportal.admin import admin_site
+
 from rest_framework import routers
 router = routers.SimpleRouter()
-router.register('users', api_views.UserView)
+router.register('users', api_views.UserView, basename='users')
+router.register('statistics', api_views.StatisticsView, basename='statistics')
+router.register('webapps', api_views.WebApplicationView, basename='webapplications')
 
 urlpatterns = [
     # frontend web views
@@ -36,11 +37,9 @@ urlpatterns = [
     path('.well-known/openid-configuration', ProviderInfoView.as_view(), name='provider_info'),
 
     # frontend API views
-    path('api/auth/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
-    path('api/auth/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
-
-    path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
-    path('api/auth/google/login/', GoogleApiLoginView.as_view(), name='api_google_login'),
+    path('api/login', dj_rest_views.LoginView.as_view(), name='rest_login'),
+    path('api/logout', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
+    path('api/login_google', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/', include(router.urls), name='api'),
 
     # frontend web auth views
