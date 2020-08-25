@@ -49,4 +49,5 @@ urlpatterns = [
     path("auth/google/login/callback/", allauth_google_views.oauth2_callback, name="google_callback"),
     # needed by some reverse lookup in the allauth code
     path("auth/signup/", RedirectView.as_view(url='/signin/', permanent=False), name="account_signup"),
+    path("auth/social/", include('allauth.socialaccount.urls')),
 ]
