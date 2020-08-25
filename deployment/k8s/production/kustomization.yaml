@@ -3,7 +3,7 @@ kind: Kustomization
 
 images:
 - name: troeger/kubeportal
-  newTag: 0.3.21
+  newTag: 0.3.22
 
 bases:
 - ./../base
