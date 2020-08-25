@@ -19,6 +19,12 @@
           <div class="title"><small>Statistics</small></div>
         </show-at>
       </v-tab>
+      <v-tab>
+        <v-icon class="icon" left>mdi-file-edit-outline</v-icon>
+        <show-at breakpoint="mediumAndAbove">
+          <div class="title"><small>Generator</small></div>
+        </show-at>
+      </v-tab>
       <v-tab @click="openAdmin" v-if="userIsAdmin">
         <v-icon class="icon" left>mdi-tools</v-icon>
         <show-at breakpoint="mediumAndAbove">
@@ -54,6 +60,13 @@
           </v-card-text>
         </v-card>
       </v-tab-item>
+      <v-tab-item class="items">
+        <v-card flat>
+          <v-card-text>
+            <Generator />
+          </v-card-text>
+        </v-card>
+      </v-tab-item>
     </v-tabs>
   </v-card>
 </template>
@@ -63,12 +76,13 @@
 import Welcome from '@/components/Welcome'
 import Statistics from '@/components/Statistics'
 import Config from '@/components/Config/Config'
-import {showAt} from 'vue-breakpoints'
+import Generator from '@/components/Generator/Generator'
+import { showAt } from 'vue-breakpoints'
 
 export default {
   name: 'App',
 
-  components: { Statistics, Welcome, Config, showAt },
+  components: { Statistics, Welcome, Config, showAt, Generator },
   data () {
     return {
       metrics: this.$store.getters['get_metrics']
@@ -117,7 +131,8 @@ export default {
     color: floralwhite;
   }
   .sidenav {
-    height: 100vh;
+    max-height: 150vh;
+    min-height: 95vh;
     position: absolute;
     left: -2px;
     top: -2px;

@@ -4,12 +4,13 @@
       Cluster Statistics
     </b-card-header>
 
+    <div>
     <v-simple-table fixed-header>
       <template v-slot:default>
         <thead>
         <tr>
-          <th class="text-left">Name</th>
-          <th class="text-left">Value</th>
+          <th class="first text-left">Name</th>
+          <th class="second text-left">Value</th>
         </tr>
         </thead>
         <tbody>
@@ -20,6 +21,7 @@
         </tbody>
       </template>
     </v-simple-table>
+    </div>
   </b-card>
 </template>
 
@@ -35,3 +37,9 @@ export default {
   }
 }
 </script>
+
+<style scoped lang="scss">
+  .first {
+    width: 30rem;
+  }
+</style>

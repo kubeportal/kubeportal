@@ -77,7 +77,8 @@ module.exports = {
     'spaced-comment': 0,
     'vue/no-unused-components': 0,
     'vue/require-v-for-key': 1,
-    'wrap-regex': 0
+    'wrap-regex': 0,
+    'no-extra-parens': 0
   },
   parserOptions: {
     parser: 'babel-eslint'
