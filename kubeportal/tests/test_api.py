@@ -47,7 +47,7 @@ class ApiAnonymous(ApiTestCase):
 
     def test_user_list_denied(self):
         response = self.get('/api/users/')
-        self.assertEquals(response.status_code, 401)
+        self.assertEquals(response.status_code, 404)
 
     def test_logout(self):
         # logout should work anyway, even when nobody is logged in
@@ -77,9 +77,6 @@ class ApiLocalUser(ApiTestCase):
         super().setUp()
         self.api_login()
 
-    def test_user_list(self):
-        response = self.get('/api/users/')
-        self.assertEquals(response.status_code, 200)
 
     def test_stats(self):
         for stat in StatisticsView.stats.keys():
