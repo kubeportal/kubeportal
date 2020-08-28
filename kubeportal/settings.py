@@ -154,6 +154,9 @@ class Common(Configuration):
 
     OIDC_AFTER_USERLOGIN_HOOK = 'kubeportal.security.oidc_login_hook'
 
+    ACCOUNT_ADAPTER = 'kubeportal.allauth.AccountAdapter'
+
+
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
