@@ -1,22 +1,23 @@
-from abc import ABC
-
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 
 from django.contrib.auth import get_user_model
 from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer
-from kubeportal.models import UserState, WebApplication
+from kubeportal.models import WebApplication
 from kubeportal import kubernetes
 from django.conf import settings
 
 
-class UserView(viewsets.ReadOnlyModelViewSet):
+class UserView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     '''
     API endpoint that allows for users to queried
     '''
-    queryset = get_user_model().objects.filter(state=UserState.ACCESS_APPROVED)
+    queryset = get_user_model().objects.all()
     serializer_class = UserSerializer
+
+    def get_queryset(self):
+        return get_user_model().objects.filter(pk=self.request.user.pk)
 
 
 class WebApplicationView(viewsets.ReadOnlyModelViewSet):
@@ -32,6 +33,7 @@ class WebApplicationView(viewsets.ReadOnlyModelViewSet):
 def get_user_count():
     User = get_user_model()
     return User.objects.count()
+
 
 def get_kubeportal_version():
     return settings.VERSION
