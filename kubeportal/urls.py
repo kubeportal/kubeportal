@@ -1,4 +1,3 @@
-from django.views.generic.base import RedirectView
 from django.conf.urls import include
 from django.urls import path
 from oidc_provider.views import ProviderInfoView
@@ -16,7 +15,7 @@ router.register('webapps', api_views.WebApplicationView, basename='webapplicatio
 
 urlpatterns = [
     # frontend web views
-    path('', RedirectView.as_view(url='/accounts/login', permanent=False)),
+    path('', views.IndexView.as_view(), name='index'),
     path('config/', views.ConfigView.as_view(), name='config'),
     path('stats/', views.StatsView.as_view(), name='stats'),
     path('config/download/', views.ConfigDownloadView.as_view(content_type='text/plain'), name='config_download'),

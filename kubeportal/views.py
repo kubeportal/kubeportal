@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
 
+
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
 
@@ -15,6 +16,15 @@ from kubeportal import kubernetes
 import logging
 
 logger = logging.getLogger('KubePortal')
+
+
+class IndexView(RedirectView):
+    def get(self, request):
+        if 'rd' in request.GET:
+            return redirect("/accounts/login?next={}".format(request.GET['rd']))
+        if 'next' in request.GET:
+            return redirect("/accounts/login?next={}".format(request.GET['next']))
+        return redirect("/accounts/login")
 
 
 class GoogleApiLoginView(SocialLoginView):
