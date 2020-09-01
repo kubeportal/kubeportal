@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
+from django import forms
 
 
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -68,6 +69,8 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
                         logger.debug('Not showing link to app "{0}" in welcome view. Although user "{1}"" is in group "{2}", link_show is set to False.'.format(app, self.request.user, group))
         context['clusterapps'] = allowed_apps
 
+        User = get_user_model()
+        context['portal_administrators'] = list(User.objects.filter(is_staff=True))
         return context
 
 
@@ -91,7 +94,6 @@ class SettingsView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['groups'] = [g for g in self.request.user.portal_groups.all()]
         return context
-
 
 class AccessRequestView(LoginRequiredMixin, RedirectView):
     def post(self, request):
