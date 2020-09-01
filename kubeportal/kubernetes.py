@@ -116,7 +116,7 @@ def _sync_namespaces(request, core_v1, rbac_v1):
                 # Portal namespaces without UID are new and should be created in K8S
                 logger.debug("Namespace record {} has no UID, creating it in Kubernetes ...".format(portal_ns.name))
                 # Sanitize name, K8S only allows DNS names for namespaces
-                sanitized_name = re.sub('[^a-zA-Z0-9]', '', portal_ns.name)
+                sanitized_name = re.sub('[^a-zA-Z0-9]', '', portal_ns.name).lower()
                 if sanitized_name !=  portal_ns.name:
                     logger.warning("Given name '{}' for new Kubernetes namespace is invalid, replacing it with '{}'".format(portal_ns.name, sanitized_name))
                     messages.warning(request, "Given name '{}' for new Kubernetes namespace was invalid, chosen name is now '{}'".format(portal_ns.name, sanitized_name))
