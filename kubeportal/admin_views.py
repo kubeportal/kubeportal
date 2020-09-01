@@ -40,5 +40,5 @@ class CleanupView(LoginRequiredMixin, TemplateView):
 
         context['months'] = 12
         x_months_ago = datetime.now() - timedelta(days=30 * context['months']) # 30 days (1 month times the amount of months we look behind)
-        context['old_service_accounts'] = list(User.objects.filter(date_joined__lte = x_months_ago))
+        context['old_service_accounts'] = list(User.objects.filter(last_login__lte = x_months_ago))
         return context
