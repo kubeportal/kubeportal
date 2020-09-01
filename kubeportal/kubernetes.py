@@ -365,20 +365,31 @@ def get_apiserver():
     else:
         return settings.API_SERVER_EXTERNAL
 
-
-def get_stats():
+def get_kubernetes_version():
     core_v1, rbac_v1 = _load_config()
-    result = {}
-    result['apiserver'] = core_v1.api_client.configuration.host
-    apiserver_image = core_v1.list_namespaced_pod(
+    return core_v1.list_namespaced_pod(
         "kube-system", label_selector="component=kube-apiserver").items[0].spec.containers[0].image.split(":")[1]
-    result['k8sversion'] = apiserver_image
-    result['numberofpods'] = len(core_v1.list_pod_for_all_namespaces().items)
+
+def get_number_of_pods():
+    core_v1, rbac_v1 = _load_config()
+    return len(core_v1.list_pod_for_all_namespaces().items)
+
+def get_number_of_nodes():
+    core_v1, rbac_v1 = _load_config()
+    return len(core_v1.list_node().items)
+
+def get_number_of_cpus():
+    core_v1, rbac_v1 = _load_config()
     nodes = core_v1.list_node().items
-    result['numberofnodes'] = len(nodes)
-    cpus = [int(node.status.capacity['cpu']) for node in nodes]
-    result['cpusum'] = sum(cpus)
+    return sum([int(node.status.capacity['cpu']) for node in nodes])
+
+def get_memory_sum():
+    core_v1, rbac_v1 = _load_config()
+    nodes = core_v1.list_node().items
     mems = [int(node.status.capacity['memory'][:-2]) for node in nodes]
-    result['memsum'] = sum(mems) / 1000000  # in GiBytes
-    result['numberofvolumes'] = len(core_v1.list_persistent_volume().items)
-    return result
+    return sum(mems) / 1000000  # in GiBytes
+
+def get_number_of_volumes():
+    core_v1, rbac_v1 = _load_config()
+    return(len(core_v1.list_persistent_volume().items))
+

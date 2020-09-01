@@ -203,11 +203,11 @@ class User(AbstractUser):
 
         if administrator:
             cluster_admins.append(User.objects.get(username=administrator))
-            logger.info(f"Sending access request from '{self.username}' to '{administrator}'")
+            logger.info(F"Sending access request from '{self.username}' to '{administrator}'")
         else:
             for admin in User.objects.filter(is_superuser=True):
                 cluster_admins.append(admin)
-            logger.info(f"Sending access request from '{self.username}' to all administrators")
+            logger.info(F"Sending access request from '{self.username}' to all administrators")
 
         cluster_admin_emails = [admin.email for admin in cluster_admins]
 

@@ -1,12 +1,15 @@
 from django.views.generic.base import TemplateView, View, RedirectView
-from django.contrib.auth.views import LoginView
 from django.http.response import HttpResponse
 from django.conf import settings
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
 from django import forms
+
+
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from dj_rest_auth.registration.views import SocialLoginView
 
 from kubeportal.models import WebApplication
 from kubeportal import kubernetes
@@ -16,12 +19,18 @@ import logging
 logger = logging.getLogger('KubePortal')
 
 
-class IndexView(LoginView):
-    template_name = 'index.html'
-    redirect_authenticated_user = True
+class IndexView(RedirectView):
+    def get(self, request):
+        if 'rd' in request.GET:
+            return redirect("/accounts/login?next={}".format(request.GET['rd']))
+        if 'next' in request.GET:
+            return redirect("/accounts/login?next={}".format(request.GET['next']))
+        return redirect("/accounts/login")
 
-    def get_success_url_allowed_hosts(self):
-        return settings.REDIRECT_HOSTS
+
+class GoogleApiLoginView(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+
 
 class StatsView(LoginRequiredMixin, TemplateView):
     template_name = 'portal_stats.html'
@@ -29,14 +38,18 @@ class StatsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         User = get_user_model()
-        context['usercount'] = User.objects.count()
-        context['version'] = settings.VERSION
         try:
-            context['stats'] = kubernetes.get_stats()
-        except Exception:
-            logger.exception("Failed to fetch Kubernetes stats")
-            context['stats'] = None
-
+            context['usercount'] = User.objects.count()
+            context['version'] = settings.VERSION
+            context['k8sversion'] = kubernetes.get_kubernetes_version()
+            context['apiserver'] = kubernetes.get_apiserver()
+            context['numberofnodes'] = kubernetes.get_number_of_nodes()
+            context['cpusum'] = kubernetes.get_number_of_cpus()
+            context['memsum'] = kubernetes.get_memory_sum()
+            context['numberofpods'] = kubernetes.get_number_of_pods()
+            context['numberofvolumes'] = kubernetes.get_number_of_volumes()
+        except Exception as e:
+            logger.exception("Failed to fetch Kubernetes stats: {}".format(e))
         return context
 
 
@@ -57,51 +70,57 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
         context['clusterapps'] = allowed_apps
 
         User = get_user_model()
-        context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
+        context['portal_administrators'] = list(User.objects.filter(is_staff=True))
         return context
-      
+
 
 class SettingsView(LoginRequiredMixin, TemplateView):
     template_name = "portal_settings.html"
 
     def update_settings(request):
         if request.method == "POST":
-            user = request.user
-            alt_mails = user.alt_mails
             new_default_email = request.POST['default-email']
-            if new_default_email in alt_mails:
+            user = request.user
+            if new_default_email in user.alt_mails:
+                if user.email not in user.alt_mails:
+                    user.alt_mails.append(user.email)
                 user.email = new_default_email
                 user.save()
                 logger.info("Changed default email of user \"{}\" to \"{}\""
                             .format(user.username, new_default_email))
         return redirect("settings")
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['groups'] = [g for g in self.request.user.portal_groups.all()]
+        return context
 
 class AccessRequestView(LoginRequiredMixin, RedirectView):
     def post(self, request):
         # create a form instance and populate it with data from the request:
-        admin_username = request.POST['selected-administrator']
-        if admin_username == "default":
-            messages.add_message(request, messages.ERROR,
-                                 "Please select an administrator from the dropdown menu.")
-            return redirect("/welcome/")
-        # get administrator and don't break if admin username can't be found
-        User = get_user_model()
-        admin = None
-        try:
-            admin = User.objects.get(username=admin_username)
-        except:
-            logger.warning(f"Access request to unknown administrator username ({admin_username}).")
+        if 'selected-administrator' in request.POST:
+            admin_username = request.POST['selected-administrator']
+            if admin_username == "default":
+                messages.add_message(request, messages.ERROR,
+                                     "Please select an administrator from the dropdown menu.")
+                return redirect("config")
+            # get administrator and don't break if admin username can't be found
+            User = get_user_model()
+            admin = None
+            try:
+                admin = User.objects.get(username=admin_username)
+            except Exception:
+                logger.warning("Access request to unknown administrator username ({admin_username}).")
 
-        # if administrator exists and access request was successfull...
-        if admin and request.user.send_access_request(request, administrator=admin):
-            request.user.save()
-            messages.add_message(request, messages.INFO,
-                                 f'Your request was sent to {admin.first_name} {admin.last_name}.')
-        else:
-            messages.add_message(request, messages.ERROR,
-                                 'Sorry, something went wrong. Your request could not be sent.')
-        return redirect("/welcome/")
+            # if administrator exists and access request was successfull...
+            if admin and request.user.send_access_request(request, administrator=admin):
+                request.user.save()
+                messages.add_message(request, messages.INFO,
+                                     'Your request was sent.')
+            else:
+                messages.add_message(request, messages.ERROR,
+                                     'Sorry, something went wrong. Your request could not be sent.')
+        return redirect("config")
 
 
 class SubAuthRequestView(View):
@@ -153,14 +172,15 @@ class SubAuthRequestView(View):
                 return HttpResponse(status=401)
 
 
-
-class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ConfigDownloadView(LoginRequiredMixin, TemplateView):
     template_name = 'config.txt'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         username = self.request.user.username
         context['username'] = username
+        User = get_user_model()
+        context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
         return context
 
     def render_to_response(self, context, **response_kwargs):
@@ -168,19 +188,15 @@ class ConfigDownloadView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         response['Content-Disposition'] = 'attachment; filename=config;'
         return response
 
-    def test_func(self):
-        '''
-        Allow config download only if a K8S service account is set.
-        Called by the UserPassesTestMixin.
-        '''
-        return self.request.user.service_account is not None
 
 
-class ConfigView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class ConfigView(LoginRequiredMixin, TemplateView):
     template_name = "portal_config.html"
 
-    def test_func(self):
-        '''
-        Allow config view only if a K8S service account is set.
-        '''
-        return self.request.user.service_account is not None
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        username = self.request.user.username
+        context['username'] = username
+        User = get_user_model()
+        context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
+        return context

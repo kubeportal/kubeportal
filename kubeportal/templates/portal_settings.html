@@ -3,21 +3,58 @@
 
 {% block portal_content %}
 
-<form action="/settings/update" method="POST">
-    {% csrf_token %}
-    <div class="form-group">
-        <label for="default-email">Default Email:</label>
-        <select class="form-control" name="default-email" id="default-email-selection">
-            {% for address in user.alt_mails %}
-            {% if address == user.email %}
-            <option value="{% filter lower %}{{ address }}{% endfilter %}" selected> {{ address }} </option>
-            {% else %}
-            <option value="{% filter lower %}{{ address }}{% endfilter %}"> {{ address }} </option>
-            {% endif %}
-            {% endfor %}
-        </select>
-        <button class="btn btn-primary mt-4" type="submit" value="OK"> Save </button>
+<div class="row">
+  <div class="col">
+    <div class="card mb-3">
+      <div class="card-header">
+        User Settings
+      </div>
+
+      <div class="card-body">
+          <table class="table table-striped table-responsive-sm">
+            <tr>
+              <td>First name</td><td>{{ user.first_name }}</td>
+            </tr>
+            <tr>
+              <td>Last name</td><td>{{ user.last_name }}</td>
+            </tr>
+            <tr>
+              <td>Primary eMail address</td><td>{{ user.email }}</td>
+            </tr>
+            <tr>
+              <td>User Groups</td><td>{{ groups|join:", " }}</td>
+            </tr>
+            <tr>
+              <td>Cluster access</td><td>{{ user.state }}</td>
+            </tr>
+          </table>
+
+
+          {% if user.alt_mails %}
+          <form action="/settings/update" method="POST">
+              {% csrf_token %}
+              <div class="form-group">
+                  <label for="default-email">New primary email address:</label>
+                  <select class="form-control" name="default-email" id="default-email-selection">
+                      {% for address in user.alt_mails %}
+                      {% if address == user.email %}
+                      <option value="{% filter lower %}{{ address }}{% endfilter %}" selected> {{   address }} </option>
+                      {% else %}
+                      <option value="{% filter lower %}{{ address }}{% endfilter %}"> {{ address   }} </option>
+                      {% endif %}
+                      {% endfor %}
+                  </select>
+                  <button class="btn btn-primary mt-4" type="submit" value="OK"> Save </button>
+              </div>
+          </form>
+          {% endif %}
     </div>
-</form>
+  </div>
+
+  </div>
+</div>
+
+
+
 
 {% endblock %}

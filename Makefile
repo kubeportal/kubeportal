@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-VERSION=0.3.14
+VERSION=0.3.25
 
 .PHONY: docs
 
@@ -13,7 +13,6 @@ dev-run: minikube-start web-run
 web-run: venv
 	./venv/bin/python ./manage.py migrate --configuration=Development
 	./venv/bin/python ./manage.py ensure_root --configuration=Development
-	./venv/bin/python ./manage.py drf_create_token root --configuration=Development
 	set -o allexport; source .env; set +o allexport; \
 	./venv/bin/python ./manage.py runserver --configuration=Development
 
