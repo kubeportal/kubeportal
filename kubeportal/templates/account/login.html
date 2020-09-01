@@ -14,15 +14,13 @@
       <form method="POST" action="{% url 'account_login' %}">
 
       {% csrf_token %}
-      {% if 'next' in request.GET %}
-        <input type="hidden" name="next" value="{{ request.GET.next }}"/>
-      {% endif %}
-      {% if 'rd' in request.GET %}
-        <input type="hidden" name="next" value="{{ request.GET.next }}"/>
-      {% endif %}
-      {% if redirect_field_value %}
-        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
-      {% endif %}
+      {% for key, value in request.GET.items %}
+        {% if key == 'rd' %}
+          <input type="hidden" name="next" value="{{ request.GET.rd }}"/>
+        {% else %}
+          <input type="hidden" name="{{ key }}" value="{{ value }}"/>
+        {% endif %}
+      {% endfor %}
 
       <div class="form-group">
         <div class="form-label-group">
