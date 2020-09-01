@@ -6,6 +6,7 @@ from kubeportal.secret import get_secret_key
 
 class Common(Configuration):
     VERSION = '0.3.25'
+    API_VERSION = '1.1.0'
 
     SITE_ID = 1
 
@@ -66,12 +67,16 @@ class Common(Configuration):
 
     REST_FRAMEWORK = {
             'DEFAULT_VERSIONING_CLASS':
-            'rest_framework.versioning.NamespaceVersioning',
+            'rest_framework.versioning.URLPathVersioning',
             'DEFAULT_AUTHENTICATION_CLASSES': [
                 'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
                 ],
             'DEFAULT_PERMISSION_CLASSES': [
                 'rest_framework.permissions.IsAuthenticated',
+                ],
+            'DEFAULT_VERSION': 'v' + API_VERSION,
+            'ALLOWED_VERSIONS': [
+                'v' + API_VERSION
                 ]
             }
 
