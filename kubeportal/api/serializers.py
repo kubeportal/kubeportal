@@ -12,3 +12,4 @@ class UserSerializer(serializers.ModelSerializer):
 class WebApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebApplication
+        fields = ('link_name', 'link_url')
