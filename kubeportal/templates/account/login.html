@@ -15,8 +15,8 @@
 
       {% csrf_token %}
       {% for key, value in request.GET.items %}
-        {% if key == 'rd' %}
-          <input type="hidden" name="next" value="{{ request.GET.rd }}"/>
+        {% if key == 'next' %}
+          <input type="hidden" name="rd" value="{{ request.GET.next }}"/>
         {% else %}
           <input type="hidden" name="{{ key }}" value="{{ value }}"/>
         {% endif %}

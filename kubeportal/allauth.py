@@ -8,14 +8,22 @@ class AccountAdapter(DefaultAccountAdapter):
     def get_login_redirect_url(self, request):
         '''
         The login template stores all incoming GET parameters in hidden POST fields.
-        We take them here and convert them back to GET parameters for the redirect.
+        A special case is "next", which is handled by Django (for redirection) before
+        AllAuth can call our own handling here. Therefore, the login template renames
+        "next" to "rd" to trigger this code in any case.
+
+        Here, we can pull the original GET parameters from the form POST data and attach
+        it again to the redirectin target.
+
+        This should fix a couple of redirection problems with Kubeportal acting as
+        OIDC provider.
         '''
-        if 'next' in request.POST:
-            url = request.POST['next'] + '?'
+        if 'rd' in request.POST:
+            url = request.POST['rd'] + '?'
             for key, value in request.POST.items():
-                if key not in ['next', 'login', 'password', 'csrfmiddlewaretoken']:
+                if key not in ['rd', 'login', 'password', 'csrfmiddlewaretoken']:
                     url += "{}={}&".format(key, value)
-            logger.info("Redirecting to {} due to 'next' POST parameter.".format(url))
+            logger.info("Redirecting to {} due to 'rd' POST parameter.".format(url))
             return url
         else:
             logger.debug("No redirection info found.")
