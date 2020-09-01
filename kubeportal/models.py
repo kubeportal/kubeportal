@@ -8,6 +8,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags, mark_safe
 from oidc_provider.models import Client
+from multi_email_field.fields import MultiEmailField
 import uuid
 import logging
 
@@ -144,6 +145,7 @@ class User(AbstractUser):
         'User', help_text="Which user approved the cluster access for this user.", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
     comments = models.CharField(
         max_length=150, default="", null=True, blank=True)
+    alt_mails = MultiEmailField(default=None, null=True, blank=True)
     portal_groups = models.ManyToManyField(
         PortalGroup, blank=True, verbose_name='Groups', help_text="The user groups this account belongs to.", related_name='members')
 
@@ -176,12 +178,15 @@ class User(AbstractUser):
         return result
 
     @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED, UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
-    def send_access_request(self, request):
+    def send_access_request(self, request, administrator=None):
         '''
         Requests approval for cluster access.
 
         Note: The user object must be saved by the caller, to reflect the state change,
               when this method returns "True".
+
+        Note: The parameter administrator is an optional argument which can be
+              used to send an access request to a specific super user.
         '''
         self.approval_id = uuid.uuid4()
 
@@ -194,12 +199,22 @@ class User(AbstractUser):
         text_mail = strip_tags(html_mail)
         subject = 'Request for access to "{0}"'.format(settings.BRANDING)
 
-        cluster_admins = User.objects.filter(
-            is_staff=True).values_list('email', flat=True)
+        cluster_admins = []
+
+        if administrator:
+            cluster_admins.append(User.objects.get(username=administrator))
+            logger.info(F"Sending access request from '{self.username}' to '{administrator}'")
+        else:
+            for admin in User.objects.filter(is_superuser=True):
+                cluster_admins.append(admin)
+            logger.info(F"Sending access request from '{self.username}' to all administrators")
+
+        cluster_admin_emails = [admin.email for admin in cluster_admins]
 
         try:
             send_mail(subject, text_mail, settings.ADMIN_EMAIL,
-                      cluster_admins, html_message=html_mail, fail_silently=False)
+                      cluster_admin_emails, html_message=html_mail, fail_silently=False)
+
             logger.debug(
                 'Sent email to admins about access request from ' + str(self))
             return True

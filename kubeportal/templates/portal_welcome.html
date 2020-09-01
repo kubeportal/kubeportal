@@ -11,22 +11,6 @@
         <i class="fas fa-user"></i>
         Hello {{user.get_short_name}}!
       </div>
-      <div class="card-body">
-        <p>Full name: {{user.get_full_name}}</p>
-        <p>User name: {{user.get_username}}</p>
-        {% if user.has_access_approved %}
-        <p>Kubernetes Service Account: {{user.service_account}}</p>
-        {% else %}
-        <p class="text-danger">
-          Sorry, you have no access to the cluster.
-        </p>
-        {% if user.has_access_requested %}
-        Your request for access was sent to the administrators (<a href="{% url 'access_request' %}">re-send</a>). You will be informed by e-email.
-        {% else %}
-        You can send a <a href="{% url 'access_request' %}">request for cluster access</a> to the administrators.
-        {% endif %}
-        {% endif %}
-      </div>
     </div>
   </div>
 </div>

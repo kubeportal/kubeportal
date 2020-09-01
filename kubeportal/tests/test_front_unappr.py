@@ -22,11 +22,11 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
 
     def test_config_view(self):
         response = self.c.get(reverse('config'))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
 
     def test_config_download_view(self):
         response = self.c.get(reverse('config_download'))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
 
     def test_stats_view(self):
         response = self.c.get('/stats/')
@@ -52,16 +52,11 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
 
         self.assertEqual(response.status_code, 401)
 
-    def test_logout_view(self):
-        # User is already logged in, expecting redirect
-        response = self.c.get('/logout/')
-        self.assertEqual(response.status_code, 302)
-
     def test_acess_request_view(self):
-        response = self.c.get('/access/request/')
-        self.assertRedirects(response, '/welcome/')
+        response = self.c.post('/access/request/', {'selected-administrator' : self.admin.username })
+        self.assertRedirects(response, '/config/')
 
     def test_acess_request_view_mail_broken(self):
         with patch('kubeportal.models.User.send_access_request', return_value=False):
-            response = self.c.get('/access/request/')
-            self.assertRedirects(response, '/welcome/')
+            response = self.c.post('/access/request/', {'selected-administrator' : self.admin.username })
+            self.assertRedirects(response, '/config/')

@@ -10,28 +10,8 @@ class FrontendAnonymous(AnonymousTestCase):
     '''
 
     def test_index_view(self):
-        response = self.c.get('/')
+        response = self.c.get('/', follow=True)
         self.assertEqual(response.status_code, 200)
-
-    @override_settings(AUTH_AD_DOMAIN='example.com')
-    def test_index_view_ad_status_available(self):
-        with patch('kubeportal.social.ad.is_available', return_value=True):
-            response = self.c.get('/')
-            self.assertEqual(response.status_code, 200)
-            self.assertIn('available', str(response.content))
-
-    @override_settings(AUTH_AD_DOMAIN='example.com')
-    def test_index_view_ad_status_unavailable(self):
-        with patch('kubeportal.social.ad.is_available', return_value=False):
-            response = self.c.get('/')
-            self.assertEqual(response.status_code, 200)
-            self.assertIn('unavailable', str(response.content))
-
-    @override_settings(AUTH_AD_DOMAIN=None)
-    def test_index_view_ad_not_given(self):
-        response = self.c.get('/')
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('no authentication method', str(response.content))
 
     def test_subauth_view_nonexistent_app(self):
         response = self.c.get('/subauthreq/42/')

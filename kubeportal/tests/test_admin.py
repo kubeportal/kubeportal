@@ -10,8 +10,10 @@ from kubeportal import kubernetes
 from kubeportal import models
 from kubeportal.models import KubernetesNamespace
 from kubeportal.models import KubernetesServiceAccount
+from kubeportal.models import PortalGroup
 from kubeportal.tests import AdminLoggedInTestCase
 from unittest.mock import patch
+from kubeportal.admin import merge_users, UserAdmin
 
 
 class Backend(AdminLoggedInTestCase):
@@ -158,8 +160,8 @@ class Backend(AdminLoggedInTestCase):
         new_svc.save()
         User = get_user_model()
         # create approved user
-        u = User(username="Hugo", 
-                 email="a@b.de", 
+        u = User(username="Hugo",
+                 email="a@b.de",
                  state=models.UserState.ACCESS_APPROVED,
                  service_account = new_svc)
         u.save()
@@ -187,6 +189,129 @@ class Backend(AdminLoggedInTestCase):
 
     def test_user_rejection(self):
         self._test_user_rejection()
+
+    def test_request_approval_specific_administrator(self):
+        # Create a new user should not change the member list
+        User = get_user_model()
+        u = User(username="Hugo", email="a@b.de")
+        u.save()
+        # walk through approval workflow
+        url = reverse('welcome')
+        request = self.factory.get(url)
+        u.send_access_request(request, self.admin.username)
+        u.save()
+        # Build full-fledged request object for logged-in admin
+        request = self._build_full_request_mock('admin:index')
+        # create service account and namespace for user
+
+    '''
+    Create two users with the secondary (the later created) one having cluster access,
+    an assigned comment and two assigned groups
+    Merge both users.
+    The primary user should be assigned the cluster access, user comment and all the
+    portal groups of the secondary user.
+    The secondary user should be deleted.
+    '''
+    def test_user_merge_access_approved(self):
+        User = get_user_model()
+        primary = User(
+                username="HUGO",
+                email="a@b.de")
+        primary.save()
+
+        ns = KubernetesNamespace(name="default")
+        ns.save()
+        new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
+        new_svc.save()
+        secondary = User(
+                username="hugo",
+                state=models.UserState.ACCESS_APPROVED,
+                email="a@b.de",
+                comments = "secondary user comment",
+                service_account = new_svc)
+        secondary.save()
+
+        group1 = PortalGroup(name="testgroup1")
+        group1.save()
+        group2 = PortalGroup(name="testgroup2")
+        group2.save()
+
+        secondary.portal_groups.add(group1)
+        secondary.portal_groups.add(group2)
+        secondary.save()
+
+        # Build full-fledged request object for logged-in admin
+        request = self._build_full_request_mock('admin:index')
+        # approve secondary for cluster access
+        secondary.approve(request, new_svc)
+
+        # the merge method only accepts a queryset of users since that's what
+        # the admin interface creates
+        queryset_of_users = User.objects.filter(pk__in = [primary.id, secondary.id])
+
+        # merge both users. shouldn't return anything
+        assert(not merge_users(UserAdmin, request, queryset_of_users))
+
+        # the primary user has been altered but the old object is still in memory
+        # we need to query for the updated user again
+        primary = User.objects.get(pk = primary.id)
+
+        # Does primary have all the values of secondary user?
+        self.assertEquals(primary.comments, "secondary user comment")
+        assert(primary.portal_groups.filter(name = group1.name))
+        assert(primary.portal_groups.filter(name = group2.name))
+        assert(primary.has_access_approved)
+
+    '''
+    Create two users with the secondary (the later created) one having rejected cluster access,
+    Merge both users.
+    The primary user should be assigned the rejected cluster access.
+    The secondary user should be deleted.
+    '''
+    def test_user_merge_access_rejected(self):
+        request = self._build_full_request_mock('admin:index')
+
+        User = get_user_model()
+        primary = User(
+                username="HUGO",
+                email="a@b.de")
+        primary.save()
+
+        ns = KubernetesNamespace(name="default")
+        ns.save()
+
+        new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
+        new_svc.save()
+        # Perform approval
+        assert(primary.approve(request, new_svc))
+        primary.save()
+
+        secondary = User(
+                username="hugo",
+                state=models.UserState.ACCESS_APPROVED,
+                email="a@b.de",
+                comments = "secondary user comment",
+                service_account = new_svc)
+        secondary.save()
+
+        # Build full-fledged request object for logged-in admin
+        request = self._build_full_request_mock('admin:index')
+        # reject cluster access for secondary
+        secondary.reject(request)
+
+        # the merge method only accepts a queryset of users since that's what
+        # the admin interface creates
+        queryset_of_users = User.objects.filter(pk__in = [primary.id, secondary.id])
+
+        # merge both users. shouldn't return anything
+        assert(not merge_users(UserAdmin, request, queryset_of_users))
+
+        # the primary user has been altered but the old object is still in memory
+        # we need to query for the updated user again
+        primary = User.objects.get(pk = primary.id)
+
+        assert(primary.has_access_rejected)
+
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend', EMAIL_HOST_PASSWORD='sdsds')
     def test_user_rejection_mail_broken(self):
