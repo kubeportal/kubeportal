@@ -29,7 +29,7 @@ Users can click a link on the front page to apply for Kubernetes credentials:
 
 .. image:: static/front_landing_new.png
 
-All (!) admins get an email notification when users request cluster access. The approving or rejecting admin for a user approval request is logged in the database. The link to a decision page is sent with the email. The admin(s) can now decide upon this request:
+When the user logged in, he can select a staff user from a dropdown menu, to request cluster access. The selected staff user will be notified by email about the request. The approving or rejecting admin for a user approval request is logged in the database. The link to a decision page is sent with the email. The admin(s) can now decide upon this request:
 
 .. image:: static/back_approval.png
 
