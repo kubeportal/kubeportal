@@ -19,15 +19,6 @@ import logging
 logger = logging.getLogger('KubePortal')
 
 
-class IndexView(RedirectView):
-    def get(self, request):
-        if 'rd' in request.GET:
-            return redirect("/accounts/login?next={}".format(request.GET['rd']))
-        if 'next' in request.GET:
-            return redirect("/accounts/login?next={}".format(request.GET['next']))
-        return redirect("/accounts/login")
-
-
 class GoogleApiLoginView(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
 

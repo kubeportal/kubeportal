@@ -2,6 +2,7 @@ from django.test import override_settings
 from rest_framework.test import RequestsClient
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
 from kubeportal.api.views import StatisticsView
+from kubeportal.settings import API_VERSION
 
 
 class ApiTestCase(AdminLoggedOutTestCase):
@@ -28,7 +29,7 @@ class ApiTestCase(AdminLoggedOutTestCase):
                                 headers={'X-CSRFToken': self.csrftoken})
 
     def api_login(self):
-        response = self.post('/api/login', {'username': admin_data['username'], 'password': admin_clear_password})
+        response = self.post(F'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEquals(response.status_code, 200)
         # The login API call returns the JWT + extra information as JSON in the body, but also sets a cookie with the JWT.
         # This means that for all test cases here, the JWT must not handed over explicitely,
@@ -46,12 +47,12 @@ class ApiAnonymous(ApiTestCase):
         super().setUp()
 
     def test_user_list_denied(self):
-        response = self.get('/api/users/')
+        response = self.get(F'/api/{API_VERSION}/users/')
         self.assertEquals(response.status_code, 404)
 
     def test_logout(self):
         # logout should work anyway, even when nobody is logged in
-        response = self.post('/api/logout')
+        response = self.post(F'/api/{API_VERSION}/logout')
         self.assertEquals(response.status_code, 200)
 
     @override_settings(SOCIALACCOUNT_PROVIDERS={'google': {
@@ -66,7 +67,7 @@ class ApiAnonymous(ApiTestCase):
         We have no valid OAuth credentials when running the test suite, but at least
         we can check that no crash happens when using this API call with fake data.
         '''
-        response = self.post('/api/login_google', {'access_token': 'foo', 'code': 'bar'})
+        response = self.post(F'/api/{API_VERSION}/login_google', {'access_token': 'foo', 'code': 'bar'})
         self.assertEquals(response.status_code, 400)
 
 class ApiLocalUser(ApiTestCase):
@@ -81,7 +82,7 @@ class ApiLocalUser(ApiTestCase):
     def test_stats(self):
         for stat in StatisticsView.stats.keys():
             with self.subTest(stat=stat):
-                response = self.get('/api/statistics/{}'.format(stat))
+                response = self.get(F'/api/{API_VERSION}/statistics/{stat}')
                 self.assertEquals(response.status_code, 200)
 
 
@@ -94,6 +95,6 @@ class ApiLogout(ApiTestCase):
         self.api_login()
 
     def test_logout(self):
-        response = self.post('/api/logout')
+        response = self.post(F'/api/{API_VERSION}/logout')
         self.assertEquals(response.status_code, 200)
 

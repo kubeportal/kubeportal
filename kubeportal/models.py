@@ -152,6 +152,15 @@ class User(AbstractUser):
     service_account = models.ForeignKey(
         KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
 
+    def k8s_namespace(self):
+        '''
+        Property used by the API serializer.
+        '''
+        if self.service_account:
+            return self.service_account.namespace
+        else:
+            return None
+
     def can_subauth(self, webapp):
         user_groups_with_this_app = self.portal_groups.filter(can_web_applications__in=[webapp.pk])
         allowed = user_groups_with_this_app.count() > 0
