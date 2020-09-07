@@ -189,5 +189,5 @@ class ConfigView(LoginRequiredMixin, TemplateView):
         username = self.request.user.username
         context['username'] = username
         User = get_user_model()
-        context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
+        context['portal_administrators'] = list(User.objects.filter(is_staff=True))
         return context
