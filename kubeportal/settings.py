@@ -33,9 +33,11 @@ class Common(Configuration):
         'allauth.socialaccount',
         'allauth.socialaccount.providers.google',
         'allauth.socialaccount.providers.oauth2',
+        'silk'
     ]
 
     MIDDLEWARE = [
+        'silk.middleware.SilkyMiddleware',
         'corsheaders.middleware.CorsMiddleware',
         'django.middleware.security.SecurityMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
@@ -160,6 +162,9 @@ class Common(Configuration):
     OIDC_AFTER_USERLOGIN_HOOK = 'kubeportal.security.oidc_login_hook'
 
     ACCOUNT_ADAPTER = 'kubeportal.allauth.AccountAdapter'
+
+    SILKY_AUTHENTICATION = True  
+    SILKY_AUTHORISATION = True  
 
 
 class Development(Common):
