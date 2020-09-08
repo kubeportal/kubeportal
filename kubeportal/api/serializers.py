@@ -1,3 +1,4 @@
+from dj_rest_auth import serializers as dj_serializers
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from kubeportal.models import WebApplication
@@ -30,3 +31,11 @@ class WebApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebApplication
         fields = ('link_name', 'link_url')
+
+
+class UserDetailsSerializer(dj_serializers.UserDetailsSerializer):
+    uid = serializers.CharField(source='pk', read_only=True)
+
+    class Meta:
+        model = get_user_model()
+        fields = ('uid', )

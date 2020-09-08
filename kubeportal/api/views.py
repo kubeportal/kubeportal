@@ -1,6 +1,8 @@
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
+from rest_framework.renderers import JSONRenderer
+
 
 from django.contrib.auth import get_user_model
 from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer
@@ -40,6 +42,8 @@ def get_kubeportal_version():
 
 
 class StatisticsView(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    renderer_classes = [JSONRenderer]
+
     stats = {'kubernetes_version': kubernetes.get_kubernetes_version,
              'apiserver_url': kubernetes.get_apiserver,
              'node_count': kubernetes.get_number_of_nodes,
@@ -53,7 +57,7 @@ class StatisticsView(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.
     def retrieve(self, request, *args, **kwargs):
         key = kwargs['pk']
         if key in self.stats.keys():
-            return Response(self.stats[key]())
+            return Response({'value': self.stats[key]()})
         else:
             raise NotFound
 

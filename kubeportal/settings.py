@@ -6,7 +6,7 @@ from kubeportal.secret import get_secret_key
 
 class Common(Configuration):
     VERSION = '0.3.32'
-    API_VERSION = 'v1.0.1'
+    API_VERSION = 'v1.1.0'
 
     SITE_ID = 1
 
@@ -165,6 +165,11 @@ class Common(Configuration):
 
     SILKY_AUTHENTICATION = True  
     SILKY_AUTHORISATION = True  
+
+    # override default response format for /api/login endpoint
+    REST_AUTH_SERIALIZERS = {
+        'USER_DETAILS_SERIALIZER': 'kubeportal.api.serializers.UserDetailsSerializer'
+    }
 
 
 class Development(Common):
