@@ -39,7 +39,7 @@ docs: venv
 
 # Runs the test suite
 test: venv minikube-start
-	./venv/bin/python ./manage.py test --configuration=Development
+	./venv/bin/python ./manage.py test ${case} --configuration=Development
 
 # Run all tests and obtain coverage information.
 coverage: venv 
