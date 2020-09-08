@@ -15,4 +15,4 @@ django-multi-email-field
 dj-rest-auth[with_social]
 djangorestframework-simplejwt
 django-silk
-psycopg2
+psycopg2-binary
