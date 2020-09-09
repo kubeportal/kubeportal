@@ -5,8 +5,8 @@ from rest_framework.renderers import JSONRenderer
 
 
 from django.contrib.auth import get_user_model
-from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer
-from kubeportal.models import WebApplication
+from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer, PortalGroupSerializer
+from kubeportal.models import WebApplication, PortalGroup
 from kubeportal import kubernetes
 from django.conf import settings
 
@@ -28,8 +28,20 @@ class WebApplicationView(viewsets.ReadOnlyModelViewSet):
 
     @todo: Implement web application filtering
     '''
-    queryset = WebApplication.objects.all()
     serializer_class = WebApplicationSerializer
+
+    def get_queryset(self):
+        return self.request.user.web_applications()
+
+
+class GroupView(viewsets.ReadOnlyModelViewSet):
+    '''
+    API endpoint that allows for groups to queried
+
+    @todo: Implement web application filtering
+    '''
+    queryset = PortalGroup.objects.all()
+    serializer_class = PortalGroupSerializer
 
 
 def get_user_count():
@@ -41,30 +53,30 @@ def get_kubeportal_version():
     return settings.VERSION
 
 
-class StatisticsView(mixins.RetrieveModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+def get_cluster_name():
+    return settings.BRANDING
+
+
+class ClusterView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     renderer_classes = [JSONRenderer]
 
-    stats = {'kubernetes_version': kubernetes.get_kubernetes_version,
-             'apiserver_url': kubernetes.get_apiserver,
-             'node_count': kubernetes.get_number_of_nodes,
-             'cpu_count': kubernetes.get_number_of_cpus,
-             'mainmemory_sum': kubernetes.get_memory_sum,
-             'pod_count': kubernetes.get_number_of_pods,
-             'volume_count': kubernetes.get_number_of_volumes,
-             'user_count': get_user_count,
-             'kubeportal_version': get_kubeportal_version}
+    stats = {'k8s_version': kubernetes.get_kubernetes_version,
+             'k8s_apiserver_url': kubernetes.get_apiserver,
+             'k8s_node_count': kubernetes.get_number_of_nodes,
+             'k8s_cpu_count': kubernetes.get_number_of_cpus,
+             'k8s_mem_sum': kubernetes.get_memory_sum,
+             'k8s_pod_count': kubernetes.get_number_of_pods,
+             'k8s_volume_count': kubernetes.get_number_of_volumes,
+             'portal_user_count': get_user_count,
+             'portal_version': get_kubeportal_version,
+             'k8s_cluster_name': get_cluster_name}
 
     def retrieve(self, request, *args, **kwargs):
         key = kwargs['pk']
         if key in self.stats.keys():
-            return Response({'value': self.stats[key]()})
+            return Response(self.stats[key]())
         else:
             raise NotFound
 
-    def list(self, request, *args, **kwargs):
-        return Response(self.stats.keys())
-
     def get_queryset(self):
         return None
-
-

@@ -161,6 +161,19 @@ class User(AbstractUser):
         else:
             return None
 
+    def web_applications(self):
+        '''
+        Returns a querset for the list of web applications allowed for this
+        user to see.
+        '''
+        allowed_apps = []
+        for group in self.portal_groups.all():
+            for app in group.can_web_applications.all():
+                if app not in allowed_apps:
+                    if app.link_show:
+                        allowed_apps.append(app.pk)
+        return WebApplication.objects.filter(pk__in=allowed_apps)
+
     def can_subauth(self, webapp):
         user_groups_with_this_app = self.portal_groups.filter(can_web_applications__in=[webapp.pk])
         allowed = user_groups_with_this_app.count() > 0

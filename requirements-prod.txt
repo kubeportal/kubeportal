@@ -14,5 +14,6 @@ django-sortedm2m-filter-horizontal-widget
 django-multi-email-field
 dj-rest-auth[with_social]
 djangorestframework-simplejwt
+drf-nested-routers
 django-silk
 psycopg2-binary
