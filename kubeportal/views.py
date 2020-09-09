@@ -61,7 +61,7 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
         context['clusterapps'] = allowed_apps
 
         User = get_user_model()
-        context['portal_administrators'] = list(User.objects.filter(is_staff=True))
+        context['portal_administrators'] = list(User.objects.filter(is_staff=True).exclude(username="root"))
         return context
 
 
@@ -189,5 +189,5 @@ class ConfigView(LoginRequiredMixin, TemplateView):
         username = self.request.user.username
         context['username'] = username
         User = get_user_model()
-        context['portal_administrators'] = list(User.objects.filter(is_staff=True))
+        context['portal_administrators'] = list(User.objects.filter(is_staff=True).exclude(username="root"))
         return context

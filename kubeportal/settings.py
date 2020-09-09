@@ -5,8 +5,8 @@ from kubeportal.secret import get_secret_key
 
 
 class Common(Configuration):
-    VERSION = '0.3.29'
-    API_VERSION = 'v1.0.1'
+    VERSION = '0.3.32'
+    API_VERSION = 'v1.1.0'
 
     SITE_ID = 1
 
@@ -33,9 +33,11 @@ class Common(Configuration):
         'allauth.socialaccount',
         'allauth.socialaccount.providers.google',
         'allauth.socialaccount.providers.oauth2',
+        'silk'
     ]
 
     MIDDLEWARE = [
+        'silk.middleware.SilkyMiddleware',
         'corsheaders.middleware.CorsMiddleware',
         'django.middleware.security.SecurityMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
@@ -160,6 +162,14 @@ class Common(Configuration):
     OIDC_AFTER_USERLOGIN_HOOK = 'kubeportal.security.oidc_login_hook'
 
     ACCOUNT_ADAPTER = 'kubeportal.allauth.AccountAdapter'
+
+    SILKY_AUTHENTICATION = True  
+    SILKY_AUTHORISATION = True  
+
+    # override default response format for /api/login endpoint
+    REST_AUTH_SERIALIZERS = {
+        'USER_DETAILS_SERIALIZER': 'kubeportal.api.serializers.UserDetailsSerializer'
+    }
 
 
 class Development(Common):

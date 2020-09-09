@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-VERSION=0.3.29
+VERSION=0.3.32
 
 .PHONY: docs
 
@@ -39,7 +39,7 @@ docs: venv
 
 # Runs the test suite
 test: venv minikube-start
-	./venv/bin/python ./manage.py test --configuration=Development
+	./venv/bin/python ./manage.py test ${case} --configuration=Development
 
 # Run all tests and obtain coverage information.
 coverage: venv 

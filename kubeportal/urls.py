@@ -42,4 +42,6 @@ urlpatterns = [
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),
+
+    path('silk/', include('silk.urls', namespace='silk'))
 ]

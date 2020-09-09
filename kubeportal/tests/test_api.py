@@ -3,6 +3,7 @@ from rest_framework.test import RequestsClient
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
 from kubeportal.api.views import StatisticsView
 from kubeportal.settings import API_VERSION
+from kubeportal.models import WebApplication
 
 
 class ApiTestCase(AdminLoggedOutTestCase):
@@ -37,6 +38,12 @@ class ApiTestCase(AdminLoggedOutTestCase):
         self.jwt = response.json()["access_token"]
         assert('kubeportal-auth' in response.cookies)
         self.assertEquals(response.cookies['kubeportal-auth'], self.jwt)
+        data = response.json()
+        self.assertIn('access_token', data)
+        self.assertIn('refresh_token', data)
+        self.assertIn('user', data)
+        self.assertIn('uid', data['user'])
+        self.uid = data['user']['uid']
 
 
 class ApiAnonymous(ApiTestCase):
@@ -84,6 +91,56 @@ class ApiLocalUser(ApiTestCase):
             with self.subTest(stat=stat):
                 response = self.get(F'/api/{API_VERSION}/statistics/{stat}')
                 self.assertEquals(response.status_code, 200)
+                data = response.json()
+                self.assertIn('value',data)
+                self.assertIsNotNone(data['value'])
+
+    def test_webapps(self):
+        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
+        app1.save()
+        app2 = WebApplication(name="app2", link_show=True, link_name="app2", link_url="http://www.spiegel.de")
+        app2.save()
+        response = self.get(F'/api/{API_VERSION}/webapps/')
+        self.assertEquals(response.status_code, 200)
+        data = response.json()
+        self.assertEquals(data[0]['link_name'], 'app1')
+        self.assertEquals(data[1]['link_name'], 'app2')
+        self.assertEquals(data[0]['link_url'], 'http://www.heise.de')
+        self.assertEquals(data[1]['link_url'], 'http://www.spiegel.de')
+
+    def test_user(self):
+        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
+        app1.save()
+        app2 = WebApplication(name="app2", link_show=True, link_name="app2", link_url="http://www.spiegel.de")
+        app2.save()
+
+        expected = [
+            'id', 
+            'firstname', 
+            'name', 
+            'username', 
+            'primary_email', 
+            'all_emails', 
+            'admin', 
+            'portal_groups', 
+            'k8s_account', 
+            'k8s_namespace', 
+            'k8s_token', 
+            'k8s_apiserver', 
+            'k8s_clustername'
+        ]        
+
+        response = self.get(F'/api/{API_VERSION}/users/'+self.uid)
+        self.assertEquals(response.status_code, 200)
+        data = response.json()
+
+        self.assertIn(app1.pk, data['portal_groups'])
+        self.assertIn(app2.pk, data['portal_groups'])
+        self.assertIs(True, data['admin'])
+
+        for key in expected:
+            with self.subTest(key=key):
+                self.assertIn(key, data)
 
 
 class ApiLogout(ApiTestCase):
