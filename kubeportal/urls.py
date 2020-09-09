@@ -16,7 +16,7 @@ router.register('cluster', api_views.ClusterView, basename='cluster')
 router.register('webapps', api_views.WebApplicationView, basename='webapplications')
 router.register('groups', api_views.GroupView, basename='groups')
 
-users_router = router.NestedSimpleRouter(router, 'users', lookup='user')
+users_router = routers.NestedSimpleRouter(router, 'users', lookup='user')
 users_router.register('webapps', api_views.WebApplicationView, basename='user-webapplications')
 users_router.register('groups', api_views.GroupView, basename='user-groups')
 

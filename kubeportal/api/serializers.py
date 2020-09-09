@@ -7,7 +7,7 @@ from kubeportal.models import WebApplication, PortalGroup
 class UserSerializer(serializers.ModelSerializer):
     firstname = serializers.CharField(source='first_name')
     name = serializers.CharField(source='last_name')
-    username = serializers.CharField(source='username')
+    username = serializers.CharField()
     primary_email = serializers.EmailField(source='email')
     admin = serializers.BooleanField(source='is_staff')
     all_emails = serializers.ListField(source='alt_mails')
