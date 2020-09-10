@@ -12,14 +12,14 @@ from rest_framework_nested import routers
 
 
 router = routers.SimpleRouter()
-router.register('users', api_views.UserView, basename='users')
-router.register('cluster', api_views.ClusterView, basename='cluster')
-router.register('webapps', api_views.WebApplicationView, basename='webapplications')
-router.register('groups', api_views.GroupView, basename='groups')
+router.register('users', api_views.UserViewSet, basename='users')
+router.register('cluster', api_views.ClusterViewSet, basename='cluster')
+router.register('webapps', api_views.WebApplicationViewSet, basename='webapplications')
+router.register('groups', api_views.GroupViewSet, basename='groups')
 
 users_router = routers.NestedSimpleRouter(router, 'users', lookup='user')
-users_router.register('webapps', api_views.WebApplicationView, basename='user-webapplications')
-users_router.register('groups', api_views.GroupView, basename='user-groups')
+users_router.register('webapps', api_views.WebApplicationViewSet, basename='user-webapplications')
+users_router.register('groups', api_views.GroupViewSet, basename='user-groups')
 
 urlpatterns = [
     # frontend web views

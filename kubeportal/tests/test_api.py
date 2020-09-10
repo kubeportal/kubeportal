@@ -1,7 +1,7 @@
 from django.test import override_settings
 from rest_framework.test import RequestsClient
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
-from kubeportal.api.views import ClusterView
+from kubeportal.api.views import ClusterViewSet
 from kubeportal.settings import API_VERSION
 from kubeportal.models import WebApplication, PortalGroup
 
@@ -28,7 +28,9 @@ class ApiTestCase(AdminLoggedOutTestCase):
         return self.client.get('http://testserver' + relative_url)
 
     def patch(self, relative_url, data):
-        return self.client.patch('http://testserver' + relative_url, data)
+        return self.client.patch('http://testserver' + relative_url,
+                                json=data,
+                                headers={'X-CSRFToken': self.csrftoken})
 
     def post(self, relative_url, data={}):
         return self.client.post('http://testserver' + relative_url,
@@ -61,7 +63,7 @@ class ApiAnonymous(ApiTestCase):
         self.assertEquals(response.status_code, 400)
 
     def test_cluster_denied(self):
-        for stat in ClusterView.stats.keys():
+        for stat in ClusterViewSet.stats.keys():
             with self.subTest(stat=stat):
                 response = self.get(F'/api/{API_VERSION}/cluster/{stat}')
                 self.assertEquals(response.status_code, 401)
@@ -114,13 +116,26 @@ class ApiLocalUser(ApiTestCase):
     '''
     Tests for API functionality when a local Django user is logged in.
     '''
+    user_attr_expected = [
+        'firstname', 
+        'name', 
+        'username', 
+        'primary_email', 
+        'all_emails', 
+        'admin', 
+        'k8s_serviceaccount', 
+        'k8s_namespace', 
+        'k8s_token', 
+    ]        
+
+
     def setUp(self):
         super().setUp()
         self.api_login()
 
 
     def test_cluster(self):
-        for stat in ClusterView.stats.keys():
+        for stat in ClusterViewSet.stats.keys():
             with self.subTest(stat=stat):
                 response = self.get(F'/api/{API_VERSION}/cluster/{stat}')
                 self.assertEquals(response.status_code, 200)
@@ -232,17 +247,6 @@ class ApiLocalUser(ApiTestCase):
 
 
     def test_user(self):
-        expected = [
-            'firstname', 
-            'name', 
-            'username', 
-            'primary_email', 
-            'all_emails', 
-            'admin', 
-            'k8s_serviceaccount', 
-            'k8s_namespace', 
-            'k8s_token', 
-        ]        
 
         response = self.get(F'/api/{API_VERSION}/users/{self.admin.pk}')
         self.assertEquals(response.status_code, 200)
@@ -250,14 +254,26 @@ class ApiLocalUser(ApiTestCase):
 
         self.assertIs(True, data['admin'])
 
-        for key in expected:
+        for key in self.user_attr_expected:
             with self.subTest(key=key):
                 self.assertIn(key, data)
 
     def test_patch_user(self):
         data = {'firstname': 'Trude', 'name': 'Honigtau', 'primary_email': 'trude@masterminds.de'}
         response = self.patch(F'/api/{API_VERSION}/users/{self.admin.pk}', data)
-        self.assertEquals(response.status_code, 200)
+        data = response.json()
+
+        self.assertIs(True, data['admin'])
+        self.assertEquals('Trude', data['firstname'])
+        self.assertEquals('Honigtau', data['name'])
+        self.assertEquals('trude@masterminds.de', data['primary_email'])
+
+        self.assertEquals(response.status_code, 204)
+
+        for key in self.user_attr_expected:
+            with self.subTest(key=key):
+                self.assertIn(key, data)
+
 
     def test_user_invalid_id(self):
         response = self.get(F'/api/{API_VERSION}/users/777')

@@ -1,7 +1,8 @@
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from rest_framework.renderers import JSONRenderer
+from rest_framework import generics
 
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
@@ -16,7 +17,7 @@ logger = logging.getLogger('KubePortal')
 
 User = get_user_model()
 
-class UserView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     '''
     API endpoint that allows for users to queried
     '''
@@ -32,8 +33,32 @@ class UserView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             else:
                 raise Http404
 
+    # def partial_update(self, request, *args, **kwargs):
+    #     pk = int(self.kwargs['pk'])
 
-class WebApplicationView(viewsets.ReadOnlyModelViewSet):
+    #     if pk != self.request.user.pk:
+    #         if User.objects.filter(pk=pk).exists():
+    #             raise PermissionDenied
+    #         else:
+    #             raise Http404
+
+    #     target_user = User.objects.get(pk=pk)
+
+    #     if len(request.data) == 0:
+    #         logger.warning(f"Got empty body in patch request for user {target_user}.")
+    #         return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    #     else:
+    #         serializer = UserSerializer(target_user, data=request.data, partial=True) 
+    #         if serializer.is_valid():
+    #             serializer.save()
+    #             response = JsonResponse(data=serializer.data)
+    #             response.status_code = 204
+    #             return response
+    #         else:
+    #             logger.warning(f"Got invalid body in patch request for user {target_user}.")
+    #             return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
     '''
     API endpoint that allows for web application(s) to queried.
     '''
@@ -64,7 +89,7 @@ class WebApplicationView(viewsets.ReadOnlyModelViewSet):
         else:
             raise Http404
 
-class GroupView(viewsets.ReadOnlyModelViewSet):
+class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     '''
     API endpoint that allows for groups to queried
     '''
@@ -108,7 +133,7 @@ def get_cluster_name():
     return settings.BRANDING
 
 
-class ClusterView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
     renderer_classes = [JSONRenderer]
 
     stats = {'k8s_version': kubernetes.get_kubernetes_version,
@@ -129,5 +154,3 @@ class ClusterView(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
         else:
             raise NotFound
 
-    def get_queryset(self):
-        return None

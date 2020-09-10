@@ -13,6 +13,8 @@ logging.getLogger('django').setLevel(logging.WARNING)
 admin_clear_password = 'adminäö&%/1`'
 
 admin_data = {
+    'first_name': 'Peter',
+    'last_name': 'Admin',
     'username': 'adminäö&%/1`',
     'email': 'adminäö&%/1`@example.com',
     'password': make_password(admin_clear_password),

@@ -224,7 +224,7 @@ class Development(Common):
             },
             'django': {
                 'handlers': ['console', ],
-                'level': 'WARNING',
+                'level': 'INFO',
                 'propagate': True
             },
         }
