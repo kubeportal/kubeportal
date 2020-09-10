@@ -133,7 +133,7 @@ def get_cluster_name():
     return settings.BRANDING
 
 
-class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
+class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     renderer_classes = [JSONRenderer]
 
     stats = {'k8s_version': kubernetes.get_kubernetes_version,
