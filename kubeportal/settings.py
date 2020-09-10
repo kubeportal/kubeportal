@@ -169,7 +169,7 @@ class Common(Configuration):
 
     # override default response format for /api/login endpoint
     REST_AUTH_SERIALIZERS = {
-        'USER_DETAILS_SERIALIZER': 'kubeportal.api.serializers.UserDetailsSerializer'
+        'JWT_SERIALIZER': 'kubeportal.api.serializers.LoginSuccessSerializer'
     }
 
 

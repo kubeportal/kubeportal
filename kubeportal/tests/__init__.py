@@ -20,11 +20,12 @@ admin_data = {
     'is_superuser': True
 }
 
-
 class BaseTestCase(TestCase):
     '''
     Nobody is logged in. No user is prepared.
     '''
+
+    admin_group_name = 'Admins'
 
     def setUp(self):
         super().setUp()
@@ -52,7 +53,7 @@ class AdminLoggedOutTestCase(BaseTestCase):
         User = get_user_model()
         self.admin = User(**admin_data)
         self.admin.save()
-        self.admin_group = models.PortalGroup(name="Admins", can_admin=True)
+        self.admin_group = models.PortalGroup(name=self.admin_group_name, can_admin=True)
         self.admin_group.save()
         self.admin_group.members.add(self.admin)
         self.admin_group.save()

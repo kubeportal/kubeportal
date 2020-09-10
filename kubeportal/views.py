@@ -49,7 +49,7 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['clusterapps'] = self.request.user.web_applications()
+        context['clusterapps'] = self.request.user.web_applications(include_invisible=False)
 
         User = get_user_model()
         context['portal_administrators'] = list(User.objects.filter(is_staff=True).exclude(username="root"))
