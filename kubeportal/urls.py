@@ -10,6 +10,7 @@ from kubeportal.admin import admin_site
 
 from rest_framework_nested import routers
 
+
 router = routers.SimpleRouter()
 router.register('users', api_views.UserView, basename='users')
 router.register('cluster', api_views.ClusterView, basename='cluster')
@@ -52,3 +53,5 @@ urlpatterns = [
 
     path('silk/', include('silk.urls', namespace='silk'))
 ]
+
+

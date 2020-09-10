@@ -33,7 +33,8 @@ class Common(Configuration):
         'allauth.socialaccount',
         'allauth.socialaccount.providers.google',
         'allauth.socialaccount.providers.oauth2',
-        'silk'
+        'silk',
+        'django_extensions',
     ]
 
     MIDDLEWARE = [
