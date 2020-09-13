@@ -365,23 +365,39 @@ def get_apiserver():
     else:
         return settings.API_SERVER_EXTERNAL
 
+
 def get_kubernetes_version():
     core_v1, rbac_v1 = _load_config()
-    return core_v1.list_namespaced_pod(
-        "kube-system", label_selector="component=kube-apiserver").items[0].spec.containers[0].image.split(":")[1]
+    api_result = core_v1.list_namespaced_pod(
+        "kube-system", label_selector="component=kube-apiserver")
+    if len(api_result.items) > 0:
+        apiserver_pod = api_result.items[0]
+        if len(apiserver_pod.spec.containers) > 0:
+            apiserver_container = apiserver_pod.spec.containers[0]
+            return apiserver_container.image.split(":")[1]
+        else:
+            logger.error("Kubernetes version not identifiable, problem while fetching API server container.")
+            return None
+    else:
+        logger.error("Kubernetes version not identifiable, problem while fetching API server pod.")
+        return None
+
 
 def get_number_of_pods():
     core_v1, rbac_v1 = _load_config()
     return len(core_v1.list_pod_for_all_namespaces().items)
 
+
 def get_number_of_nodes():
     core_v1, rbac_v1 = _load_config()
     return len(core_v1.list_node().items)
+
 
 def get_number_of_cpus():
     core_v1, rbac_v1 = _load_config()
     nodes = core_v1.list_node().items
     return sum([int(node.status.capacity['cpu']) for node in nodes])
+
 
 def get_memory_sum():
     core_v1, rbac_v1 = _load_config()
@@ -389,7 +405,9 @@ def get_memory_sum():
     mems = [int(node.status.capacity['memory'][:-2]) for node in nodes]
     return sum(mems) / 1000000  # in GiBytes
 
+
 def get_number_of_volumes():
     core_v1, rbac_v1 = _load_config()
     return(len(core_v1.list_persistent_volume().items))
+
 
