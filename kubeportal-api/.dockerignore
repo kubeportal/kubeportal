@@ -1,9 +1,0 @@
-deployment/k8s
-Dockerfile
-.dockerignore
-.bumpversion.cfg
-db.sqlite3
-Makefile
-venv
-kubeportal/tests
-kubeportal/__pycache__
