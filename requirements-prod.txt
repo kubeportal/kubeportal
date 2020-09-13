@@ -1,0 +1,20 @@
+urllib3
+Django==2.2.16
+ldap3
+django-oidc-provider
+colorama
+kubernetes
+django-configurations
+dj-database-url
+django-fsm
+djangorestframework
+python-jose
+django-cors-middleware
+django-sortedm2m-filter-horizontal-widget
+django-multi-email-field
+dj-rest-auth[with_social]
+djangorestframework-simplejwt
+drf-nested-routers
+django-silk
+psycopg2-binary
+django-extensions # mainly for show_urls

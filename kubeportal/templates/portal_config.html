@@ -1,0 +1,103 @@
+{% extends 'portal_base.html' %}
+
+{% block portal_content %}
+
+<div class="row">
+  <div class="col">
+    <div class="card mb-3">
+      <div class="card-header">
+        Cluster Access
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-body">
+        {% if user.has_access_approved %}
+          <p>Kubernetes Service Account: {{user.service_account.name}}</p>
+          <p>Kubernetes Namespace: {{user.service_account.namespace}}</p>
+        {% else %}
+          <p class="text-danger">
+            {% if user.has_access_requested %}
+              Still waiting for approval.
+            {% else %}
+              Sorry, you have no access to the cluster.
+            {% endif %}
+          </p>
+          {% if portal_administrators %}
+            <p>
+              {% if user.has_access_requested %}
+                Your request for cluster access was already sent to the administrators. <br>
+                If needed, you can re-send an access request to an administrator of your choice:
+                {% else %}
+                You can send an access request to an administrator of your choice:
+              {% endif %}
+            </p>
+
+            <form method="POST" action="{% url 'access_request' %}">
+              {% csrf_token %}
+              <select id="selected-administrator" name="selected-administrator">
+                <option value="default" selected disabled>Select Administrator</option>
+                {% for admin in portal_administrators %}
+                <option value="{{ admin.username }}">
+                {{ admin.first_name }} {{ admin.last_name }} ({{ admin.username }})
+                </option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-secondary">send</button>
+            </form>
+          {% else %}
+            Currently there are no users marked as staff.<br>
+            Please contact the administrator for cluster access.
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+{% if user.has_access_approved %}
+
+<div class="row">
+  <div class="col-sm-6">
+	<div class="card">
+		<div class="card-header">config (<a href="{% url 'config_download' %}">Download</a>)</div>
+		<div class="card-body">
+			<code><pre>{% include 'config.txt'%}</pre></code>
+		</div>
+    </div>
+  </div>
+  <div class="col-sm-6">
+    <p>This configuration file is needed for Kubernetes client tools on your computer.<br/>It contains your personal access token.
+    </p>
+  	<h1 class="h4">Using <a href="https://kubernetes.io/docs/reference/kubectl/overview/" target="_new">kubectl</a></h1>
+  	<h2 class="h5">Windows</h2>
+  	<ul>
+  		<li>Install kubectl <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-on-windows-using-chocolatey-or-scoop">for Windows</a></li>
+  		<li>Navigate to your home directory: <code>cd %USERPROFILE%</code></li>
+  		<li>Create the <code>.kube</code> directory: <code>mkdir .kube</code></li>
+  		<li>Store the <a href="{% url 'config_download' %}">config file</a> as <code>.kube/config</code> </li>
+  	</ul>
+
+  	<h2 class="h5">MacOS X / Linux / Unix</h2>
+  	<ul>
+  		<li>Install kubectl with your <a href="https://kubernetes.io/docs/tasks/tools/install-kubectl/">package manager</a> </li>
+  		<li>Navigate to your home directory: <code>cd ~</code></li>
+  		<li>Create the <code>.kube</code> directory: <code>mkdir .kube</code></li>
+      <li>Store the <a href="{% url 'config_download' %}">config file</a> as <code>.kube/config</code> </li>
+  	</ul>
+
+  	<p>You can test your installation by calling <code>kubectl cluster-info</code>.</p>
+
+  </div>
+</div>
+
+{% endif %}
+
+
+
+{% endblock %}

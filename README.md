@@ -1,19 +1,13 @@
-# kubeportal-integration
+# Kubeportal Backend
 
-## how to use git subtrees:
-https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt
+The official end user documenation is here: https://kubeportal.readthedocs.io/en/latest/
 
-### update changes:
+## Quick start for developers
 
-```
-git subtree pull --prefix kubeportal-api https://github.com/kubeportal/kubeportal.git fe-api --squash
-aka:
-make pull-api
-```
-
-```
-git subtree push --prefix kubeportal-api https://github.com/kubeportal/kubeportal.git fe-api --squash
-aka:
-make push-api
-```
+- Clone the repository.
+- Run `make web-run` to start a development server with the Kubeportal backend.
+- Run `make dev-run` to start a development server with the Kubeportal backend + Minikube integration. The latter must be installed.
+- The developer mode automatically has a superuser account with name "root" and the password "rootpw."
+- You can create a `.env` file in the project root for configuration. Check the manual for details: https://kubeportal.readthedocs.io/en/latest/installation.html#configuration-options
+- Run `make test` to execute the test suite.
 

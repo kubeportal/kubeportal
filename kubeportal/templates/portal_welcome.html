@@ -1,0 +1,37 @@
+{% extends 'portal_base.html' %}
+{% load frontend_tags %}
+
+
+{% block portal_content %}
+
+<div class="row">
+  <div class="col">
+    <div class="card mb-3">
+      <div class="card-header">
+        <i class="fas fa-user"></i>
+        Hello {{user.get_short_name}}!
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card-columns">
+  {% for app in clusterapps %}
+  <a target="_new" href="{% placeholder_replace app.link_url %}">
+  <div display="inline-block">
+    <div class="card mb-3 text-white bg-{% cycle 'primary' 'success' 'warning' %}">
+      <div class="card-body">
+        <div class="card-body-icon">
+          <i class="fas fa-fw fa-external-link-alt"></i>
+        </div>
+        <div>{% placeholder_replace app.link_name %}</div>
+      </div>
+    </div>
+  </div>
+  </a>
+  {% endfor %}
+</div>
+
+
+
+{% endblock %}
