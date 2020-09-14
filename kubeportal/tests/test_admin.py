@@ -69,14 +69,15 @@ class Backend(AdminLoggedInTestCase):
 
     def test_new_ns_broken_name_sync(self):
         core_v1, rbac_v1 = kubernetes._load_config()
-        new_ns = KubernetesNamespace(name="foo_bar")
-        new_ns.save()
-        self._call_sync()
-        ns_names = [ns.metadata.name for ns in kubernetes.get_namespaces()]
-        self.assertNotIn("foo_bar", ns_names)
-        self.assertIn("foobar", ns_names)
-        self.assertEquals(KubernetesNamespace.objects.filter(name="foobar").exists(), True)
-        kubernetes._delete_k8s_ns("foobar", core_v1)
+        test_cases = {  "foo_bar": "foobar",
+                        "ABCDEF": "abcdef"}
+        for old, new  in test_cases.items():
+            new_ns = KubernetesNamespace(name=old)
+            new_ns.save()
+            self._call_sync()
+            ns_names = [ns.metadata.name for ns in kubernetes.get_namespaces()]
+            self.assertNotIn(old, ns_names)
+            self.assertIn(new, ns_names)
 
     def test_new_external_ns_sync(self):
         self._call_sync()
