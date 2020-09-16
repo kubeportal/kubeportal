@@ -29,7 +29,13 @@ class CustomAdminSite(admin.AdminSite):
         urls = super().get_urls()
         urls += [
                 path('cleanup/', admin_views.CleanupView.as_view(), name='cleanup'),
-                path('sync/', admin_views.sync_view, name='sync')
+                path('sync/', admin_views.sync_view, name='sync'),
+                path('prune/inactiveserviceacc/', admin_views.PruneViews.PruneInactiveServiceAccounts,
+                    name='pruneinactiveserviceaccounts'),
+                path('prune/namespaceswithoutpods/', admin_views.PruneViews.PruneNamespacesWithoutPods,
+                    name='prunenamespaceswithoutpods'),
+                path('prune/namespaceswithoutserviceacc/', admin_views.PruneViews.PruneNamespacesWithoutServiceAccounts,
+                    name='prunenamespaceswithoutserviceacc')
                 ]
         return urls
 
