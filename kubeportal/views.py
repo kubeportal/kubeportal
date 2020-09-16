@@ -22,7 +22,6 @@ logger = logging.getLogger('KubePortal')
 class GoogleApiLoginView(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
 
-
 class StatsView(LoginRequiredMixin, TemplateView):
     template_name = 'portal_stats.html'
 
