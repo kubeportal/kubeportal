@@ -1,0 +1,30 @@
+name: kubeportal-backend
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.6'
+      - name: install dependencies
+        run: |
+          apt-get update && apt-get install -y gcc make libc-dev musl-dev libffi-dev libssl-dev libpcre3-dev
+          python -m pip install --upgrade pip
+          if [ -f requirements-prod.txt ]; then pip install --no-cache-dir -r requirements-prod.txt; fi
+      - name: Setup Minikube
+        uses: manusa/actions-setup-minikube@v2.0.0
+        with:
+          minikube version: 'v1.6.2'
+          kubernetes version: 'v1.15.7'
+          github token: ${{ secrets.GITHUB_TOKEN }}
+      - name: run Unittest
+        run: ./manage.py test --configuration=Development
