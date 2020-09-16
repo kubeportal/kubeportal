@@ -69,20 +69,20 @@ class PruneViews():
     def PruneNamespacesWithoutServiceAccounts(self):
         namespaces_without_service_accounts = get_namespaces_without_service_accounts()
         for ns in namespaces_without_service_accounts:
-            logger.warn(f"Pruning {ns.name}!")
+            logger.warn(f"Pruning namespace: {ns.name}!")
             ns.delete()
         return redirect("admin:cleanup")
 
     def PruneNamespacesWithoutPods(self):
         namespaces_without_pods = get_namespaces_without_pods()
         for ns in namespaces_without_pods:
-            logger.warn(f"Pruning {ns.name}!")
+            logger.warn(f"Pruning namespace: {ns.name}!")
             ns.delete()
         return redirect("admin:cleanup")
 
     def PruneInactiveServiceAccounts(self):
         inactive_service_accounts = get_inactive_service_accounts()
         for svc_acc in inactive_service_accounts:
-            logger.warn(f"Pruning {svc_acc}!")
+            logger.warn(f"Pruning service account: {svc_acc}!")
             svc_acc.delete()
         return redirect("admin:cleanup")
