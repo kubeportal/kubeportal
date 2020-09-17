@@ -379,7 +379,7 @@ def get_kubernetes_version():
             logger.error("Kubernetes version not identifiable, problem while fetching API server container.")
             return None
     else:
-        logger.error("Kubernetes version not identifiable, problem while fetching API server pod.")
+        logger.error(f"Kubernetes version not identifiable, problem while fetching API server pod. Got: {api_result} with item {api_result.items}")
         return None
 
 
