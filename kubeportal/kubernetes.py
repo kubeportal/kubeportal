@@ -369,7 +369,7 @@ def get_apiserver():
 def get_kubernetes_version():
     core_v1, rbac_v1 = _load_config()
     api_result = core_v1.list_namespaced_pod(
-        "kube-system", label_selector="component=kube-apiserver")
+        "kube-system")
     if len(api_result.items) > 0:
         apiserver_pod = api_result.items[0]
         if len(apiserver_pod.spec.containers) > 0:
