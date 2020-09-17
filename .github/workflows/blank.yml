@@ -17,7 +17,7 @@ jobs:
           python-version: '3.6'
       - name: install dependencies
         run: |
-          pip install -r requirements-prod.txt requirements-dev.txt
+          pip install -r requirements-prod.txt -r requirements-dev.txt
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.0.0
         with:
