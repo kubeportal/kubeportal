@@ -63,3 +63,11 @@ On startup, the log output of the KubePortal pod shows you a generated password 
 
 It allows you to enter the admin backend while by-passing all configured frontend login methods. This is especially helpful with an empty database after installation.
 
+Merging Users
+-------------
+
+In the backend user administration, one is able to select two users and then click the ``Merge two users`` action. This will merge all the important credentials of the newer (referred to as secondary) into the older (referred to as primary).
+
+.. image:: static/back_usermerging.png
+
+In case the secondary user has gotten their cluster access rejected, this will carry over to the primary. Also the user comments from the secondary user will be favored unless the secondary has no comments. Any group that secondary has joined will be carried over to the primary. The secondary user will be deleted after all the details have been merged.
