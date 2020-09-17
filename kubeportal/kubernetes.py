@@ -368,19 +368,13 @@ def get_apiserver():
 
 def get_kubernetes_version():
     core_v1, rbac_v1 = _load_config()
-    api_result = core_v1.list_namespaced_pod(
-        "kube-system")
-    if len(api_result.items) > 0:
-        apiserver_pod = api_result.items[0]
-        if len(apiserver_pod.spec.containers) > 0:
-            apiserver_container = apiserver_pod.spec.containers[0]
-            return apiserver_container.image.split(":")[1]
-        else:
-            logger.error("Kubernetes version not identifiable, problem while fetching API server container.")
-            return None
-    else:
-        logger.error(f"Kubernetes version not identifiable, problem while fetching API server pod. Got: {api_result} with item {api_result.items}")
-        return None
+    pods = core_v1.list_namespaced_pod("kube-system").items
+    for pod in pods:
+        for container in pod.spec.containers:
+            if 'kube-apiserver' in container.image:
+                return container.image.split(":")[1]
+    logger.error(f"Kubernetes version not identifiable, list of pods in 'kube-system': {pods}.")
+    return None
 
 
 def get_number_of_pods():
