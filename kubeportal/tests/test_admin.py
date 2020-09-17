@@ -37,7 +37,7 @@ class Backend(AdminLoggedInTestCase):
         # so that the result of sync is directly analyzed
         request = self._build_full_request_mock('admin:index')
         sync_success = kubernetes.sync(request)
-        self.assertEquals(sync_success, expect_success)
+        self.assertEqual(sync_success, expect_success)
 
     def setUp(self):
         super().setUp()
@@ -126,19 +126,19 @@ class Backend(AdminLoggedInTestCase):
     def test_special_k8s_approved(self):
         # Creating an auto_add_approved group should not change its member list.
         group = models.PortalGroup.objects.get(special_k8s_accounts=True)
-        self.assertEquals(group.members.count(), 0)
+        self.assertEqual(group.members.count(), 0)
         # Create a new user should not change the member list
         User = get_user_model()
         u = User(username="Hugo", email="a@b.de")
         u.save()
-        self.assertEquals(group.members.count(), 0)
+        self.assertEqual(group.members.count(), 0)
         # walk through approval workflow
         url = reverse('welcome')
         request = self.factory.get(url)
         u.send_access_request(request)
         u.save()
         # Just sending an approval request should not change to member list
-        self.assertEquals(group.members.count(), 0)
+        self.assertEqual(group.members.count(), 0)
         # Build full-fledged request object for logged-in admin
         request = self._build_full_request_mock('admin:index')
         # Prepare K8S namespace
@@ -150,7 +150,7 @@ class Backend(AdminLoggedInTestCase):
         assert(u.approve(request, new_svc))
         u.save()
         # Should lead to addition of user to the add_approved group
-        self.assertEquals(group.members.count(), 1)
+        self.assertEqual(group.members.count(), 1)
 
 
     def test_special_k8s_unapproved(self):
@@ -166,11 +166,11 @@ class Backend(AdminLoggedInTestCase):
                  state=models.UserState.ACCESS_APPROVED,
                  service_account = new_svc)
         u.save()
-        self.assertEquals(group.members.count(), 1)
+        self.assertEqual(group.members.count(), 1)
         # unapprove
         u.state=models.UserState.ACCESS_REJECTED
         u.save()
-        self.assertEquals(group.members.count(), 0)
+        self.assertEqual(group.members.count(), 0)
 
 
     def _test_user_rejection(self):
@@ -258,7 +258,7 @@ class Backend(AdminLoggedInTestCase):
         primary = User.objects.get(pk = primary.id)
 
         # Does primary have all the values of secondary user?
-        self.assertEquals(primary.comments, "secondary user comment")
+        self.assertEqual(primary.comments, "secondary user comment")
         assert(primary.portal_groups.filter(name = group1.name))
         assert(primary.portal_groups.filter(name = group2.name))
         assert(primary.has_access_approved)

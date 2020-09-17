@@ -21,7 +21,7 @@ class ApiTestCase(AdminLoggedOutTestCase):
 
         # Obtain the CSRF token for later POST requests
         response = self.get('/')
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.csrftoken = response.cookies['csrftoken']
 
     def get(self, relative_url):
@@ -39,16 +39,16 @@ class ApiTestCase(AdminLoggedOutTestCase):
 
     def api_login(self):
         response = self.post(F'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         # The login API call returns the JWT + extra information as JSON in the body, but also sets a cookie with the JWT.
         # This means that for all test cases here, the JWT must not handed over explicitely,
         # since the Python http client has the cookie anyway.
         assert('kubeportal-auth' in response.cookies)
         data = response.json()
-        self.assertEquals(2, len(data))
+        self.assertEqual(2, len(data))
         self.assertIn('firstname', data)
         self.assertIn('id', data)
-        self.assertEquals(data['id'], self.admin.pk)
+        self.assertEqual(data['id'], self.admin.pk)
 
 
 class ApiAnonymous(ApiTestCase):
@@ -60,13 +60,13 @@ class ApiAnonymous(ApiTestCase):
 
     def test_api_wrong_login(self):
         response = self.post(F'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': 'blabla'})
-        self.assertEquals(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
 
     def test_cluster_denied(self):
         for stat in ClusterViewSet.stats.keys():
             with self.subTest(stat=stat):
                 response = self.get(F'/api/{API_VERSION}/cluster/{stat}')
-                self.assertEquals(response.status_code, 401)
+                self.assertEqual(response.status_code, 401)
 
     def test_webapp_denied(self):
         app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
@@ -74,7 +74,7 @@ class ApiAnonymous(ApiTestCase):
         self.admin_group.can_web_applications.add(app1)
 
         response = self.get(F'/api/{API_VERSION}/webapps/{app1.pk}')
-        self.assertEquals(response.status_code, 401)
+        self.assertEqual(response.status_code, 401)
 
     def test_user_webapps_denied(self):
         app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
@@ -82,20 +82,20 @@ class ApiAnonymous(ApiTestCase):
         self.admin_group.can_web_applications.add(app1)
 
         response = self.get(F'/api/{API_VERSION}/users/{self.admin.pk}/webapps')
-        self.assertEquals(response.status_code, 401)
+        self.assertEqual(response.status_code, 401)
 
     def test_group_denied(self):
         response = self.get(F'/api/{API_VERSION}/groups/{self.admin_group.pk}')
-        self.assertEquals(response.status_code, 401)
+        self.assertEqual(response.status_code, 401)
 
     def test_user_groups_denied(self):
         response = self.get(F'/api/{API_VERSION}/users/{self.admin.pk}/groups')
-        self.assertEquals(response.status_code, 401)
+        self.assertEqual(response.status_code, 401)
 
     def test_logout(self):
         # logout should work anyway, even when nobody is logged in
         response = self.post(F'/api/{API_VERSION}/logout')
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     @override_settings(SOCIALACCOUNT_PROVIDERS={'google': {
             'APP': {
@@ -110,7 +110,7 @@ class ApiAnonymous(ApiTestCase):
         we can check that no crash happens when using this API call with fake data.
         '''
         response = self.post(F'/api/{API_VERSION}/login_google', {'access_token': 'foo', 'code': 'bar'})
-        self.assertEquals(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
 
 class ApiLocalUser(ApiTestCase):
     '''
@@ -138,25 +138,25 @@ class ApiLocalUser(ApiTestCase):
         for stat in ClusterViewSet.stats.keys():
             with self.subTest(stat=stat):
                 response = self.get(F'/api/{API_VERSION}/cluster/{stat}')
-                self.assertEquals(response.status_code, 200)
+                self.assertEqual(response.status_code, 200)
                 data = response.json()
                 self.assertIn('value', data.keys())
                 self.assertIsNotNone(data['value'])
 
     def test_cluster_invalid(self):
         response = self.get(F'/api/{API_VERSION}/cluster/foobar')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_webapp_user_not_in_group(self):
         app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
         app1.save()
 
         response = self.get(F'/api/{API_VERSION}/webapps/{app1.pk}')
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
     def test_webapp_invalid_id(self):
         response = self.get(F'/api/{API_VERSION}/webapps/777')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
 
     def test_webapp_invisible(self):
@@ -165,7 +165,7 @@ class ApiLocalUser(ApiTestCase):
         self.admin_group.can_web_applications.add(app1)
 
         response = self.get(F'/api/{API_VERSION}/webapps/{app1.pk}')
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
 
     def test_webapp(self):
@@ -174,11 +174,11 @@ class ApiLocalUser(ApiTestCase):
         self.admin_group.can_web_applications.add(app1)
 
         response = self.get(F'/api/{API_VERSION}/webapps/{app1.pk}')
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         data = response.json()
-        self.assertEquals(data['link_name'], 'app1')
-        self.assertEquals(data['link_url'], 'http://www.heise.de')
+        self.assertEqual(data['link_name'], 'app1')
+        self.assertEqual(data['link_url'], 'http://www.heise.de')
 
     def test_user_webapps(self):
         app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
@@ -194,7 +194,7 @@ class ApiLocalUser(ApiTestCase):
         self.admin_group.can_web_applications.add(app3)
 
         response = self.get(F'/api/{API_VERSION}/users/{self.admin.pk}/webapps')
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn({'link_name': 'app1', 'link_url': 'http://www.heise.de'}, data)
         self.assertIn({'link_name': 'app2', 'link_url': 'http://www.spiegel.de'}, data)
@@ -204,7 +204,7 @@ class ApiLocalUser(ApiTestCase):
 
     def test_user_webapps_invalid_id(self):
         response = self.get(F'/api/{API_VERSION}/users/777/webapps')
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
     def test_user_groups(self):
         group1 = PortalGroup(name="group1")
@@ -216,22 +216,22 @@ class ApiLocalUser(ApiTestCase):
         self.admin.portal_groups.add(group2)
 
         response = self.get(F'/api/{API_VERSION}/users/{self.admin.pk}/groups')
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         data = response.json()
         for entry in data:
             self.assertIn('name', entry.keys())
-        self.assertEquals(4, len(data))  #  Auto group "all users", Test case group "Admins", plus 2 extra
+        self.assertEqual(4, len(data))  #  Auto group "all users", Test case group "Admins", plus 2 extra
 
     def test_group(self):
         response = self.get(F'/api/{API_VERSION}/groups/{self.admin_group.pk}')
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         data = response.json()
-        self.assertEquals(data['name'], self.admin_group_name)
+        self.assertEqual(data['name'], self.admin_group_name)
 
     def test_group_invalid_id(self):
         response = self.get(F'/api/{API_VERSION}/groups/777')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
 
     def test_group_non_member(self):
@@ -239,17 +239,17 @@ class ApiLocalUser(ApiTestCase):
         group1.save()
 
         response = self.get(F'/api/{API_VERSION}/groups/{group1.pk}')
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
     def test_group_invalid_id(self):
         response = self.get(F'/api/{API_VERSION}/users/777/groups')
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
 
     def test_user(self):
 
         response = self.get(F'/api/{API_VERSION}/users/{self.admin.pk}')
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         data = response.json()
 
         self.assertIs(True, data['admin'])
@@ -270,37 +270,37 @@ class ApiLocalUser(ApiTestCase):
 
     def test_patch_user_invalid_id(self):
         response = self.patch(F'/api/{API_VERSION}/users/777', {})
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_patch_user_not_himself(self):
         u = User()
         u.save()
 
         response = self.patch(F'/api/{API_VERSION}/users/{u.pk}', {})
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
     def test_user_invalid_id(self):
         response = self.get(F'/api/{API_VERSION}/users/777')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_user_not_himself(self):
         u = User()
         u.save()
 
         response = self.get(F'/api/{API_VERSION}/users/{u.pk}')
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
     def test_no_general_user_list(self):
         response = self.get(F'/api/{API_VERSION}/users')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_no_general_webapp_list(self):
         response = self.get(F'/api/{API_VERSION}/webapps')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_no_general_group_list(self):
         response = self.get(F'/api/{API_VERSION}/groups')
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
 
 class ApiLogout(ApiTestCase):
@@ -313,5 +313,5 @@ class ApiLogout(ApiTestCase):
 
     def test_logout(self):
         response = self.post(F'/api/{API_VERSION}/logout')
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
