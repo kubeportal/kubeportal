@@ -1,6 +1,9 @@
 from django.db.models.signals import post_save, m2m_changed
+from django.contrib.auth.signals import user_logged_in, user_logged_out
+from allauth.socialaccount.signals import pre_social_login
 from django.dispatch import receiver
 from django.contrib.auth.models import Permission
+from datetime import date
 
 from kubeportal.models import User
 from kubeportal.models import PortalGroup
@@ -8,6 +11,25 @@ from kubeportal.models import PortalGroup
 import logging
 
 logger = logging.getLogger('KubePortal')
+
+
+@receiver([user_logged_out, user_logged_in, pre_social_login])
+def check_user_validity_date(sender, request, **kwargs):
+    '''
+    When a user logs in check the users validity_date. If the current date is
+    past the validity_date, set the users is_active state to False.
+
+    TODO: use django allauths pre_social_login signal so we can deactivate accounts
+    before they logged in.
+    '''
+    u = request.user
+    # does user have a validity date?
+    if u.validity_date:
+        # are we past that date?
+        if u.validity_date < date.today():
+            logger.warn(f"Deactivating user {u.username}")
+            u.is_active = False
+            u.save()
 
 
 @receiver(post_save, sender=User)

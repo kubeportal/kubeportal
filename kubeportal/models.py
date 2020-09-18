@@ -149,8 +149,12 @@ class User(AbstractUser):
     portal_groups = models.ManyToManyField(
         PortalGroup, blank=True, verbose_name='Groups', help_text="The user groups this account belongs to.", related_name='members')
 
+    validity_date = models.DateField(verbose_name="Validity date", null=True)
+
     service_account = models.ForeignKey(
         KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
+
+
 
     def k8s_namespace(self):
         '''
