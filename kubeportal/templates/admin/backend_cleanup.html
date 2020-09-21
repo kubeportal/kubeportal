@@ -17,7 +17,7 @@
     </tr>
     {% endfor %}
   </table>
-  <a href="{% url 'admin:prunenamespaceswithoutserviceacc' %}"><button type="button" class="btn btn-danger">Prune</button></a>
+  <a onclick="return confirm('Are you sure you want to prune {{ namespaces_no_portal_users|length }} namespace(s)?')" href="{% url 'admin:prunenamespaceswithoutserviceacc' %}"><button type="button" class="btn btn-danger">Prune</button></a>
   {% else %}
   There are no visible namespaces without portal users.
   {% endif %}
@@ -35,7 +35,7 @@
     </tr>
     {% endfor %}
   </table>
-  <a href="{% url 'admin:prunenamespaceswithoutpods' %}"><button type="button" class="btn btn-danger">Prune</button></a>
+  <a onclick="return confirm('Are you sure you want to delete {{ namespaces_no_pods|length }} namespace(s)?')" href="{% url 'admin:prunenamespaceswithoutpods' %}"><button type="button" class="btn btn-danger">Prune</button></a>
   {% else %}
   There are no visible namespaces without pods.
   {% endif %}
@@ -55,7 +55,7 @@
     </tr>
     {% endfor %}
   </table>
-  <a href="{% url 'admin:pruneinactiveserviceaccounts' %}"><button type="button" class="btn btn-danger">Prune</button></a>
+  <a onclick="return confirm('Are you sure you want to delete {{ inactive_service_accounts|length }} user(s)?')"  href="{% url 'admin:pruneinactiveserviceaccounts' %}"><button type="button" class="btn btn-danger">Prune</button></a>
   {% else %}
   There are no users that logged in longer ago than {{ months }} months.
   {% endif %}
