@@ -21,8 +21,8 @@
       </tr>
       {% endfor %}
     </table>
-    <button name="prune" value="namespaces-no-service-acc" onclick="return confirm('Are you sure you want to delete ' + amountOfSelected('.namespaces-no-service-acc-checkbox') + ' namespace(s)?')" type="submit" class="prune-btn">Prune</button>
     <button class="select-all-btn" onclick="selectAll('.namespaces-no-service-acc-checkbox')">Select All</button>
+    <button name="prune" value="namespaces-no-service-acc" onclick="return confirm('Are you sure you want to delete ' + amountOfSelected('.namespaces-no-service-acc-checkbox') + ' namespace(s)?')" type="submit" class="prune-btn">Prune</button>
   </form>
   {% else %}
   There are no visible namespaces without portal users.
@@ -46,8 +46,8 @@
       </tr>
       {% endfor %}
     </table>
-    <button name="prune" value="namespaces-no-pods" onclick="return confirm('Are you sure you want to delete ' + amountOfSelected('.namespaces-no-pods-checkbox') + ' namespace(s)?')" type="submit" class="prune-btn">Prune</button>
     <button class="select-all-btn" onclick="selectAll('.namespaces-no-pods-checkbox')">Select All</button>
+    <button name="prune" value="namespaces-no-pods" onclick="return confirm('Are you sure you want to delete ' + amountOfSelected('.namespaces-no-pods-checkbox') + ' namespace(s)?')" type="submit" class="prune-btn">Prune</button>
   </form>
   {% else %}
   There are no visible namespaces without pods.
