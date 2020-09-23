@@ -24,7 +24,7 @@ class CleanupView(LoginRequiredMixin, TemplateView):
         context['site_header'] = settings.BRANDING + " (Admin Backend)"
         context['title'] = "Clean Up"
 
-        context['namespaces_no_portal_users'] = get_namespaces_without_service_accounts()
+        context['namespaces_no_service_acc'] = get_namespaces_without_service_accounts()
         context['namespaces_no_pods'] = get_namespaces_without_pods()
         context['months'] = settings.LAST_LOGIN_MONTHS_AGO
         context['inactive_service_accounts'] = get_inactive_service_accounts()
@@ -65,24 +65,32 @@ def get_inactive_service_accounts():
     return list(User.objects.filter(last_login__lte = x_months_ago))
 
 
-class PruneViews():
-    def PruneNamespacesWithoutServiceAccounts(self):
-        namespaces_without_service_accounts = get_namespaces_without_service_accounts()
-        for ns in namespaces_without_service_accounts:
-            logger.warn(f"Pruning namespace: {ns.name}!")
-            ns.delete()
-        return redirect("admin:cleanup")
-
-    def PruneNamespacesWithoutPods(self):
-        namespaces_without_pods = get_namespaces_without_pods()
-        for ns in namespaces_without_pods:
-            logger.warn(f"Pruning namespace: {ns.name}!")
-            ns.delete()
-        return redirect("admin:cleanup")
-
-    def PruneInactiveServiceAccounts(self):
-        inactive_service_accounts = get_inactive_service_accounts()
-        for svc_acc in inactive_service_accounts:
-            logger.warn(f"Pruning service account: {svc_acc}!")
-            svc_acc.delete()
-        return redirect("admin:cleanup")
+def Prune(request):
+    if request.method == 'POST':
+        # copy immutable form data to mutable dict
+        form = {items[0]: items[1] for items in request.POST.items()}
+        print(form)
+        del(form['csrfmiddlewaretoken'])
+        if form['prune'] == 'namespaces-no-service-acc':
+            del(form['prune'])
+            list_of_namespaces = []
+            for key in form:
+                list_of_namespaces.append(key)
+            KubernetesNamespace.objects.filter(name__in=list_of_namespaces).delete()
+            logger.warn(f"Pruning list of namespaces: [{','.join(list_of_namespaces)}]")
+        elif form['prune'] == 'namespaces-no-pods':
+            del(form['prune'])
+            list_of_namespaces = []
+            for key in form:
+                list_of_namespaces.append(key)
+            KubernetesNamespace.objects.filter(name__in=list_of_namespaces).delete()
+            logger.warn(f"Pruning list of namespaces: [{','.join(list_of_namespaces)}]")
+        elif form['prune'] == 'inactive-service-acc':
+            del(form['prune'])
+            list_of_service_accounts = []
+            for key in form:
+                User = get_user_model()
+                list_of_service_accounts.append(key)
+            User.objects.filter(username__in=list_of_service_accounts).delete()
+            logger.warn(f"Pruning list of namespaces: [{','.join(list_of_service_accounts)}]")
+        return redirect('admin:cleanup')
