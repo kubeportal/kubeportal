@@ -2,12 +2,14 @@ from django.test import override_settings
 from rest_framework.test import RequestsClient
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
 from kubeportal.api.views import ClusterViewSet
-from kubeportal.settings import API_VERSION
+from kubeportal.settings import Common
 from kubeportal.models import WebApplication, PortalGroup
 
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+API_VERSION = Common.API_VERSION
+
 
 class ApiTestCase(AdminLoggedOutTestCase):
     '''

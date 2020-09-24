@@ -1,33 +1,11 @@
-import logging
 import os
-import random
-import uuid
 
-from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-from django.contrib.messages.storage.fallback import FallbackStorage
-from django.contrib.sessions.middleware import SessionMiddleware
-from django.core.exceptions import PermissionDenied
-from django.test import RequestFactory
-from django.test import TestCase
-from django.test import client
-from django.test import override_settings
 from django.urls import reverse
-from kubeportal import kubernetes
-from kubeportal import models
 from kubeportal.models import KubernetesNamespace
-from kubeportal.models import KubernetesServiceAccount
 from kubeportal.models import PortalGroup
 from kubeportal.models import WebApplication
 from kubeportal.tests import AdminLoggedInTestCase
-from oidc_provider.lib.utils.token import create_id_token
-from oidc_provider.lib.utils.token import create_token
-from oidc_provider.models import Client
-from oidc_provider.models import ResponseType
-from oidc_provider.views import AuthorizeView
-from oidc_provider.views import userinfo
 from unittest.mock import patch
-from urllib.parse import urlencode
 
 
 class FrontendLoggedInApproved(AdminLoggedInTestCase):
@@ -90,7 +68,7 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_stats_with_broken_k8s_view(self):
-        with patch('kubeportal.kubernetes._load_config'):
+        with patch('kubeportal.k8s.utils.load_config'):
             response = self.c.get('/stats/')
             self.assertEqual(response.status_code, 200)
 
@@ -115,6 +93,11 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
             group2.can_web_applications.add(app1)
 
         return self.c.get('/subauthreq/{}/'.format(app1.pk))
+
+    def _test_reset(self):
+        from ..k8s import kubernetes_api as api
+
+
 
     def test_subauth_invalid_cases(self):
         # Constellations for group membership of user and app
@@ -148,8 +131,12 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
                 self.assertEqual(response.status_code, 401)
 
     def test_subauth_k8s_broken(self):
+        from ..k8s import kubernetes_api as api
+        core_v1_temp, rbac_v1_temp = api.core_v1, api.rbac_v1
+        api.core_v1 = None
+        api.rbac_v1 = None
         self.admin_group.can_subauth = True
         self.admin_group.save()
-        with patch('kubeportal.kubernetes._load_config', return_value=(None, None)):
-            response = self._prepare_subauth_test(True, True, True, True, True)
-            self.assertEqual(response.status_code, 401)
+        response = self._prepare_subauth_test(True, True, True, True, True)
+        self.assertEqual(response.status_code, 401)
+        self._test_reset(core_v1_temp, rbac_v1_temp)

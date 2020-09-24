@@ -3,15 +3,16 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 from django.conf import settings
-from django.contrib import admin
 from django.db.models import Count
-from kubeportal import kubernetes, models
-from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount
+from kubeportal.models import KubernetesNamespace
+from .k8s import k8s_sync, kubernetes_api as api
 from datetime import datetime, timedelta
 
+
 def sync_view(request):
-    kubernetes.sync(request)
+    k8s_sync.sync(request)
     return redirect('admin:index')
+
 
 class CleanupView(LoginRequiredMixin, TemplateView):
     template_name = "admin/backend_cleanup.html"
@@ -28,7 +29,7 @@ class CleanupView(LoginRequiredMixin, TemplateView):
         context['namespaces_no_portal_users'] = [ns for ns in counted_service_accounts if ns.service_accounts__count == 0]
 
         context['namespaces_no_pods'] = []
-        pod_list = kubernetes.get_pods()
+        pod_list = api.get_pods()
         for ns in visible_namespaces:
             ns_has_pods = False
             for pod in pod_list:

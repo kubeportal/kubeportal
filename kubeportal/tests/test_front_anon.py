@@ -1,4 +1,3 @@
-from django.test import override_settings
 from kubeportal.models import WebApplication
 from kubeportal.tests import AnonymousTestCase
 from unittest.mock import patch

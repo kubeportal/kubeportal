@@ -14,8 +14,7 @@ from kubeportal.models import UserState as states
 import logging
 import uuid
 from . import models, admin_views
-from kubeportal import kubernetes
-
+from .k8s import k8s_sync, kubernetes_api as api
 
 logger = logging.getLogger('KubePortal')
 User = get_user_model()
@@ -54,7 +53,7 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        kubernetes.sync(request)
+        k8s_sync.sync(request)
 
     def get_queryset(self, request):
         '''
@@ -188,7 +187,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
     def created(self, instance):
         if not self.ns_list:
-            self.ns_list = kubernetes.get_namespaces()
+            self.ns_list = api.get_namespaces()
 
         for ns in self.ns_list:
             if ns.metadata.name == instance.name:
@@ -198,7 +197,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
     def number_of_pods(self, instance):
         if not self.pod_list:
-            self.pod_list = kubernetes.get_pods()
+            self.pod_list = api.get_pods()
         count = 0
         for pod in self.pod_list:
             if pod.metadata.namespace == instance.name:
@@ -241,7 +240,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        kubernetes.sync(request)
+        k8s_sync.sync(request)
 
     def get_queryset(self, request):
         '''
@@ -492,7 +491,7 @@ class PortalUserAdmin(UserAdmin):
                     name=request.POST['approve_create_name'])
                 new_ns.save()
                 # creates "default" service account automatically
-                if kubernetes.sync(request):
+                if k8s_sync.sync(request):
                     new_svc = get_object_or_404(
                         models.KubernetesServiceAccount, namespace=new_ns, name="default")
                     if user.approve(request, new_svc):

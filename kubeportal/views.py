@@ -5,14 +5,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
-from django import forms
-
 
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
 
 from kubeportal.models import WebApplication
-from kubeportal import kubernetes
+from .k8s import kubernetes_api as api
 
 import logging
 
@@ -21,6 +19,7 @@ logger = logging.getLogger('KubePortal')
 
 class GoogleApiLoginView(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
+
 
 class StatsView(LoginRequiredMixin, TemplateView):
     template_name = 'portal_stats.html'
@@ -31,13 +30,13 @@ class StatsView(LoginRequiredMixin, TemplateView):
         try:
             context['usercount'] = User.objects.count()
             context['version'] = settings.VERSION
-            context['k8sversion'] = kubernetes.get_kubernetes_version()
-            context['apiserver'] = kubernetes.get_apiserver()
-            context['numberofnodes'] = kubernetes.get_number_of_nodes()
-            context['cpusum'] = kubernetes.get_number_of_cpus()
-            context['memsum'] = kubernetes.get_memory_sum()
-            context['numberofpods'] = kubernetes.get_number_of_pods()
-            context['numberofvolumes'] = kubernetes.get_number_of_volumes()
+            context['k8sversion'] = api.get_kubernetes_version()
+            context['apiserver'] = api.get_apiserver()
+            context['numberofnodes'] = api.get_number_of_nodes()
+            context['cpusum'] = api.get_number_of_cpus()
+            context['memsum'] = api.get_memory_sum()
+            context['numberofpods'] = api.get_number_of_pods()
+            context['numberofvolumes'] = api.get_number_of_volumes()
         except Exception as e:
             logger.exception("Failed to fetch Kubernetes stats: {}".format(e))
         return context

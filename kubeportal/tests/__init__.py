@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.test import TestCase
 from django.test import client
-from kubeportal import models, kubernetes
+from kubeportal import models
+from ..k8s import utils
 
 logging.getLogger('KubePortal').setLevel(logging.DEBUG)
 logging.getLogger('django.request').setLevel(logging.WARNING)
@@ -32,7 +33,7 @@ class BaseTestCase(TestCase):
     def setUp(self):
         super().setUp()
         self.c = client.Client()
-        assert(kubernetes.is_minikube())
+        assert(utils.is_minikube())
 
 
 class AnonymousTestCase(BaseTestCase):
