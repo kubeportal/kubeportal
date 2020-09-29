@@ -20,6 +20,7 @@ class Common(Configuration):
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
+        'corsheaders',
         'sortedm2m_filter_horizontal_widget',
         'oidc_provider',
         'rest_framework',
@@ -47,7 +48,7 @@ class Common(Configuration):
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
-        'kubeportal.middleware.HideAdminForNonStaffMiddleware'    
+        'kubeportal.middleware.HideAdminForNonStaffMiddleware'
     ]
 
     ROOT_URLCONF = 'kubeportal.urls'
@@ -136,8 +137,10 @@ class Common(Configuration):
     USE_L10N = True
     USE_TZ = True
 
-    CORS_ORIGIN_ALLOW_ALL = True
-
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOWED_ORIGINS = []
+   
     ALLOWED_HOSTS = ['*']
 
     AUTH_USER_MODEL = 'kubeportal.User'

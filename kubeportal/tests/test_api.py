@@ -40,15 +40,6 @@ class ApiTestCase(AdminLoggedOutTestCase):
     def api_login(self):
         response = self.post(F'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
-        # The login API call returns the JWT + extra information as JSON in the body, but also sets a cookie with the JWT.
-        # This means that for all test cases here, the JWT must not handed over explicitely,
-        # since the Python http client has the cookie anyway.
-        assert('kubeportal-auth' in response.cookies)
-        data = response.json()
-        self.assertEqual(2, len(data))
-        self.assertIn('firstname', data)
-        self.assertIn('id', data)
-        self.assertEqual(data['id'], self.admin.pk)
 
 
 class ApiAnonymous(ApiTestCase):
@@ -57,6 +48,27 @@ class ApiAnonymous(ApiTestCase):
     '''
     def setUp(self):
         super().setUp()
+
+    def test_api_login(self):
+        response = self.post(F'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
+        self.assertEqual(response.status_code, 200)
+        # The login API call returns the JWT + extra information as JSON in the body, but also sets a cookie with the JWT.
+        # This means that for all test cases here, the JWT must not handed over explicitely,
+        # since the Python http client has the cookie anyway.
+        self.assertIn('Set-Cookie', response.headers)
+        self.assertIn('kubeportal-auth=', response.headers['Set-Cookie'])
+        from http.cookies import SimpleCookie
+        cookie = SimpleCookie() 
+        cookie.load(response.headers['Set-Cookie'])
+        self.assertEqual(cookie['kubeportal-auth']['path'], '/')  
+        self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')  
+        self.assertEqual(cookie['kubeportal-auth']['httponly'], True)  
+        data = response.json()
+        self.assertEqual(2, len(data))
+        self.assertIn('firstname', data)
+        self.assertIn('id', data)
+        self.assertEqual(data['id'], self.admin.pk)
+
 
     def test_api_wrong_login(self):
         response = self.post(F'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': 'blabla'})
