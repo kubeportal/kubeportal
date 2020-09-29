@@ -60,6 +60,7 @@ KUBEPORTAL_API_SERVER_EXTERNAL        URL of the Kubernetes API server that work
 KUBEPORTAL_SESSION_COOKIE_DOMAIN      The domain used for the user session cookie, e.g. ``.example.com``.
 KUBEPORTAL_NAMESPACE_CLUSTERROLES     Kubernetes cluster roles that should be bound to the *default* service account of newly created Kubernetes namespaces, e.g. ``minimal-api,standard-api``.
 KUBEPORTAL_BRANDING                   The human-readable name of your cluster.
+KUBEPORTAL_ALLOWED_URLS               The portal URLs used by clients, eg. ``https://portal.foo.com:8000,http://example.com``. This is crucial for browser security headers, such as CORS.
 KUBEPORTAL_LANGUAGE_CODE              The locale for the web site, e.g. ``en-us``.
 KUBEPORTAL_TIME_ZONE                  The time zone for the web site, e.g. ``UTC``.
 KUBEPORTAL_ADMIN_NAME                 The name of the superuser, used only for email sending.

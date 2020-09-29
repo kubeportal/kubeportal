@@ -24,8 +24,8 @@ class ApiTestCase(AdminLoggedOutTestCase):
         self.assertEqual(response.status_code, 200)
         self.csrftoken = response.cookies['csrftoken']
 
-    def get(self, relative_url):
-        return self.client.get('http://testserver' + relative_url)
+    def get(self, relative_url, headers=None):
+        return self.client.get('http://testserver' + relative_url, headers=headers)
 
     def patch(self, relative_url, data):
         return self.client.patch('http://testserver' + relative_url,
@@ -154,6 +154,26 @@ class ApiLocalUser(ApiTestCase):
                 data = response.json()
                 self.assertIn('value', data.keys())
                 self.assertIsNotNone(data['value'])
+
+    @override_settings(CORS_ALLOWED_ORIGINS=['http://testserver', ],
+                       CORS_ALLOW_CREDENTIALS=True)
+    def test_cors_single_origin(self):
+        # Only requests with 'Origin' header are CORS-related:
+        # https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Origin
+        # https://github.com/adamchainz/django-cors-headers/blob/master/tests/test_middleware.py
+        headers = {'Origin': 'http://testserver'}
+        response = self.get(f'/api/{API_VERSION}/cluster/portal_version', headers=headers)
+        self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'http://testserver')
+        self.assertEqual(response.headers['Access-Control-Allow-Credentials'], 'true')
+
+    @override_settings(CORS_ALLOWED_ORIGINS=['http://testserver', 'https://example.org:8000'])
+    def test_cors_multiple_origin(self):
+        headers = {'Origin': 'http://testserver'}
+        response = self.get(f'/api/{API_VERSION}/cluster/portal_version', headers=headers)
+        self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'http://testserver')
+        headers = {'Origin': 'https://example.org:8000'}
+        response = self.get(f'/api/{API_VERSION}/cluster/portal_version', headers=headers)
+        self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'https://example.org:8000')
 
     def test_cluster_invalid(self):
         response = self.get(F'/api/{API_VERSION}/cluster/foobar')
