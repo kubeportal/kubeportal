@@ -3,7 +3,11 @@
 Installation
 ############
 
-The latest official release of KubePortal is always available as `Docker image <https://hub.docker.com/r/troeger/kubeportal/>`__. The software is configured through environment variables (see :ref:`Configuration options`). It is mandatory to configure at least one authentication method (``KUBEPORTAL_AUTH_...``) and a database  ``KUBEPORTAL_DATABASE_URL`` .
+The latest official release of KubePortal is always available as `Docker image <https://hub.docker.com/r/troeger/kubeportal/>`__. The software is configured through environment variables (see :ref:`Configuration options`). 
+
+It is *mandatory* to configure the public URLs used by the installation ``KUBEPORTAL_ALLOWED_URLS``.
+
+It is *highly recommended* to configure at least one authentication method (``KUBEPORTAL_AUTH_...``) and the database storage.
 
 KubePortal is expected to run inside the Kubernetes cluster it acts as frontend for. The API server is auto-detected from the pod running the software. Permissions must be given to the KubePortal namespace for allowing it to create new namespaces.
 
