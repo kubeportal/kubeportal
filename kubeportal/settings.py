@@ -22,7 +22,6 @@ class Common(Configuration):
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
-        'corsheaders',
         'sortedm2m_filter_horizontal_widget',
         'oidc_provider',
         'rest_framework',
@@ -42,7 +41,7 @@ class Common(Configuration):
 
     MIDDLEWARE = [
         'silk.middleware.SilkyMiddleware',
-        'corsheaders.middleware.CorsMiddleware',
+        'kubeportal.middleware.CorsMiddleware',
         'django.middleware.security.SecurityMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.common.CommonMiddleware',
@@ -139,13 +138,10 @@ class Common(Configuration):
     USE_L10N = True
     USE_TZ = True
 
+    # Allow frontend dev server addresses as default, so that dev mode
+    # works without an extra env variable being set
     ALLOWED_URLS = values.ListValue([], environ_prefix='KUBEPORTAL')
     ALLOWS_HOSTS = [urlparse(url).netloc for url in ALLOWED_URLS.value]
-    # Please note that '*' is no longer an option:
-    # https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Credentialed_requests_and_wildcards
-    CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOW_CREDENTIALS = True
-    CORS_ALLOWED_ORIGINS = ALLOWED_URLS.value
 
     AUTH_USER_MODEL = 'kubeportal.User'
 
