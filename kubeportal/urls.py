@@ -8,11 +8,18 @@ from kubeportal import views
 from kubeportal.api import views as api_views
 from kubeportal.admin import admin_site
 
-from rest_framework import routers
+from rest_framework_nested import routers
+
+
 router = routers.SimpleRouter()
-router.register('users', api_views.UserView, basename='users')
-router.register('statistics', api_views.StatisticsView, basename='statistics')
-router.register('webapps', api_views.WebApplicationView, basename='webapplications')
+router.register('users', api_views.UserViewSet, basename='users')
+router.register('cluster', api_views.ClusterViewSet, basename='cluster')
+router.register('webapps', api_views.WebApplicationViewSet, basename='webapplications')
+router.register('groups', api_views.GroupViewSet, basename='groups')
+
+users_router = routers.NestedSimpleRouter(router, 'users', lookup='user')
+users_router.register('webapps', api_views.WebApplicationViewSet, basename='user-webapplications')
+users_router.register('groups', api_views.GroupViewSet, basename='user-groups')
 
 urlpatterns = [
     # frontend web views
@@ -38,8 +45,13 @@ urlpatterns = [
     path('api/<str:version>/login', dj_rest_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google', views.GoogleApiLoginView.as_view(), name='api_google_login'),
-    path('api/<str:version>/', include(router.urls), name='api'),
+    path('api/<str:version>/', include(router.urls)),
+    path('api/<str:version>/', include(users_router.urls)),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),
+
+    path('silk/', include('silk.urls', namespace='silk'))
 ]
+
+

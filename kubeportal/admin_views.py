@@ -25,14 +25,14 @@ class CleanupView(LoginRequiredMixin, TemplateView):
 
         visible_namespaces = KubernetesNamespace.objects.filter(visible=True)
         counted_service_accounts = visible_namespaces.annotate(Count('service_accounts'))
-        context['namespaces_no_portal_users'] = [ns for ns in counted_service_accounts if ns.service_accounts__count == 1]
+        context['namespaces_no_portal_users'] = [ns for ns in counted_service_accounts if ns.service_accounts__count == 0]
 
         context['namespaces_no_pods'] = []
         pod_list = kubernetes.get_pods()
         for ns in visible_namespaces:
             ns_has_pods = False
             for pod in pod_list:
-                if pod.metadata.namespace == ns:
+                if pod.metadata.namespace == ns.name:
                     ns_has_pods = True
                     break
             if not ns_has_pods:
