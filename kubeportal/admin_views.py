@@ -1,9 +1,9 @@
 from django.views.generic.base import TemplateView
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect
+from django.shortcuts import redirect, HttpResponse
 from django.conf import settings
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models import Count
 from kubeportal import kubernetes, models
 from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount
@@ -27,7 +27,7 @@ class CleanupView(LoginRequiredMixin, TemplateView):
         context['namespaces_no_service_acc'] = get_namespaces_without_service_accounts()
         context['namespaces_no_pods'] = get_namespaces_without_pods()
         context['months'] = settings.LAST_LOGIN_MONTHS_AGO
-        context['inactive_service_accounts'] = get_inactive_service_accounts()
+        context['inactive_users'] = get_inactive_users()
         return context
 
 def get_namespaces_without_service_accounts():
@@ -56,7 +56,7 @@ def get_namespaces_without_pods():
     return namespaces_without_pods
 
 
-def get_inactive_service_accounts():
+def get_inactive_users():
     '''
     returns a list of users that haven't logged in x months ago.
     '''
@@ -68,29 +68,25 @@ def get_inactive_service_accounts():
 def Prune(request):
     if request.method == 'POST':
         # copy immutable form data to mutable dict
-        form = {items[0]: items[1] for items in request.POST.items()}
-        print(form)
-        del(form['csrfmiddlewaretoken'])
-        if form['prune'] == 'namespaces-no-service-acc':
-            del(form['prune'])
-            list_of_namespaces = []
-            for key in form:
-                list_of_namespaces.append(key)
-            KubernetesNamespace.objects.filter(name__in=list_of_namespaces).delete()
-            logger.warn(f"Pruning list of namespaces: [{','.join(list_of_namespaces)}]")
-        elif form['prune'] == 'namespaces-no-pods':
-            del(form['prune'])
-            list_of_namespaces = []
-            for key in form:
-                list_of_namespaces.append(key)
-            KubernetesNamespace.objects.filter(name__in=list_of_namespaces).delete()
-            logger.warn(f"Pruning list of namespaces: [{','.join(list_of_namespaces)}]")
-        elif form['prune'] == 'inactive-service-acc':
-            del(form['prune'])
-            list_of_service_accounts = []
-            for key in form:
-                User = get_user_model()
-                list_of_service_accounts.append(key)
-            User.objects.filter(username__in=list_of_service_accounts).delete()
-            logger.warn(f"Pruning list of namespaces: [{','.join(list_of_service_accounts)}]")
+        form = request.POST
+
+        if not form['prune']:
+            messages.add_message(request, messages.ERROR, "No prune method passed.")
+            logger.warn("No prune method passed.")
+            return redirect('admin:cleanup')
+
+        if form['prune'] == 'namespaces-no-service-acc' or form['prune'] == 'namespaces-no-pods':
+            namespaces = form.getlist('namespaces')
+            KubernetesNamespace.objects.filter(name__in=namespaces).delete()
+            messages.add_message(request, messages.WARNING, f"Pruning list of namespaces: [{', '.join(namespaces)}]")
+            logger.warn(f"Pruning list of namespaces: [{', '.join(namespaces)}]")
+        elif form['prune'] == 'inactive-users':
+            users = form.getlist("users")
+            User = get_user_model()
+            User.objects.filter(username__in=users).delete()
+            messages.add_message(request, messages.WARNING, f"Pruning list of users: [{', '.join(users)}]")
+            logger.warn(f"Pruning list of users: [{', '.join(users)}]")
+
         return redirect('admin:cleanup')
+    else:
+        HttpResponse(401)
