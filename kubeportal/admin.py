@@ -392,7 +392,7 @@ def merge_users(modeladmin, request, queryset):
     primary.save()
     secondary.delete()
     messages.info(request, F"The Users '{primary.username}' and '{secondary.username}' have been merged into '{primary.username}' and '{secondary.username}' has been deleted.")
-merge_users.short_description = "Merges two users and keeps the one that joined first."
+merge_users.short_description = "Merge two users"
 
 
 class PortalUserAdmin(UserAdmin):

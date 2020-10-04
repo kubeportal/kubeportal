@@ -29,7 +29,7 @@ Users can click a link on the front page to apply for Kubernetes credentials:
 
 .. image:: static/front_landing_new.png
 
-All (!) admins get an email notification when users request cluster access. The approving or rejecting admin for a user approval request is logged in the database. The link to a decision page is sent with the email. The admin(s) can now decide upon this request:
+When the user logged in, he can select a staff user from a dropdown menu, to request cluster access. The selected staff user will be notified by email about the request. The approving or rejecting admin for a user approval request is logged in the database. The link to a decision page is sent with the email. The admin(s) can now decide upon this request:
 
 .. image:: static/back_approval.png
 
@@ -63,3 +63,11 @@ On startup, the log output of the KubePortal pod shows you a generated password 
 
 It allows you to enter the admin backend while by-passing all configured frontend login methods. This is especially helpful with an empty database after installation.
 
+Merging Users
+-------------
+
+In the backend user administration, one is able to select two users and then click the ``Merge two users`` action. This will merge all the important credentials of the newer (referred to as secondary) into the older (referred to as primary).
+
+.. image:: static/back_usermerging.png
+
+In case the secondary user has gotten their cluster access rejected, this will carry over to the primary. Also the user comments from the secondary user will be favored unless the secondary has no comments. Any group that secondary has joined will be carried over to the primary. The secondary user will be deleted after all the details have been merged.
