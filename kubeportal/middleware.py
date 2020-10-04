@@ -69,7 +69,7 @@ class CorsMiddleware:
             # Ok, the user forgot to configure KUBEPORTAL_ALLOWED_URLS.
             if settings.DEBUG == True: 
                 # We call it the Kat-Hi mode. Just go on.
-                logger.warn("KUBEPORTAL_ALLOWED_URLS is not set. Overriding CORS due to DEBUG mode.")
+                logger.warning("KUBEPORTAL_ALLOWED_URLS is not set. Overriding CORS due to DEBUG mode.")
             else:
                 # Whitelist is missing, so no CORS headers are added to the response.
                 logger.error("KUBEPORTAL_ALLOWED_URLS is not set, so CORS origin check is not possible and the headers cannot be set. This will break JavaScript API calls.")

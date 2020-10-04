@@ -24,7 +24,7 @@ def settings_value_normalized(name):
 
 @register.simple_tag(takes_context=True)
 def placeholder_replace(context, text):
-    if text == None:
+    if text is None:
         return ""
 
     try:
