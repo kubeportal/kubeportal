@@ -12,7 +12,7 @@
 
 from django.conf import settings
 from kubernetes import client
-from . import utils
+from kubeportal.k8s.utils import load_config, is_minikube
 from base64 import b64decode
 
 import logging
@@ -22,7 +22,7 @@ logger = logging.getLogger('KubePortal')
 HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 
 
-core_v1, rbac_v1 = utils.load_config()
+core_v1, rbac_v1 = load_config()
 
 
 def create_k8s_ns(name):
@@ -35,16 +35,16 @@ def create_k8s_ns(name):
     except client.rest.ApiException as e:
         # Race condition or earlier sync error - the K8S namespace is already there
         if e.status == 409:
-            logger.warning("Tried to create already existing Kubernetes namespace {}. Skipping the creation and using the existing one.".format(name))
+            logger.warning("Tried to create already existing Kubernetes namespace {}. "
+                           "Skipping the creation and using the existing one.".format(name))
         else:
             raise e
     return core_v1.read_namespace(name=name)
 
 
 def delete_k8s_ns(name):
-    if utils.is_minikube():
-        logger.info(
-            "Deleting Kubernetes namespace '{0}'".format(name))
+    if is_minikube():
+        logger.info("Deleting Kubernetes namespace '{0}'".format(name))
         core_v1.delete_namespace(name)
     else:
         logger.error("K8S namespace deletion not allowed in production clusters")

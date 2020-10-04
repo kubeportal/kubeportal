@@ -5,7 +5,6 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import RequestFactory
 from django.test import override_settings
-from django.test import Client
 from django.urls import reverse
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
@@ -14,7 +13,7 @@ from kubeportal.models import UserState
 from kubeportal.tests import AdminLoggedInTestCase
 from unittest.mock import patch
 from kubeportal.admin import merge_users, UserAdmin
-from ..k8s import k8s_sync, kubernetes_api as api, utils
+from kubeportal.k8s import k8s_sync, kubernetes_api as api
 from kubeportal.admin_views import prune
 
 
@@ -93,7 +92,6 @@ class Backend(AdminLoggedInTestCase):
 
     def test_new_external_ns_sync(self):
         self._call_sync()
-        core_v1, rbac_v1 = utils.load_config()
         api.create_k8s_ns("new-external-ns1")
         try:
             self._call_sync()
@@ -107,7 +105,6 @@ class Backend(AdminLoggedInTestCase):
 
     def test_exists_both_sides_sync(self):
         self._call_sync()
-        core_v1, rbac_v1 = utils.load_config()
         api.create_k8s_ns("new-external-ns2")
         new_ns = KubernetesNamespace(name="new-external-ns2")
         new_ns.save()
@@ -301,8 +298,8 @@ class Backend(AdminLoggedInTestCase):
                 username="hugo",
                 state=UserState.ACCESS_APPROVED,
                 email="a@b.de",
-                comments = "secondary user comment",
-                service_account = new_svc)
+                comments="secondary user comment",
+                service_account=new_svc)
         secondary.save()
 
         # Build full-fledged request object for logged-in admin
@@ -312,7 +309,7 @@ class Backend(AdminLoggedInTestCase):
 
         # the merge method only accepts a queryset of users since that's what
         # the admin interface creates
-        queryset_of_users = User.objects.filter(pk__in = [primary.id, secondary.id])
+        queryset_of_users = User.objects.filter(pk__in=[primary.id, secondary.id])
 
         # merge both users. shouldn't return anything
         assert(not merge_users(UserAdmin, request, queryset_of_users))
@@ -349,7 +346,8 @@ class Backend(AdminLoggedInTestCase):
         request = self._build_full_request_mock('admin:cleanup')
         assert(request)
 
-    def test_backend_cleanup_entitity_getters(self):
+    @staticmethod
+    def test_backend_cleanup_entitity_getters():
         User = get_user_model()
         from dateutil.parser import parse
         # we need an inactive user for the the filter to work

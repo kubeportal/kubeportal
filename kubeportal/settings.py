@@ -1,8 +1,6 @@
 import os
 from urllib.parse import urlparse
 from configurations import Configuration, values
-
-
 from kubeportal.secret import get_secret_key
 
 

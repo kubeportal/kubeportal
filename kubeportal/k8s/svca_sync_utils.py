@@ -3,6 +3,8 @@ from kubernetes import client
 import logging
 
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.k8s.kubernetes_api import core_v1
+
 
 logger = logging.getLogger('KubePortal')
 
@@ -27,15 +29,15 @@ def add_svca_to_kubeportal(request, k8s_svca, portal_svca):
         k8s_svca.metadata.namespace, k8s_svca.metadata.name))
 
 
-def add_svca_to_kubernetes(request, portal_svca, portal_ns, v1):
+def add_svca_to_kubernetes(request, portal_svca, portal_ns):
     logger.info(
         "Creating Kubernetes service account '{0}:{1}'".format(portal_ns.name, portal_svca.name))
     k8s_svca = client.V1ServiceAccount(
         api_version="v1", kind="ServiceAccount", metadata=client.V1ObjectMeta(name=portal_svca.name))
-    v1.create_namespaced_service_account(
+    core_v1.create_namespaced_service_account(
         namespace=portal_ns.name, body=k8s_svca)
     # Fetch UID and store it in portal record
-    created_k8s_svca = v1.read_namespaced_service_account(
+    created_k8s_svca = core_v1.read_namespaced_service_account(
         name=portal_svca.name, namespace=portal_ns.name)
     portal_svca.uid = created_k8s_svca.metadata.uid
     portal_svca.save()

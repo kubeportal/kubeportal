@@ -6,7 +6,6 @@ from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedInTestCase
 from unittest.mock import patch
-from ..k8s.utils import load_config
 
 
 class FrontendLoggedInApproved(AdminLoggedInTestCase):
@@ -127,7 +126,7 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
                 self.assertEqual(response.status_code, 401)
 
     def test_subauth_k8s_broken(self):
-        from ..k8s import kubernetes_api as api
+        from kubeportal.k8s import kubernetes_api as api
         core_v1_temp, rbac_v1_temp = api.core_v1, api.rbac_v1
         api.core_v1 = None
         api.rbac_v1 = None

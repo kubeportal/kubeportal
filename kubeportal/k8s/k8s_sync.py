@@ -12,16 +12,15 @@
 
 from django.contrib import messages
 from kubernetes import client
-from .utils import load_config, error_log
-from . import ns_sync_utils as ns_utils
-from . import svca_sync_utils as svca_utils
-from . import kubernetes_api as api
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
+from kubeportal.k8s.utils import load_config, error_log
+from kubeportal.k8s import ns_sync_utils as ns_utils
+from kubeportal.k8s import svca_sync_utils as svca_utils
+from kubeportal.k8s import kubernetes_api as api
 
 import json
 import logging
-
-from kubeportal.models.kubernetesnamespace import KubernetesNamespace
-from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 
 
 logger = logging.getLogger('KubePortal')
@@ -39,19 +38,18 @@ def _sync_namespaces(request):
     success_count_pull = 0
 
     try:
-        k8s_ns_list = core_v1.list_namespace()
+        k8s_ns_list = api.get_namespaces()
     except Exception as e:
         error_log(request, e, None, 'Sync failed, error while fetching list of namespaces: {e}')
         return
 
-    for k8s_ns in k8s_ns_list.items:
+    for k8s_ns in k8s_ns_list:
         try:
             k8s_ns_name, k8s_ns_uid = k8s_ns.metadata.name, k8s_ns.metadata.uid
             # remember for later use
             k8s_ns_uids.append(k8s_ns_uid)
 
-            portal_ns, created = KubernetesNamespace.objects.get_or_create(
-                name=k8s_ns_name, uid=k8s_ns_uid)
+            portal_ns, created = KubernetesNamespace.objects.get_or_create(name=k8s_ns_name, uid=k8s_ns_uid)
             if created:
                 ns_utils.add_namespace_to_kubeportal(k8s_ns_name, portal_ns, request)
             else:
@@ -64,27 +62,21 @@ def _sync_namespaces(request):
     #################################################
     # portal namespaces -> K8S namespaces
     #################################################
-    for portal_ns in KubernetesNamespace.objects.all():
+    portal_ns_list = KubernetesNamespace.objects.all()
+    for portal_ns in portal_ns_list:
         try:
             if portal_ns.uid:
-                # Portal namespace records with UID must be given in K8S, or they are stale und should be deleted
-                if portal_ns.uid in k8s_ns_uids:
-                    # No action needed
-                    logger.debug(f"Found existing Kubernetes namespace for record '{portal_ns.name}'")
-                    success_count_push += 1
-                else:
-                    # Remove stale namespace record
-                    ns_utils.delete_namespace_in_kubernetes(request, portal_ns)
+                ns_utils.check_if_portal_ns_exists_in_k8s(portal_ns, request, k8s_ns_uids, success_count_push)
             else:
                 # Portal namespaces without UID are new and should be created in K8S
-                ns_utils.add_namespace_to_kubernetes(portal_ns, request, core_v1, api)
+                ns_utils.add_namespace_to_kubernetes(portal_ns, request, api)
         except Exception as e:
             error_log(request, e, portal_ns, 'Sync to Kubernetes for namespace {} failed: {}."')
 
     if success_count_push == success_count_pull:
         messages.success(request, "All valid namespaces are in sync.")
 
-    ns_utils.check_role_bindings_of_namespaces(request, rbac_v1)
+    ns_utils.check_role_bindings_of_namespaces(request)
 
 
 def _sync_svcaccounts(request):
@@ -97,12 +89,12 @@ def _sync_svcaccounts(request):
     k8s_svca_uids = []
 
     try:
-        k8s_svca_list = core_v1.list_service_account_for_all_namespaces()
+        k8s_svca_list = api.get_service_accounts()
     except Exception as e:
         error_log(request, e, None, "Sync failed, error while fetching list of service accounts: {}.")
         return
 
-    for k8s_svca in k8s_svca_list.items:
+    for k8s_svca in k8s_svca_list:
         try:
             # remember for later use
             '''
@@ -134,7 +126,8 @@ def _sync_svcaccounts(request):
     #################################################
     # portal service accounts -> K8S service accounts
     #################################################
-    for portal_svca in KubernetesServiceAccount.objects.all():
+    portal_svca_list = KubernetesServiceAccount.objects.all()
+    for portal_svca in portal_svca_list:
         try:
             portal_ns = portal_svca.namespace
             if portal_svca.uid:
@@ -157,7 +150,7 @@ def _sync_svcaccounts(request):
                                       portal_ns.name, portal_svca.name))
             else:
                 # Portal service accounts without UID are new and should be created in K8S
-                svca_utils.add_svca_to_kubernetes(request, portal_svca, portal_ns, core_v1)
+                svca_utils.add_svca_to_kubernetes(request, portal_svca, portal_ns)
         except Exception as e:
             error_log(request, e, portal_svca.namespace, 'Sync to Kubernetes for service account {} failed: {}.')
 

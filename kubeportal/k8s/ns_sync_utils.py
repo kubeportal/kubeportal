@@ -4,6 +4,7 @@ from django.contrib import messages
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubernetes import client
 from kubeportal.k8s.utils import error_log
+from kubeportal.k8s.kubernetes_api import rbac_v1
 import logging
 import re
 
@@ -11,7 +12,7 @@ logger = logging.getLogger('KubePortal')
 HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 
 
-def check_role_bindings_of_namespaces(request, rbac_v1):
+def check_role_bindings_of_namespaces(request):
     """
     We only consider visible namespaces here, to prevent hitting special namespaces and giving them
     (most likely unneccessary) additional role bindings
@@ -25,32 +26,33 @@ def check_role_bindings_of_namespaces(request, rbac_v1):
             error_log(request, e, portal_ns, "Could not fetch role bindings for namespace '{}': {}.")
             continue
         # Get all cluster roles this namespace is currently bound to
-        clusterroles_active = [
-            rolebinding.role_ref.name for rolebinding in rolebindings.items if
-            rolebinding.role_ref.kind == 'ClusterRole']
-        logger.debug("Namespace '{0}' is bound to cluster roles {1}".format(
-            portal_ns, clusterroles_active))
+        clusterroles_active = [rolebinding.role_ref.name for rolebinding in rolebindings.items if
+                               rolebinding.role_ref.kind == 'ClusterRole']
+        logger.debug("Namespace '{0}' is bound to cluster roles {1}".format(portal_ns, clusterroles_active))
         # Check list of default cluster roles from settings
         for clusterrole in settings.NAMESPACE_CLUSTERROLES:
             if clusterrole not in clusterroles_active:
                 try:
                     logger.info("Namespace '{0}' is not bound to cluster role '{1}', fixing this ...".format(
                         portal_ns, clusterrole))
-                    role_ref = client.V1RoleRef(
-                        name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
-                    # Subject for the cluster role are all service accounts in the namespace
-                    subject = client.V1Subject(
-                        name="system:serviceaccounts:" + portal_ns.name, kind="Group",
-                        api_group="rbac.authorization.k8s.io")
-                    metadata = client.V1ObjectMeta(name=clusterrole)
-                    new_rolebinding = client.V1RoleBinding(
-                        role_ref=role_ref, metadata=metadata, subjects=[subject, ])
-                    rbac_v1.create_namespaced_role_binding(
-                        portal_ns.name, new_rolebinding)
+                    _bind_namespace_to_cluster_role(clusterrole, portal_ns)
                 except Exception as e:
                     error_log(request, e, (portal_ns.name, clusterrole),
-                                   "Could not create binding of namespace '{}' to cluster role '{}': {}.")
+                              "Could not create binding of namespace '{}' to cluster role '{}': {}.")
                     continue
+
+
+def _bind_namespace_to_cluster_role(clusterrole, portal_ns):
+    role_ref = client.V1RoleRef(
+        name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
+    # Subject for the cluster role are all service accounts in the namespace
+    subject = client.V1Subject(
+        name="system:serviceaccounts:" + portal_ns.name,
+        kind="Group",
+        api_group="rbac.authorization.k8s.io")
+    metadata = client.V1ObjectMeta(name=clusterrole)
+    new_rolebinding = client.V1RoleBinding(role_ref=role_ref, metadata=metadata, subjects=[subject, ])
+    rbac_v1.create_namespaced_role_binding(portal_ns.name, new_rolebinding)
 
 
 def add_namespace_to_kubeportal(k8s_ns_name, portal_ns, request):
@@ -65,7 +67,7 @@ def add_namespace_to_kubeportal(k8s_ns_name, portal_ns, request):
     messages.info(request, f"Found new Kubernetes namespace '{k8s_ns_name}'.")
 
 
-def add_namespace_to_kubernetes(portal_ns, request, core_v1, api):
+def add_namespace_to_kubernetes(portal_ns, request, api):
     logger.debug(f"Namespace record {portal_ns.name} has no UID, creating it in Kubernetes ...")
     # Sanitize name, K8S only allows DNS names for namespaces
     sanitized_name = re.sub('[^a-zA-Z0-9]', '', portal_ns.name).lower()
@@ -94,10 +96,11 @@ def delete_namespace_in_kubernetes(request, portal_ns):
 
 
 def check_if_portal_ns_exists_in_k8s(portal_ns, request, k8s_ns_uids, success_count_push):
+    # Portal namespace records with UID must be given in K8S, or they are stale und should be deleted
     if portal_ns.uid in k8s_ns_uids:
         # No action needed
         logger.debug(f"Found existing Kubernetes namespace for record '{portal_ns.name}'")
         success_count_push += 1
     else:
         # Remove stale namespace record
-        delete_namespace_in_kubernetes(portal_ns, request)
+        delete_namespace_in_kubernetes(request, portal_ns)
