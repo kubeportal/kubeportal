@@ -8,14 +8,14 @@ from django.test import override_settings
 from django.test import Client
 from django.urls import reverse
 from kubeportal import kubernetes
-from kubeportal import models
-from kubeportal.models import KubernetesNamespace
-from kubeportal.models import KubernetesServiceAccount
-from kubeportal.models import PortalGroup
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models import UserState
 from kubeportal.tests import AdminLoggedInTestCase
 from unittest.mock import patch
 from kubeportal.admin import merge_users, UserAdmin
-from kubeportal.admin_views import Prune
+from kubeportal.admin_views import prune
 
 
 class Backend(AdminLoggedInTestCase):
@@ -138,7 +138,7 @@ class Backend(AdminLoggedInTestCase):
 
     def test_special_k8s_approved(self):
         # Creating an auto_add_approved group should not change its member list.
-        group = models.PortalGroup.objects.get(special_k8s_accounts=True)
+        group = PortalGroup.objects.get(special_k8s_accounts=True)
         self.assertEqual(group.members.count(), 0)
         # Create a new user should not change the member list
         User = get_user_model()
@@ -167,7 +167,7 @@ class Backend(AdminLoggedInTestCase):
 
 
     def test_special_k8s_unapproved(self):
-        group = models.PortalGroup.objects.get(special_k8s_accounts=True)
+        group = PortalGroup.objects.get(special_k8s_accounts=True)
         ns = KubernetesNamespace(name="default")
         ns.save()
         new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
@@ -176,12 +176,12 @@ class Backend(AdminLoggedInTestCase):
         # create approved user
         u = User(username="Hugo",
                  email="a@b.de",
-                 state=models.UserState.ACCESS_APPROVED,
+                 state=UserState.ACCESS_APPROVED,
                  service_account = new_svc)
         u.save()
         self.assertEqual(group.members.count(), 1)
         # unapprove
-        u.state=models.UserState.ACCESS_REJECTED
+        u.state=UserState.ACCESS_REJECTED
         u.save()
         self.assertEqual(group.members.count(), 0)
 
@@ -239,7 +239,7 @@ class Backend(AdminLoggedInTestCase):
         new_svc.save()
         secondary = User(
                 username="hugo",
-                state=models.UserState.ACCESS_APPROVED,
+                state=UserState.ACCESS_APPROVED,
                 email="a@b.de",
                 comments = "secondary user comment",
                 service_account = new_svc)
@@ -302,7 +302,7 @@ class Backend(AdminLoggedInTestCase):
 
         secondary = User(
                 username="hugo",
-                state=models.UserState.ACCESS_APPROVED,
+                state=UserState.ACCESS_APPROVED,
                 email="a@b.de",
                 comments = "secondary user comment",
                 service_account = new_svc)
@@ -367,9 +367,9 @@ class Backend(AdminLoggedInTestCase):
         ns = KubernetesNamespace(name="asdfadfasdfasdf", visible=True)
         ns.save()
 
-        assert(get_inactive_users()[0] == User.objects.get(username=u.username))
-        assert(get_namespaces_without_pods()[0] == ns)
-        assert(get_namespaces_without_service_accounts()[0] == ns)
+        assert(User.inactive_users()[0] == User.objects.get(username=u.username))
+        assert(KubernetesNamespace.without_pods()[0] == ns)
+        assert(KubernetesNamespace.without_service_accounts()[0] == ns)
 
     def test_backend_prune_view(self):
         User = get_user_model()
@@ -407,7 +407,7 @@ class Backend(AdminLoggedInTestCase):
             'prune': "namespaces-no-service-acc",
             "namespaces": [ns.name for ns in ns_list]
         })
-        Prune(request)
+        prune(request)
 
         assert(not KubernetesNamespace.objects.filter(name__in=[ns.name for ns in ns_list]))
 
@@ -422,7 +422,7 @@ class Backend(AdminLoggedInTestCase):
             'prune': "namespaces-no-pods",
             "namespaces": [ns.name for ns in ns_list]
         })
-        Prune(request)
+        prune(request)
 
         # have all been pruned?
         assert(not KubernetesNamespace.objects.filter(name__in=[ns.name for ns in ns_list]))
@@ -432,7 +432,7 @@ class Backend(AdminLoggedInTestCase):
             'prune': "inactive-users",
             "users": [u.username for u in user_list]
         })
-        Prune(request)
+        prune(request)
 
         # have all been pruned?
         assert(not KubernetesServiceAccount.objects.filter(name__in=[u.username for u in user_list]))

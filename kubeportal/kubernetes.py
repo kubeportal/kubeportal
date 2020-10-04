@@ -18,13 +18,12 @@ import json
 import logging
 import re
 
-from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 
 logger = logging.getLogger('KubePortal')
 
-
 HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
-
 
 
 def _create_k8s_ns(name, core_v1):
@@ -37,7 +36,9 @@ def _create_k8s_ns(name, core_v1):
     except client.rest.ApiException as e:
         # Race condition or earlier sync error - the K8S namespace is already there
         if e.status == 409:
-            logger.warning("Tried to create already existing Kubernetes namespace {}. Skipping the creation and using the existing one.".format(name))
+            logger.warning(
+                "Tried to create already existing Kubernetes namespace {}. Skipping the creation and using the existing one.".format(
+                    name))
         else:
             raise e
     return core_v1.read_namespace(name=name)
@@ -111,15 +112,20 @@ def _sync_namespaces(request, core_v1, rbac_v1):
                         "Removing stale record for Kubernetes namespace '{0}'".format(portal_ns.name))
                     portal_ns.delete()
                     messages.info(
-                        request, "Namespace '{0}' no longer exists in Kubernetes and was removed.".format(portal_ns.name))
+                        request,
+                        "Namespace '{0}' no longer exists in Kubernetes and was removed.".format(portal_ns.name))
             else:
                 # Portal namespaces without UID are new and should be created in K8S
                 logger.debug("Namespace record {} has no UID, creating it in Kubernetes ...".format(portal_ns.name))
                 # Sanitize name, K8S only allows DNS names for namespaces
                 sanitized_name = re.sub('[^a-zA-Z0-9]', '', portal_ns.name).lower()
-                if sanitized_name !=  portal_ns.name:
-                    logger.warning("Given name '{}' for new Kubernetes namespace is invalid, replacing it with '{}'".format(portal_ns.name, sanitized_name))
-                    messages.warning(request, "Given name '{}' for new Kubernetes namespace was invalid, chosen name is now '{}'".format(portal_ns.name, sanitized_name))
+                if sanitized_name != portal_ns.name:
+                    logger.warning(
+                        "Given name '{}' for new Kubernetes namespace is invalid, replacing it with '{}'".format(
+                            portal_ns.name, sanitized_name))
+                    messages.warning(request,
+                                     "Given name '{}' for new Kubernetes namespace was invalid, chosen name is now '{}'".format(
+                                         portal_ns.name, sanitized_name))
                     # TODO: May already exist?
                     portal_ns.name = sanitized_name
                     portal_ns.save()
@@ -152,7 +158,8 @@ def _sync_namespaces(request, core_v1, rbac_v1):
             continue
         # Get all cluster roles this namespace is currently bound to
         clusterroles_active = [
-            rolebinding.role_ref.name for rolebinding in rolebindings.items if rolebinding.role_ref.kind == 'ClusterRole']
+            rolebinding.role_ref.name for rolebinding in rolebindings.items if
+            rolebinding.role_ref.kind == 'ClusterRole']
         logger.debug("Namespace '{0}' is bound to cluster roles {1}".format(
             portal_ns, clusterroles_active))
         # Check list of default cluster roles from settings
@@ -165,7 +172,8 @@ def _sync_namespaces(request, core_v1, rbac_v1):
                         name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
                     # Subject for the cluster role are all service accounts in the namespace
                     subject = client.V1Subject(
-                        name="system:serviceaccounts:" + portal_ns.name, kind="Group", api_group="rbac.authorization.k8s.io")
+                        name="system:serviceaccounts:" + portal_ns.name, kind="Group",
+                        api_group="rbac.authorization.k8s.io")
                     metadata = client.V1ObjectMeta(name=clusterrole)
                     new_rolebinding = client.V1RoleBinding(
                         role_ref=role_ref, metadata=metadata, subjects=[subject, ])
@@ -173,8 +181,9 @@ def _sync_namespaces(request, core_v1, rbac_v1):
                         portal_ns.name, new_rolebinding)
                 except Exception as e:
                     logger.exception(e)
-                    messages.error(request, "Could not create binding of namespace '{0}' to cluster role '{1}': {2}.".format(
-                        portal_ns.name, clusterrole, e))
+                    messages.error(request,
+                                   "Could not create binding of namespace '{0}' to cluster role '{1}': {2}.".format(
+                                       portal_ns.name, clusterrole, e))
                     continue
 
 
@@ -215,7 +224,8 @@ def _sync_svcaccounts(request, v1):
                     k8s_svca.metadata.namespace, k8s_svca.metadata.name))
                 portal_svca.save()
                 messages.info(request,
-                              "Found new Kubernetes service account '{0}:{1}'.".format(k8s_svca.metadata.namespace, k8s_svca.metadata.name))
+                              "Found new Kubernetes service account '{0}:{1}'.".format(k8s_svca.metadata.namespace,
+                                                                                       k8s_svca.metadata.name))
             else:
                 # No action needed
                 logger.info("Found existing record for Kubernetes service account '{0}:{1}'".format(
@@ -243,15 +253,18 @@ def _sync_svcaccounts(request, v1):
                 if portal_svca.uid in k8s_svca_uids:
                     # No action needed
                     logger.info(
-                        "Found existing Kubernetes service account for record '{0}:{1}'".format(portal_ns.name, portal_svca.name))
+                        "Found existing Kubernetes service account for record '{0}:{1}'".format(portal_ns.name,
+                                                                                                portal_svca.name))
                     success_count_push += 1
                 else:
                     # Remove stale record
                     logger.warning(
-                        "Removing stale record for Kubernetes service account '{0}:{1}'".format(portal_ns.name, portal_svca.name))
+                        "Removing stale record for Kubernetes service account '{0}:{1}'".format(portal_ns.name,
+                                                                                                portal_svca.name))
                     portal_svca.delete()
-                    messages.info(request, "Service account '{0}:{1}' no longer exists in Kubernetes and was removed.".format(
-                        portal_ns.name, portal_svca.name))
+                    messages.info(request,
+                                  "Service account '{0}:{1}' no longer exists in Kubernetes and was removed.".format(
+                                      portal_ns.name, portal_svca.name))
             else:
                 # Portal service accounts without UID are new and should be created in K8S
                 logger.info(
@@ -293,6 +306,7 @@ def is_minikube():
     '''
     contexts, active_context = config.list_kube_config_contexts()
     return active_context['context']['cluster'] == 'minikube'
+
 
 def get_namespaces():
     '''
@@ -371,7 +385,9 @@ def get_kubernetes_version():
     pods = core_v1.list_namespaced_pod("kube-system").items
     for pod in pods:
         for container in pod.spec.containers:
-            if 'kube-apiserver' in container.image:
+            # apiserver container is missing in some minikube installations on GitHub actions,
+            # so we take the version number from another core image
+            if 'kube-proxy' in container.image:
                 return container.image.split(":")[1]
     logger.error(f"Kubernetes version not identifiable, list of pods in 'kube-system': {pods}.")
     return None
@@ -402,6 +418,4 @@ def get_memory_sum():
 
 def get_number_of_volumes():
     core_v1, rbac_v1 = _load_config()
-    return(len(core_v1.list_persistent_volume().items))
-
-
+    return (len(core_v1.list_persistent_volume().items))

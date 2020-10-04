@@ -1,7 +1,9 @@
 from dj_rest_auth import serializers as dj_serializers
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from kubeportal.models import WebApplication, PortalGroup
+
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models.webapplication import WebApplication
 
 User = get_user_model()
 
@@ -42,11 +44,18 @@ class PortalGroupSerializer(serializers.ModelSerializer):
 
 
 class LoginSuccessSerializer(serializers.Serializer):
-    '''
+    """
     This is an override for the default answer to /login,
     as originally given by the dj_rest_auth library.
     The serializer is referenced in settings.py, accordingly.
-    '''
+    """
+
+    def update(self, instance, validated_data):
+        pass
+
+    def create(self, validated_data):
+        pass
+
     def to_representation(self, instance):
         return {'id': instance['user'].pk,
                 'firstname': instance['user'].first_name,

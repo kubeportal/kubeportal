@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.test import TestCase
 from django.test import client
-from kubeportal import models, kubernetes
+from kubeportal import kubernetes
+from kubeportal.models.portalgroup import PortalGroup
 
 logging.getLogger('KubePortal').setLevel(logging.DEBUG)
 logging.getLogger('django.request').setLevel(logging.WARNING)
@@ -55,7 +56,7 @@ class AdminLoggedOutTestCase(BaseTestCase):
         User = get_user_model()
         self.admin = User(**admin_data)
         self.admin.save()
-        self.admin_group = models.PortalGroup(name=self.admin_group_name, can_admin=True)
+        self.admin_group = PortalGroup(name=self.admin_group_name, can_admin=True)
         self.admin_group.save()
         self.admin_group.members.add(self.admin)
         self.admin_group.save()

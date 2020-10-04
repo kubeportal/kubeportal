@@ -5,22 +5,22 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
-from django import forms
-
 
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
 
-from kubeportal.models import WebApplication
 from kubeportal import kubernetes
 
 import logging
+
+from kubeportal.models.webapplication import WebApplication
 
 logger = logging.getLogger('KubePortal')
 
 
 class GoogleApiLoginView(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
+
 
 class StatsView(LoginRequiredMixin, TemplateView):
     template_name = 'portal_stats.html'
@@ -76,6 +76,7 @@ class SettingsView(LoginRequiredMixin, TemplateView):
         context['groups'] = [g for g in self.request.user.portal_groups.all()]
         return context
 
+
 class AccessRequestView(LoginRequiredMixin, RedirectView):
     def post(self, request):
         # create a form instance and populate it with data from the request:
@@ -118,38 +119,45 @@ class SubAuthRequestView(View):
         webapp = get_object_or_404(WebApplication, pk=kwargs['webapp_pk'])
         if (not request.user) or (not request.user.is_authenticated):
             logger.debug(
-                "Rejecting authorization for {} through sub-request, user is anonymous / not authenticated.".format(webapp))
+                "Rejecting authorization for {} through sub-request, user is anonymous / not authenticated.".format(
+                    webapp))
             self._dump_request_info(request)
             # 401 is the expected fail code in ingress-nginx
             return HttpResponse(status=401)
         elif not webapp.can_subauth:
             logger.debug(
-                "Rejecting authorization for {0} through sub-request for user {1}, subauth is not enabled for this app.".format(webapp, request.user))
+                "Rejecting authorization for {0} through sub-request for user {1}, subauth is not enabled for this app.".format(
+                    webapp, request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         elif not request.user.service_account:
             logger.debug(
-                "Rejecting authorization for {0} through sub-request, user {1} has no service account.".format(webapp, request.user))
+                "Rejecting authorization for {0} through sub-request, user {1} has no service account.".format(webapp,
+                                                                                                               request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         elif not request.user.can_subauth(webapp):
             logger.debug(
-                "Rejecting authorization for {0} through sub-request, forbidden for user {1} through group membership constellation.".format(webapp, request.user))
+                "Rejecting authorization for {0} through sub-request, forbidden for user {1} through group membership constellation.".format(
+                    webapp, request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         else:
-            logger.debug("Allowing authorization for {0} through sub-request (user {1}, service account '{2}:{3}').".format(
-                webapp,
-                request.user,
-                request.user.service_account.namespace.name,
-                request.user.service_account.name))
+            logger.debug(
+                "Allowing authorization for {0} through sub-request (user {1}, service account '{2}:{3}').".format(
+                    webapp,
+                    request.user,
+                    request.user.service_account.namespace.name,
+                    request.user.service_account.name))
             response = HttpResponse()
             token = request.user.token
             if token:
                 response['Authorization'] = 'Bearer ' + token
                 return response
             else:
-                logger.error("Error while fetching Kubernetes secret bearer token for user {0}, must reject valid  authorization for {1} through subrequest.".format(request.user, webapp))
+                logger.error(
+                    "Error while fetching Kubernetes secret bearer token for user {0}, must reject valid  authorization for {1} through subrequest.".format(
+                        request.user, webapp))
                 return HttpResponse(status=401)
 
 
@@ -168,7 +176,6 @@ class ConfigDownloadView(LoginRequiredMixin, TemplateView):
         response = super().render_to_response(context, **response_kwargs)
         response['Content-Disposition'] = 'attachment; filename=config;'
         return response
-
 
 
 class ConfigView(LoginRequiredMixin, TemplateView):

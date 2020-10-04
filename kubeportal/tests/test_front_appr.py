@@ -1,33 +1,11 @@
-import logging
 import os
-import random
-import uuid
-
-from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-from django.contrib.messages.storage.fallback import FallbackStorage
-from django.contrib.sessions.middleware import SessionMiddleware
-from django.core.exceptions import PermissionDenied
-from django.test import RequestFactory
-from django.test import TestCase
-from django.test import client
-from django.test import override_settings
 from django.urls import reverse
-from kubeportal import kubernetes
-from kubeportal import models
-from kubeportal.models import KubernetesNamespace
-from kubeportal.models import KubernetesServiceAccount
-from kubeportal.models import PortalGroup
-from kubeportal.models import WebApplication
+
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedInTestCase
-from oidc_provider.lib.utils.token import create_id_token
-from oidc_provider.lib.utils.token import create_token
-from oidc_provider.models import Client
-from oidc_provider.models import ResponseType
-from oidc_provider.views import AuthorizeView
-from oidc_provider.views import userinfo
 from unittest.mock import patch
-from urllib.parse import urlencode
 
 
 class FrontendLoggedInApproved(AdminLoggedInTestCase):
