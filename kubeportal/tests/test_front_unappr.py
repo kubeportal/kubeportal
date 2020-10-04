@@ -1,6 +1,7 @@
 from django.urls import reverse
-from kubeportal.models import PortalGroup
-from kubeportal.models import WebApplication
+
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedInTestCase
 from unittest.mock import patch
 

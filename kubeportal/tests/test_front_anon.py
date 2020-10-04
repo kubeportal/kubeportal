@@ -1,4 +1,4 @@
-from kubeportal.models import WebApplication
+from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AnonymousTestCase
 from unittest.mock import patch
 

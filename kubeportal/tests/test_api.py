@@ -1,14 +1,15 @@
 from django.test import override_settings
 from rest_framework.test import RequestsClient
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
 from kubeportal.api.views import ClusterViewSet
-from kubeportal.settings import Common
-from kubeportal.models import WebApplication, PortalGroup
+from kubeportal import settings
 
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-API_VERSION = Common.API_VERSION
+API_VERSION = settings.API_VERSION
 
 
 class ApiTestCase(AdminLoggedOutTestCase):
@@ -17,6 +18,7 @@ class ApiTestCase(AdminLoggedOutTestCase):
     with Python requests. This ensures that we are getting as close as possible
     to 'real' API clients, e.g. from JavaScript.
     '''
+
     def setUp(self):
         super().setUp()
         self.client = RequestsClient()
@@ -26,13 +28,13 @@ class ApiTestCase(AdminLoggedOutTestCase):
         self.assertEqual(response.status_code, 200)
         self.csrftoken = response.cookies['csrftoken']
 
-    def get(self, relative_url):
-        return self.client.get('http://testserver' + relative_url)
+    def get(self, relative_url, headers=None):
+        return self.client.get('http://testserver' + relative_url, headers=headers)
 
     def patch(self, relative_url, data):
         return self.client.patch('http://testserver' + relative_url,
-                                json=data,
-                                headers={'X-CSRFToken': self.csrftoken})
+                                 json=data,
+                                 headers={'X-CSRFToken': self.csrftoken})
 
     def post(self, relative_url, data={}):
         return self.client.post('http://testserver' + relative_url,
@@ -42,23 +44,35 @@ class ApiTestCase(AdminLoggedOutTestCase):
     def api_login(self):
         response = self.post(F'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
-        # The login API call returns the JWT + extra information as JSON in the body, but also sets a cookie with the JWT.
-        # This means that for all test cases here, the JWT must not handed over explicitely,
-        # since the Python http client has the cookie anyway.
-        assert('kubeportal-auth' in response.cookies)
-        data = response.json()
-        self.assertEqual(2, len(data))
-        self.assertIn('firstname', data)
-        self.assertIn('id', data)
-        self.assertEqual(data['id'], self.admin.pk)
 
 
 class ApiAnonymous(ApiTestCase):
     '''
     Tests for API functionality when nobody is logged in.
     '''
+
     def setUp(self):
         super().setUp()
+
+    def test_api_login(self):
+        response = self.post(F'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
+        self.assertEqual(response.status_code, 200)
+        # The login API call returns the JWT + extra information as JSON in the body, but also sets a cookie with the JWT.
+        # This means that for all test cases here, the JWT must not handed over explicitely,
+        # since the Python http client has the cookie anyway.
+        self.assertIn('Set-Cookie', response.headers)
+        self.assertIn('kubeportal-auth=', response.headers['Set-Cookie'])
+        from http.cookies import SimpleCookie
+        cookie = SimpleCookie()
+        cookie.load(response.headers['Set-Cookie'])
+        self.assertEqual(cookie['kubeportal-auth']['path'], '/')
+        self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
+        self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
+        data = response.json()
+        self.assertEqual(3, len(data))
+        self.assertIn('firstname', data)
+        self.assertIn('id', data)
+        self.assertEqual(data['id'], self.admin.pk)
 
     def test_api_wrong_login(self):
         response = self.post(F'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': 'blabla'})
@@ -71,7 +85,8 @@ class ApiAnonymous(ApiTestCase):
                 self.assertEqual(response.status_code, 401)
 
     def test_webapp_denied(self):
-        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
+        app1 = WebApplication(name="app1", link_show=True,
+                              link_name="app1", link_url="http://www.heise.de")
         app1.save()
         self.admin_group.can_web_applications.add(app1)
 
@@ -79,7 +94,8 @@ class ApiAnonymous(ApiTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_user_webapps_denied(self):
-        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
+        app1 = WebApplication(name="app1", link_show=True,
+                              link_name="app1", link_url="http://www.heise.de")
         app1.save()
         self.admin_group.can_web_applications.add(app1)
 
@@ -100,12 +116,12 @@ class ApiAnonymous(ApiTestCase):
         self.assertEqual(response.status_code, 200)
 
     @override_settings(SOCIALACCOUNT_PROVIDERS={'google': {
-            'APP': {
-                'secret': '123',
-                'client_id': '456'
-            },
-            'SCOPE': ['profile', 'email'],
-    }})    
+        'APP': {
+            'secret': '123',
+            'client_id': '456'
+        },
+        'SCOPE': ['profile', 'email'],
+    }})
     def test_invalid_google_login(self):
         '''
         We have no valid OAuth credentials when running the test suite, but at least
@@ -114,27 +130,26 @@ class ApiAnonymous(ApiTestCase):
         response = self.post(F'/api/{API_VERSION}/login_google', {'access_token': 'foo', 'code': 'bar'})
         self.assertEqual(response.status_code, 400)
 
+
 class ApiLocalUser(ApiTestCase):
     '''
     Tests for API functionality when a local Django user is logged in.
     '''
     user_attr_expected = [
-        'firstname', 
-        'name', 
-        'username', 
-        'primary_email', 
-        'all_emails', 
-        'admin', 
-        'k8s_serviceaccount', 
-        'k8s_namespace', 
-        'k8s_token', 
-    ]        
-
+        'firstname',
+        'name',
+        'username',
+        'primary_email',
+        'all_emails',
+        'admin',
+        'k8s_serviceaccount',
+        'k8s_namespace',
+        'k8s_token',
+    ]
 
     def setUp(self):
         super().setUp()
         self.api_login()
-
 
     def test_cluster(self):
         for stat in ClusterViewSet.stats.keys():
@@ -144,6 +159,25 @@ class ApiLocalUser(ApiTestCase):
                 data = response.json()
                 self.assertIn('value', data.keys())
                 self.assertIsNotNone(data['value'])
+
+    @override_settings(ALLOWED_URLS=['http://testserver', ])
+    def test_cors_single_origin(self):
+        headers = {'Origin': 'http://testserver'}
+        relative_urls = [f'/api/{API_VERSION}/login', f'/api/{settings.API_VERSION}/cluster/portal_version']
+        for url in relative_urls:
+            with self.subTest(url=url):
+                response = self.get(url, headers=headers)
+                self.assertEqual(
+                    response.headers['Access-Control-Allow-Origin'], 'http://testserver')
+                self.assertEqual(
+                    response.headers['Access-Control-Allow-Credentials'], 'true')
+
+    @override_settings(ALLOWED_URLS=['http://testserver', 'https://example.org:8000'])
+    def test_cors_multiple_allowed(self):
+        headers = {'Origin': 'http://testserver'}
+        response = self.get(f'/api/{API_VERSION}/cluster/portal_version', headers=headers)
+        self.assertEqual(
+            response.headers['Access-Control-Allow-Origin'], 'http://testserver')
 
     def test_cluster_invalid(self):
         response = self.get(F'/api/{API_VERSION}/cluster/foobar')
@@ -160,7 +194,6 @@ class ApiLocalUser(ApiTestCase):
         response = self.get(F'/api/{API_VERSION}/webapps/777')
         self.assertEqual(response.status_code, 404)
 
-
     def test_webapp_invisible(self):
         app1 = WebApplication(name="app1", link_show=False, link_name="app1", link_url="http://www.heise.de")
         app1.save()
@@ -168,7 +201,6 @@ class ApiLocalUser(ApiTestCase):
 
         response = self.get(F'/api/{API_VERSION}/webapps/{app1.pk}')
         self.assertEqual(response.status_code, 403)
-
 
     def test_webapp(self):
         app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
@@ -222,7 +254,8 @@ class ApiLocalUser(ApiTestCase):
         data = response.json()
         for entry in data:
             self.assertIn('name', entry.keys())
-        self.assertEqual(4, len(data))  #  Auto group "all users", Test case group "Admins", plus 2 extra
+        # Auto group "all users", Test case group "Admins", plus 2 extra
+        self.assertEqual(4, len(data))
 
     def test_group(self):
         response = self.get(F'/api/{API_VERSION}/groups/{self.admin_group.pk}')
@@ -235,7 +268,6 @@ class ApiLocalUser(ApiTestCase):
         response = self.get(F'/api/{API_VERSION}/groups/777')
         self.assertEqual(response.status_code, 404)
 
-
     def test_group_non_member(self):
         group1 = PortalGroup(name="group1")
         group1.save()
@@ -246,7 +278,6 @@ class ApiLocalUser(ApiTestCase):
     def test_group_invalid_id(self):
         response = self.get(F'/api/{API_VERSION}/users/777/groups')
         self.assertEqual(response.status_code, 403)
-
 
     def test_user(self):
 
@@ -309,6 +340,7 @@ class ApiLogout(ApiTestCase):
     '''
     Tests for API logout functionality when a local Django user is logged in.
     '''
+
     def setUp(self):
         super().setUp()
         self.api_login()
@@ -316,4 +348,3 @@ class ApiLogout(ApiTestCase):
     def test_logout(self):
         response = self.post(F'/api/{API_VERSION}/logout')
         self.assertEqual(response.status_code, 200)
-

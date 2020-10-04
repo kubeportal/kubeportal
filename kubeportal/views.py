@@ -5,14 +5,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
-
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
-
-from kubeportal.models import WebApplication
+from kubeportal.models.webapplication import WebApplication
 from .k8s import kubernetes_api as api
 
 import logging
+
 
 logger = logging.getLogger('KubePortal')
 
@@ -74,6 +73,7 @@ class SettingsView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['groups'] = [g for g in self.request.user.portal_groups.all()]
         return context
+
 
 class AccessRequestView(LoginRequiredMixin, RedirectView):
     def post(self, request):
@@ -167,7 +167,6 @@ class ConfigDownloadView(LoginRequiredMixin, TemplateView):
         response = super().render_to_response(context, **response_kwargs)
         response['Content-Disposition'] = 'attachment; filename=config;'
         return response
-
 
 
 class ConfigView(LoginRequiredMixin, TemplateView):

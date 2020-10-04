@@ -9,16 +9,15 @@ def add_special_groups(apps, schema_editor):
     PortalGroup = apps.get_model('kubeportal', 'PortalGroup')
     has_all_group = PortalGroup.objects.filter(special_all_accounts=True).exists()
     if not has_all_group:
-    	all_group = PortalGroup(name="All users", special_all_accounts=True)
-    	all_group.save()
+        all_group = PortalGroup(name="All users", special_all_accounts=True)
+        all_group.save()
     has_k8s_group = PortalGroup.objects.filter(special_k8s_accounts=True).exists()
     if not has_k8s_group:
-    	k8s_group = PortalGroup(name="Kubernetes users", special_k8s_accounts=True)
-    	k8s_group.save()
+        k8s_group = PortalGroup(name="Kubernetes users", special_k8s_accounts=True)
+        k8s_group.save()
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('kubeportal', '0006_auto_20200411_1458'),
     ]
@@ -26,4 +25,3 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(add_special_groups),
     ]
-

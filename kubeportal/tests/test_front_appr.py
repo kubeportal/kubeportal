@@ -1,9 +1,9 @@
 import os
-
 from django.urls import reverse
-from kubeportal.models import KubernetesNamespace
-from kubeportal.models import PortalGroup
-from kubeportal.models import WebApplication
+
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedInTestCase
 from unittest.mock import patch
 
@@ -94,11 +94,6 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
 
         return self.c.get('/subauthreq/{}/'.format(app1.pk))
 
-    def _test_reset(self):
-        from ..k8s import kubernetes_api as api
-
-
-
     def test_subauth_invalid_cases(self):
         # Constellations for group membership of user and app
         # The expected result value assumes that the app is enabled
@@ -139,4 +134,4 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         self.admin_group.save()
         response = self._prepare_subauth_test(True, True, True, True, True)
         self.assertEqual(response.status_code, 401)
-        self._test_reset(core_v1_temp, rbac_v1_temp)
+        api.core_v1, api.rbac_v1 = core_v1_temp, rbac_v1_temp

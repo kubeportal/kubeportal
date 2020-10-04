@@ -4,8 +4,10 @@ import uuid
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory
 from django.urls import reverse
+
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedOutTestCase
-from kubeportal import models
 from oidc_provider.lib.utils.token import create_id_token
 from oidc_provider.lib.utils.token import create_token
 from oidc_provider.models import Client
@@ -17,10 +19,10 @@ from urllib.parse import urlencode
 
 
 class FrontendOidc(AdminLoggedOutTestCase):
-    '''
+    """
     Tests for frontend functionality when admin is NOT logged in,
     and she authenticates through OpenID Connect.
-    '''
+    """
 
     def setUp(self):
         super().setUp()
@@ -39,7 +41,7 @@ class FrontendOidc(AdminLoggedOutTestCase):
             self.client[index].save()
             self.client[index].response_types.add(
                 ResponseType.objects.get(value='code'))
-            self.app[index] = models.WebApplication(
+            self.app[index] = WebApplication(
                 name=name, oidc_client=self.client[index])
             self.app[index].save()
         self.state = uuid.uuid4().hex
@@ -83,7 +85,7 @@ class FrontendOidc(AdminLoggedOutTestCase):
         return token
 
     def _create_group(self, name, member=None, app=None):
-        group = models.PortalGroup(name=name)
+        group = PortalGroup(name=name)
         group.save()
         if member:
             group.members.add(member)

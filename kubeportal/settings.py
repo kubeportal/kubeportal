@@ -1,5 +1,7 @@
 import os
+from urllib.parse import urlparse
 from configurations import Configuration, values
+
 
 from kubeportal.secret import get_secret_key
 
@@ -39,7 +41,7 @@ class Common(Configuration):
 
     MIDDLEWARE = [
         'silk.middleware.SilkyMiddleware',
-        'corsheaders.middleware.CorsMiddleware',
+        'kubeportal.middleware.CorsMiddleware',
         'django.middleware.security.SecurityMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.common.CommonMiddleware',
@@ -47,7 +49,7 @@ class Common(Configuration):
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
-        'kubeportal.middleware.HideAdminForNonStaffMiddleware'    
+        'kubeportal.middleware.HideAdminForNonStaffMiddleware'
     ]
 
     ROOT_URLCONF = 'kubeportal.urls'
@@ -110,7 +112,7 @@ class Common(Configuration):
         'allauth.account.auth_backends.AuthenticationBackend'
     )
 
-    SOCIALACCOUNT_QUERY_EMAIL=True
+    SOCIALACCOUNT_QUERY_EMAIL = True
     SOCIALACCOUNT_PROVIDERS = {}
     AUTH_AD_DOMAIN = values.Value(None, environ_prefix='KUBEPORTAL')
     AUTH_AD_SERVER = values.Value(None, environ_prefix='KUBEPORTAL')
@@ -136,9 +138,10 @@ class Common(Configuration):
     USE_L10N = True
     USE_TZ = True
 
-    CORS_ORIGIN_ALLOW_ALL = True
-
-    ALLOWED_HOSTS = ['*']
+    # Allow frontend dev server addresses as default, so that dev mode
+    # works without an extra env variable being set
+    ALLOWED_URLS = values.ListValue([], environ_prefix='KUBEPORTAL')
+    ALLOWS_HOSTS = [urlparse(url).netloc for url in ALLOWED_URLS.value]
 
     AUTH_USER_MODEL = 'kubeportal.User'
 
@@ -164,8 +167,10 @@ class Common(Configuration):
 
     ACCOUNT_ADAPTER = 'kubeportal.allauth.AccountAdapter'
 
-    SILKY_AUTHENTICATION = True  
-    SILKY_AUTHORISATION = True  
+    SILKY_AUTHENTICATION = True
+    SILKY_AUTHORISATION = True
+
+    LAST_LOGIN_MONTHS_AGO = values.Value(12, environ_prefix='KUBEPORTAL')
 
     # override default response format for /api/login endpoint
     REST_AUTH_SERIALIZERS = {
@@ -188,8 +193,6 @@ class Development(Common):
     PROJECT_DIR = os.path.dirname(__file__)
 
     DEBUG = True
-
-    REDIRECT_HOSTS = ['localhost', '127.0.0.1']
 
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
     EMAIL_HOST = values.Value('localhost', environ_prefix='KUBEPORTAL')
@@ -241,18 +244,16 @@ class Production(Common):
     STATIC_ROOT = values.Value('', environ_prefix='KUBEPORTAL')
     STATICFILES_DIRS = values.TupleValue('', environ_prefix='KUBEPORTAL')
 
-    REDIRECT_HOSTS = values.TupleValue(None, environ_prefix='KUBEPORTAL')
-
     EMAIL_HOST = values.Value('localhost', environ_prefix='KUBEPORTAL')
 
     LOG_LEVEL_PORTAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
     LOG_LEVEL_REQUEST = values.Value('ERROR', environ_prefix='KUBEPORTAL')
-    
+
     # read the environment variables immediately because they're used to
     # configure the loggers below
     LOG_LEVEL_PORTAL.setup('LOG_LEVEL_PORTAL')
     LOG_LEVEL_REQUEST.setup('LOG_LEVEL_REQUEST')
-    
+
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,

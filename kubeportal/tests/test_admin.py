@@ -5,15 +5,18 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import RequestFactory
 from django.test import override_settings
+from django.test import Client
 from django.urls import reverse
-from kubeportal import models
-from kubeportal.models import KubernetesNamespace
-from kubeportal.models import KubernetesServiceAccount
-from kubeportal.models import PortalGroup
+from kubeportal import kubernetes
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models import UserState
 from kubeportal.tests import AdminLoggedInTestCase
 from unittest.mock import patch
 from kubeportal.admin import merge_users, UserAdmin
 from ..k8s import k8s_sync, kubernetes_api as api, utils
+from kubeportal.admin_views import prune
 
 
 class Backend(AdminLoggedInTestCase):
@@ -24,6 +27,17 @@ class Backend(AdminLoggedInTestCase):
     def _build_full_request_mock(self, short_url):
         url = reverse(short_url)
         request = self.factory.get(url)
+        request.user = self.admin
+        middleware = SessionMiddleware()
+        middleware.process_request(request)
+        request.session.save()
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        return request
+
+    def _build_full_post_request_mock(self, short_url, data):
+        url = reverse(short_url)
+        request = self.factory.post(url, data)
         request.user = self.admin
         middleware = SessionMiddleware()
         middleware.process_request(request)
@@ -124,7 +138,7 @@ class Backend(AdminLoggedInTestCase):
 
     def test_special_k8s_approved(self):
         # Creating an auto_add_approved group should not change its member list.
-        group = models.PortalGroup.objects.get(special_k8s_accounts=True)
+        group = PortalGroup.objects.get(special_k8s_accounts=True)
         self.assertEqual(group.members.count(), 0)
         # Create a new user should not change the member list
         User = get_user_model()
@@ -152,7 +166,7 @@ class Backend(AdminLoggedInTestCase):
         self.assertEqual(group.members.count(), 1)
 
     def test_special_k8s_unapproved(self):
-        group = models.PortalGroup.objects.get(special_k8s_accounts=True)
+        group = PortalGroup.objects.get(special_k8s_accounts=True)
         ns = KubernetesNamespace(name="default")
         ns.save()
         new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
@@ -161,12 +175,12 @@ class Backend(AdminLoggedInTestCase):
         # create approved user
         u = User(username="Hugo",
                  email="a@b.de",
-                 state=models.UserState.ACCESS_APPROVED,
+                 state=UserState.ACCESS_APPROVED,
                  service_account = new_svc)
         u.save()
         self.assertEqual(group.members.count(), 1)
         # unapprove
-        u.state=models.UserState.ACCESS_REJECTED
+        u.state=UserState.ACCESS_REJECTED
         u.save()
         self.assertEqual(group.members.count(), 0)
 
@@ -223,7 +237,7 @@ class Backend(AdminLoggedInTestCase):
         new_svc.save()
         secondary = User(
                 username="hugo",
-                state=models.UserState.ACCESS_APPROVED,
+                state=UserState.ACCESS_APPROVED,
                 email="a@b.de",
                 comments = "secondary user comment",
                 service_account = new_svc)
@@ -286,7 +300,7 @@ class Backend(AdminLoggedInTestCase):
 
         secondary = User(
                 username="hugo",
-                state=models.UserState.ACCESS_APPROVED,
+                state=UserState.ACCESS_APPROVED,
                 email="a@b.de",
                 comments = "secondary user comment",
                 service_account = new_svc)
@@ -313,3 +327,109 @@ class Backend(AdminLoggedInTestCase):
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend', EMAIL_HOST_PASSWORD='sdsds')
     def test_user_rejection_mail_broken(self):
         self._test_user_rejection()
+
+    def test_backend_cleanup_view(self):
+        User = get_user_model()
+        u = User(
+                username="HUGO",
+                email="a@b.de")
+        u.save()
+
+        # we need an inactive user for the the filter to work
+        from dateutil.parser import parse
+        u.last_login = parse("2017-09-23 11:21:52.909020")
+        u.save()
+
+        ns = KubernetesNamespace(name="aaasdfadfasdfasdf", visible=True)
+        ns.save()
+
+        new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
+        new_svc.save()
+        new_svc.delete()
+
+        request = self._build_full_request_mock('admin:cleanup')
+        assert(request)
+
+    def test_backend_cleanup_entitity_getters(self):
+        User = get_user_model()
+        from dateutil.parser import parse
+        # we need an inactive user for the the filter to work
+        u = User(
+                username="HUGO",
+                email="a@b.de",
+                last_login = parse("2017-09-23 11:21:52.909020")
+                )
+        u.save()
+
+        ns = KubernetesNamespace(name="asdfadfasdfasdf", visible=True)
+        ns.save()
+
+        assert(User.inactive_users()[0] == User.objects.get(username=u.username))
+        assert(KubernetesNamespace.without_pods()[0] == ns)
+        assert(KubernetesNamespace.without_service_accounts()[0] == ns)
+
+    def test_backend_prune_view(self):
+        User = get_user_model()
+        from dateutil.parser import parse
+        # we need an inactive user for the the filter to work
+
+        user_list = [
+            User.objects.create_user(
+                    username="HUGO1",
+                    email="a@b.de",
+                    last_login = parse("2017-09-23 11:21:52.909020")
+                    ),
+
+            User.objects.create_user(
+                    username="HUGO2",
+                    email="b@b.de",
+                    last_login = parse("2017-09-23 11:21:52.909020")
+                    ),
+
+            User.objects.create_user(
+                    username="HUGO3",
+                    email="c@b.de",
+                    last_login = parse("2017-09-23 11:21:52.909020")
+                    )
+        ]
+
+        ns_list = [
+            KubernetesNamespace.objects.create(name="test-namespace1"),
+            KubernetesNamespace.objects.create(name="test-namespace2"),
+            KubernetesNamespace.objects.create(name="test-namespace3")
+        ]
+
+        ## prune visible namespaces without an assigned service account
+        request = self._build_full_post_request_mock("admin:prune", {
+            'prune': "namespaces-no-service-acc",
+            "namespaces": [ns.name for ns in ns_list]
+        })
+        prune(request)
+
+        assert(not KubernetesNamespace.objects.filter(name__in=[ns.name for ns in ns_list]))
+
+        ns_list = [
+            KubernetesNamespace.objects.create(name="test-namespace1"),
+            KubernetesNamespace.objects.create(name="test-namespace2"),
+            KubernetesNamespace.objects.create(name="test-namespace3")
+        ]
+
+        # prune visible namespaces without pods
+        request = self._build_full_post_request_mock("admin:prune", {
+            'prune': "namespaces-no-pods",
+            "namespaces": [ns.name for ns in ns_list]
+        })
+        prune(request)
+
+        # have all been pruned?
+        assert(not KubernetesNamespace.objects.filter(name__in=[ns.name for ns in ns_list]))
+
+        # prune service accounts that haven't logged in for a long time
+        request = self._build_full_post_request_mock("admin:prune", {
+            'prune': "inactive-users",
+            "users": [u.username for u in user_list]
+        })
+        prune(request)
+
+        # have all been pruned?
+        assert(not KubernetesServiceAccount.objects.filter(name__in=[u.username for u in user_list]))

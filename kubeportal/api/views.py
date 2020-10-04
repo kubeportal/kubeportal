@@ -2,14 +2,15 @@ from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from rest_framework.renderers import JSONRenderer
-
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.contrib.auth import get_user_model
 from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer, PortalGroupSerializer
-from kubeportal.models import WebApplication, PortalGroup
 from django.conf import settings
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models.webapplication import WebApplication
 from ..k8s import kubernetes_api as api
+
 import logging
 
 logger = logging.getLogger('KubePortal')
@@ -26,7 +27,7 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
     def get_queryset(self):
         query_pk = int(self.kwargs['pk'])
         if query_pk == self.request.user.pk:
-            return User.objects.filter(pk=query_pk)   
+            return User.objects.filter(pk=query_pk)
         else:
             if User.objects.filter(pk=query_pk).exists():
                 raise PermissionDenied
@@ -57,6 +58,7 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
     #         else:
     #             logger.warning(f"Got invalid body in patch request for user {target_user}.")
     #             return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
 
 
 class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -156,4 +158,3 @@ class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return Response({'value': self.stats[key]()})
         else:
             raise NotFound
-
