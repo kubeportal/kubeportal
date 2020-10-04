@@ -48,4 +48,7 @@ class LoginSuccessSerializer(serializers.Serializer):
     The serializer is referenced in settings.py, accordingly.
     '''
     def to_representation(self, instance):
-        return {'id': instance['user'].pk, 'firstname': instance['user'].first_name}
+        return {'id': instance['user'].pk,
+                'firstname': instance['user'].first_name,
+                'token': str(instance['access_token'])
+                }
