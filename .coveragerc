@@ -1,7 +1,4 @@
 # .coveragerc
 [report]
 show_missing = True
-omit =
-    README.md
-    .dockerignore
-    LICENSE
+include = kubeportal/*
