@@ -38,8 +38,10 @@ docs: venv
 	pushd docs; make html; popd
 
 # Runs the test suite
+# You can restrict the tests bing executed by specifying the file:
+# make test case=kubeportal/tests/test_admin.py
 test: venv minikube-start
-	./venv/bin/pytest 
+	./venv/bin/pytest ${case}
 
 # Run all tests and obtain coverage information.
 coverage: venv 
