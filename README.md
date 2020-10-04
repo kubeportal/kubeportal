@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/kubeportal/kubeportal/branch/master/graph/badge.svg?token=9JYI6Q59H6)](undefined)
+[![codecov](https://codecov.io/gh/kubeportal/kubeportal/branch/master/graph/badge.svg?token=9JYI6Q59H6)](https://codecov.io/gh/kubeportal/kubeportal)
 
 # Kubeportal Backend
 
