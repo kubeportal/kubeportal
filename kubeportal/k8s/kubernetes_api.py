@@ -25,7 +25,7 @@ HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 core_v1, rbac_v1 = utils.load_config()
 
 
-def create_k8s_ns(name, core_v1):
+def create_k8s_ns(name):
     logger.info(
         "Creating Kubernetes namespace '{0}'".format(name))
     try:
@@ -41,7 +41,7 @@ def create_k8s_ns(name, core_v1):
     return core_v1.read_namespace(name=name)
 
 
-def delete_k8s_ns(name, core_v1):
+def delete_k8s_ns(name):
     if utils.is_minikube():
         logger.info(
             "Deleting Kubernetes namespace '{0}'".format(name))
@@ -90,17 +90,19 @@ def get_token(kubeportal_service_account):
     encoded_token = secret.data['token']
     return b64decode(encoded_token).decode()
 
+
 def get_apiserver():
     if settings.API_SERVER_EXTERNAL is None:
         return core_v1.api_client.configuration.host
     else:
         return settings.API_SERVER_EXTERNAL
 
+
 def get_kubernetes_version():
     pods = core_v1.list_namespaced_pod("kube-system").items
     for pod in pods:
         for container in pod.spec.containers:
-            if 'kube-apiserver' in container.image:
+            if 'kube-proxy' in container.image:
                 return container.image.split(":")[1]
     logger.error(f"Kubernetes version not identifiable, list of pods in 'kube-system': {pods}.")
     return None

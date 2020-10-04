@@ -6,6 +6,7 @@ from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedInTestCase
 from unittest.mock import patch
+from ..k8s.utils import load_config
 
 
 class FrontendLoggedInApproved(AdminLoggedInTestCase):

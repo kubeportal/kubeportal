@@ -2,7 +2,7 @@ from django.contrib import messages
 from kubernetes import client
 import logging
 
-from kubeportal.models import KubernetesNamespace
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 
 logger = logging.getLogger('KubePortal')
 

@@ -260,7 +260,7 @@ class User(AbstractUser):
 
     @property
     def token(self):
-        from .k8s.kubernetes_api import get_token
+        from ..k8s.kubernetes_api import get_token
         try:
             return get_token(self.service_account)
         except Exception:

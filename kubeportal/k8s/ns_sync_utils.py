@@ -1,9 +1,9 @@
 from django.conf import settings
 from django.contrib import messages
 
-from kubeportal.models import KubernetesNamespace
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubernetes import client
-from kubeportal.k8s.utils import load_config, error_log
+from kubeportal.k8s.utils import error_log
 import logging
 import re
 
@@ -79,7 +79,7 @@ def add_namespace_to_kubernetes(portal_ns, request, core_v1, api):
         # TODO: May already exist?
         portal_ns.name = sanitized_name
         portal_ns.save()
-    created_k8s_ns = api.create_k8s_ns(portal_ns.name, core_v1)
+    created_k8s_ns = api.create_k8s_ns(portal_ns.name)
     portal_ns.uid = created_k8s_ns.metadata.uid
     portal_ns.save()
     messages.success(request, "Created namespace '{0}' in Kubernetes.".format(portal_ns.name))

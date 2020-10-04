@@ -7,7 +7,6 @@ from django.test import RequestFactory
 from django.test import override_settings
 from django.test import Client
 from django.urls import reverse
-from kubeportal import kubernetes
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 from kubeportal.models.portalgroup import PortalGroup
@@ -95,7 +94,7 @@ class Backend(AdminLoggedInTestCase):
     def test_new_external_ns_sync(self):
         self._call_sync()
         core_v1, rbac_v1 = utils.load_config()
-        api.create_k8s_ns("new-external-ns1", core_v1)
+        api.create_k8s_ns("new-external-ns1")
         try:
             self._call_sync()
             new_ns_object = KubernetesNamespace.objects.get(
@@ -104,18 +103,18 @@ class Backend(AdminLoggedInTestCase):
             for svc_account in new_ns_object.service_accounts.all():
                 self.assertEqual(svc_account.is_synced(), True)
         finally:
-            api.delete_k8s_ns("new-external-ns1", core_v1)
+            api.delete_k8s_ns("new-external-ns1")
 
     def test_exists_both_sides_sync(self):
         self._call_sync()
         core_v1, rbac_v1 = utils.load_config()
-        api.create_k8s_ns("new-external-ns2", core_v1)
+        api.create_k8s_ns("new-external-ns2")
         new_ns = KubernetesNamespace(name="new-external-ns2")
         new_ns.save()
         try:
             self._call_sync()
         finally:
-            api.delete_k8s_ns("new-external-ns2", core_v1)
+            api.delete_k8s_ns("new-external-ns2")
 
     def test_new_svc_sync(self):
         self._call_sync()

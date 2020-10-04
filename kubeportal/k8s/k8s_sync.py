@@ -20,7 +20,9 @@ from . import kubernetes_api as api
 import json
 import logging
 
-from kubeportal.models import KubernetesNamespace, KubernetesServiceAccount
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
+
 
 logger = logging.getLogger('KubePortal')
 
