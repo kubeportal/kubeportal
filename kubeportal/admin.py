@@ -29,7 +29,8 @@ class CustomAdminSite(admin.AdminSite):
         urls = super().get_urls()
         urls += [
                 path('cleanup/', admin_views.CleanupView.as_view(), name='cleanup'),
-                path('sync/', admin_views.sync_view, name='sync')
+                path('sync/', admin_views.sync_view, name='sync'),
+                path('prune/', admin_views.Prune, name='prune')
                 ]
         return urls
 

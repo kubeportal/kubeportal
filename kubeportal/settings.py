@@ -167,8 +167,10 @@ class Common(Configuration):
 
     ACCOUNT_ADAPTER = 'kubeportal.allauth.AccountAdapter'
 
-    SILKY_AUTHENTICATION = True  
-    SILKY_AUTHORISATION = True  
+    SILKY_AUTHENTICATION = True
+    SILKY_AUTHORISATION = True
+
+    LAST_LOGIN_MONTHS_AGO = values.Value(12, environ_prefix='KUBEPORTAL')
 
     # override default response format for /api/login endpoint
     REST_AUTH_SERIALIZERS = {
@@ -246,12 +248,12 @@ class Production(Common):
 
     LOG_LEVEL_PORTAL  = values.Value('ERROR', environ_prefix='KUBEPORTAL')
     LOG_LEVEL_REQUEST = values.Value('ERROR', environ_prefix='KUBEPORTAL')
-    
+
     # read the environment variables immediately because they're used to
     # configure the loggers below
     LOG_LEVEL_PORTAL.setup('LOG_LEVEL_PORTAL')
     LOG_LEVEL_REQUEST.setup('LOG_LEVEL_REQUEST')
-    
+
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': False,

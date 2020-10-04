@@ -76,4 +76,5 @@ KUBEPORTAL_ROOT_PASSWORD              The password to be used in the development
 KUBEPORTAL_LOG_LEVEL_PORTAL           Sets the verbosity of the logging for the admin panel. [DEBUG, INFO, WARNING, ERROR, CRITICAL]
 KUBEPORTAL_LOG_LEVEL_SOCIAL           Sets the verbosity of the logging for django.social. [DEBUG, INFO, WARNING, ERROR, CRITICAL]
 KUBEPORTAL_LOG_LEVEL_REQUEST          Sets the verbosity of the logging for requests. [DEBUG, INFO, WARNING, ERROR, CRITICAL]
+KUBEPORTAL_LAST_LOGIN_MONTHS_AGO      Sets how many months ago users have logged in to be considered old in the admin clean up page. Defaults to 12.
 ===================================== ============================================================================
