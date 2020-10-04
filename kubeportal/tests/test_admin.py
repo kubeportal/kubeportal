@@ -80,9 +80,8 @@ class Backend(AdminLoggedInTestCase):
         self.assertIn("foo", ns_names)
 
     def test_new_ns_broken_name_sync(self):
-        test_cases = {  "foo_bar": "foobar",
-                        "ABCDEF": "abcdef"}
-        for old, new  in test_cases.items():
+        test_cases = {"foo_bar": "foobar", "ABCDEF": "abcdef"}
+        for old, new in test_cases.items():
             new_ns = KubernetesNamespace(name=old)
             new_ns.save()
             self._call_sync()

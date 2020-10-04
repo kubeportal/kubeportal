@@ -78,13 +78,17 @@ def add_namespace_to_kubernetes(portal_ns, request, api):
         messages.warning(request,
                          "Given name '{}' for new Kubernetes namespace was invalid, chosen name is now '{}'".format(
                              portal_ns.name, sanitized_name))
-        # TODO: May already exist?
-        portal_ns.name = sanitized_name
-        portal_ns.save()
+        if not _ns_exist_in_kubeportal_db(sanitized_name):
+            portal_ns.name = sanitized_name
+            portal_ns.save()
     created_k8s_ns = api.create_k8s_ns(portal_ns.name)
     portal_ns.uid = created_k8s_ns.metadata.uid
     portal_ns.save()
     messages.success(request, "Created namespace '{0}' in Kubernetes.".format(portal_ns.name))
+
+
+def _ns_exist_in_kubeportal_db(sanitized_name):
+    return sanitized_name in KubernetesNamespace.objects.all()
 
 
 def delete_namespace_in_kubernetes(request, portal_ns):
