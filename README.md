@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/kubeportal/kubeportal/branch/master/graph/badge.svg?token=9JYI6Q59H6)](undefined)
+
 # Kubeportal Backend
 
 The official end user documenation is here: https://kubeportal.readthedocs.io/en/latest/
