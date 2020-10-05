@@ -260,7 +260,7 @@ class User(AbstractUser):
 
     @property
     def token(self):
-        from kubeportal.kubernetes import get_token
+        from kubeportal.k8s.kubernetes_api import get_token
         try:
             return get_token(self.service_account)
         except Exception:

@@ -1,7 +1,6 @@
 from django.db import models
 from django.db.models import Count
-
-from kubeportal import kubernetes
+from kubeportal.k8s import kubernetes_api as api
 
 
 class KubernetesNamespace(models.Model):
@@ -37,7 +36,7 @@ class KubernetesNamespace(models.Model):
         """
         visible_namespaces = cls.objects.filter(visible=True)
         namespaces_without_pods = []
-        pod_list = kubernetes.get_pods()
+        pod_list = api.get_pods()
         for ns in visible_namespaces:
             ns_has_pods = False
             for pod in pod_list:

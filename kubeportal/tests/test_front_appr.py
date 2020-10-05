@@ -68,7 +68,7 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_stats_with_broken_k8s_view(self):
-        with patch('kubeportal.kubernetes._load_config'):
+        with patch('kubeportal.k8s.utils.load_config'):
             response = self.c.get('/stats/')
             self.assertEqual(response.status_code, 200)
 
@@ -126,8 +126,12 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
                 self.assertEqual(response.status_code, 401)
 
     def test_subauth_k8s_broken(self):
+        from kubeportal.k8s import kubernetes_api as api
+        core_v1_temp, rbac_v1_temp = api.core_v1, api.rbac_v1
+        api.core_v1 = None
+        api.rbac_v1 = None
         self.admin_group.can_subauth = True
         self.admin_group.save()
-        with patch('kubeportal.kubernetes._load_config', return_value=(None, None)):
-            response = self._prepare_subauth_test(True, True, True, True, True)
-            self.assertEqual(response.status_code, 401)
+        response = self._prepare_subauth_test(True, True, True, True, True)
+        self.assertEqual(response.status_code, 401)
+        api.core_v1, api.rbac_v1 = core_v1_temp, rbac_v1_temp

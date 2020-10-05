@@ -3,19 +3,19 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, HttpResponse
 from django.conf import settings
-from django.contrib import admin, messages
-from django.db.models import Count
-from kubeportal import kubernetes, models
-import logging
-
+from django.contrib import messages
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models import User
+from .k8s import k8s_sync
+
+from datetime import datetime, timedelta
+import logging
 
 logger = logging.getLogger('KubePortal')
 
 
 def sync_view(request):
-    kubernetes.sync(request)
+    k8s_sync.sync(request)
     return redirect('admin:index')
 
 

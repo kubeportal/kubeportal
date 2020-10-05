@@ -25,6 +25,7 @@ wheels/
 MANIFEST
 *.manifest
 *.spec
+.idea/
 
 # Unit test / coverage reports
 htmlcov/

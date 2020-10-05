@@ -4,3 +4,4 @@ sphinx
 sphinx-issues
 coverage
 pytest-django
+django-configurations

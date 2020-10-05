@@ -5,15 +5,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect
-
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
-
-from kubeportal import kubernetes
+from kubeportal.models.webapplication import WebApplication
+from .k8s import kubernetes_api as api
 
 import logging
 
-from kubeportal.models.webapplication import WebApplication
 
 logger = logging.getLogger('KubePortal')
 
@@ -31,13 +29,13 @@ class StatsView(LoginRequiredMixin, TemplateView):
         try:
             context['usercount'] = User.objects.count()
             context['version'] = settings.VERSION
-            context['k8sversion'] = kubernetes.get_kubernetes_version()
-            context['apiserver'] = kubernetes.get_apiserver()
-            context['numberofnodes'] = kubernetes.get_number_of_nodes()
-            context['cpusum'] = kubernetes.get_number_of_cpus()
-            context['memsum'] = kubernetes.get_memory_sum()
-            context['numberofpods'] = kubernetes.get_number_of_pods()
-            context['numberofvolumes'] = kubernetes.get_number_of_volumes()
+            context['k8sversion'] = api.get_kubernetes_version()
+            context['apiserver'] = api.get_apiserver()
+            context['numberofnodes'] = api.get_number_of_nodes()
+            context['cpusum'] = api.get_number_of_cpus()
+            context['memsum'] = api.get_memory_sum()
+            context['numberofpods'] = api.get_number_of_pods()
+            context['numberofvolumes'] = api.get_number_of_volumes()
         except Exception as e:
             logger.exception("Failed to fetch Kubernetes stats: {}".format(e))
         return context
@@ -119,45 +117,38 @@ class SubAuthRequestView(View):
         webapp = get_object_or_404(WebApplication, pk=kwargs['webapp_pk'])
         if (not request.user) or (not request.user.is_authenticated):
             logger.debug(
-                "Rejecting authorization for {} through sub-request, user is anonymous / not authenticated.".format(
-                    webapp))
+                "Rejecting authorization for {} through sub-request, user is anonymous / not authenticated.".format(webapp))
             self._dump_request_info(request)
             # 401 is the expected fail code in ingress-nginx
             return HttpResponse(status=401)
         elif not webapp.can_subauth:
             logger.debug(
-                "Rejecting authorization for {0} through sub-request for user {1}, subauth is not enabled for this app.".format(
-                    webapp, request.user))
+                "Rejecting authorization for {0} through sub-request for user {1}, subauth is not enabled for this app.".format(webapp, request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         elif not request.user.service_account:
             logger.debug(
-                "Rejecting authorization for {0} through sub-request, user {1} has no service account.".format(webapp,
-                                                                                                               request.user))
+                "Rejecting authorization for {0} through sub-request, user {1} has no service account.".format(webapp, request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         elif not request.user.can_subauth(webapp):
             logger.debug(
-                "Rejecting authorization for {0} through sub-request, forbidden for user {1} through group membership constellation.".format(
-                    webapp, request.user))
+                "Rejecting authorization for {0} through sub-request, forbidden for user {1} through group membership constellation.".format(webapp, request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         else:
-            logger.debug(
-                "Allowing authorization for {0} through sub-request (user {1}, service account '{2}:{3}').".format(
-                    webapp,
-                    request.user,
-                    request.user.service_account.namespace.name,
-                    request.user.service_account.name))
+            logger.debug("Allowing authorization for {0} through sub-request (user {1}, service account '{2}:{3}').".format(
+                webapp,
+                request.user,
+                request.user.service_account.namespace.name,
+                request.user.service_account.name))
             response = HttpResponse()
             token = request.user.token
             if token:
                 response['Authorization'] = 'Bearer ' + token
                 return response
             else:
-                logger.error(
-                    "Error while fetching Kubernetes secret bearer token for user {0}, must reject valid  authorization for {1} through subrequest.".format(
-                        request.user, webapp))
+                logger.error("Error while fetching Kubernetes secret bearer token for user {0}, must reject valid  authorization for {1} through subrequest.".format(request.user, webapp))
                 return HttpResponse(status=401)
 
 
