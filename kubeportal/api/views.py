@@ -1,21 +1,22 @@
-from rest_framework import viewsets, mixins, status
+from rest_framework import viewsets, mixins
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
 from rest_framework.renderers import JSONRenderer
-from rest_framework import generics
-
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.contrib.auth import get_user_model
 from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer, PortalGroupSerializer
-from kubeportal.models import WebApplication, PortalGroup
-from kubeportal import kubernetes
 from django.conf import settings
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models.webapplication import WebApplication
+from kubeportal.k8s import kubernetes_api as api
+
 import logging
 
 logger = logging.getLogger('KubePortal')
 
 User = get_user_model()
+
 
 class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
     '''
@@ -26,7 +27,7 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
     def get_queryset(self):
         query_pk = int(self.kwargs['pk'])
         if query_pk == self.request.user.pk:
-            return User.objects.filter(pk=query_pk)   
+            return User.objects.filter(pk=query_pk)
         else:
             if User.objects.filter(pk=query_pk).exists():
                 raise PermissionDenied
@@ -58,6 +59,8 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
     #             logger.warning(f"Got invalid body in patch request for user {target_user}.")
     #             return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
+
+
 class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
     '''
     API endpoint that allows for web application(s) to queried.
@@ -88,6 +91,7 @@ class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
                     raise Http404
         else:
             raise Http404
+
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     '''
@@ -136,16 +140,17 @@ def get_cluster_name():
 class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     renderer_classes = [JSONRenderer]
 
-    stats = {'k8s_version': kubernetes.get_kubernetes_version,
-             'k8s_apiserver_url': kubernetes.get_apiserver,
-             'k8s_node_count': kubernetes.get_number_of_nodes,
-             'k8s_cpu_count': kubernetes.get_number_of_cpus,
-             'k8s_mem_sum': kubernetes.get_memory_sum,
-             'k8s_pod_count': kubernetes.get_number_of_pods,
-             'k8s_volume_count': kubernetes.get_number_of_volumes,
+    stats = {'k8s_version': api.get_kubernetes_version,
+             'k8s_apiserver_url': api.get_apiserver,
+             'k8s_node_count': api.get_number_of_nodes,
+             'k8s_cpu_count': api.get_number_of_cpus,
+             'k8s_mem_sum': api.get_memory_sum,
+             'k8s_pod_count': api.get_number_of_pods,
+             'k8s_volume_count': api.get_number_of_volumes,
              'portal_user_count': get_user_count,
              'portal_version': get_kubeportal_version,
-             'k8s_cluster_name': get_cluster_name}
+             'k8s_cluster_name': get_cluster_name,
+             }
 
     def retrieve(self, request, *args, **kwargs):
         key = kwargs['pk']
@@ -153,4 +158,3 @@ class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return Response({'value': self.stats[key]()})
         else:
             raise NotFound
-

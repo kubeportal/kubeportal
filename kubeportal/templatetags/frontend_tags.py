@@ -1,14 +1,14 @@
 from django import template
 from django.conf import settings
 
-from kubeportal.kubernetes import get_apiserver
+from kubeportal.k8s import kubernetes_api as api
 
 register = template.Library()
 
 
 @register.simple_tag
 def apiserver():
-    return get_apiserver()
+    return api.get_apiserver()
 
 
 @register.simple_tag
@@ -24,7 +24,7 @@ def settings_value_normalized(name):
 
 @register.simple_tag(takes_context=True)
 def placeholder_replace(context, text):
-    if text == None:
+    if text is None:
         return ""
 
     try:

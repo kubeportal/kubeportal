@@ -14,8 +14,11 @@ from kubeportal.models import UserState as states
 import logging
 import uuid
 from . import models, admin_views
-from kubeportal import kubernetes
-
+from .k8s import k8s_sync, kubernetes_api as api
+from .models.kubernetesnamespace import KubernetesNamespace
+from .models.kubernetesserviceaccount import KubernetesServiceAccount
+from .models.portalgroup import PortalGroup
+from .models.webapplication import WebApplication
 
 logger = logging.getLogger('KubePortal')
 User = get_user_model()
@@ -29,7 +32,8 @@ class CustomAdminSite(admin.AdminSite):
         urls = super().get_urls()
         urls += [
                 path('cleanup/', admin_views.CleanupView.as_view(), name='cleanup'),
-                path('sync/', admin_views.sync_view, name='sync')
+                path('sync/', admin_views.sync_view, name='sync'),
+                path('prune/', admin_views.prune, name='prune')
                 ]
         return urls
 
@@ -54,7 +58,7 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        kubernetes.sync(request)
+        k8s_sync.sync(request)
 
     def get_queryset(self, request):
         '''
@@ -83,7 +87,7 @@ make_invisible.short_description = "Mark as non-visible"
 
 class WebApplicationAdminForm(forms.ModelForm):
     portal_groups = forms.ModelMultipleChoiceField(
-        queryset=models.PortalGroup.objects.all(),
+        queryset=PortalGroup.objects.all(),
         required=False,
         widget=FilteredSelectMultiple(
             verbose_name=('Groups'),
@@ -92,7 +96,7 @@ class WebApplicationAdminForm(forms.ModelForm):
     )
 
     class Meta:
-        model = models.WebApplication
+        model = WebApplication
         fields = ('name', 'link_show', 'link_name',
                   'link_url', 'oidc_client', 'can_subauth')
 
@@ -188,7 +192,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
     def created(self, instance):
         if not self.ns_list:
-            self.ns_list = kubernetes.get_namespaces()
+            self.ns_list = api.get_namespaces()
 
         for ns in self.ns_list:
             if ns.metadata.name == instance.name:
@@ -198,7 +202,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
     def number_of_pods(self, instance):
         if not self.pod_list:
-            self.pod_list = kubernetes.get_pods()
+            self.pod_list = api.get_pods()
         count = 0
         for pod in self.pod_list:
             if pod.metadata.namespace == instance.name:
@@ -241,7 +245,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        kubernetes.sync(request)
+        k8s_sync.sync(request)
 
     def get_queryset(self, request):
         '''
@@ -265,7 +269,7 @@ class PortalGroupAdminForm(forms.ModelForm):
     )
 
     class Meta:
-        model = models.PortalGroup
+        model = PortalGroup
         fields = ('name', 'can_admin')
 
     def __init__(self, *args, **kwargs):
@@ -386,13 +390,13 @@ def merge_users(modeladmin, request, queryset):
     joined_groups = [str(g) for g in joined_groups]
     if joined_groups:
         messages.info(request, F"User '{primary.username}' joined the group(s) {joined_groups}")
-    if primary.comments == "" or primary.comments == None:
+    if primary.comments == "" or primary.comments is None:
         if  secondary.comments != "" and secondary.comments is not None:
             primary.comments = secondary.comments
     primary.save()
     secondary.delete()
     messages.info(request, F"The Users '{primary.username}' and '{secondary.username}' have been merged into '{primary.username}' and '{secondary.username}' has been deleted.")
-merge_users.short_description = "Merges two users and keeps the one that joined first."
+merge_users.short_description = "Merge two users"
 
 
 class PortalUserAdmin(UserAdmin):
@@ -421,7 +425,7 @@ class PortalUserAdmin(UserAdmin):
     def get_actions(self, request):
         actions = super(PortalUserAdmin, self).get_actions(request)
 
-        for group in models.PortalGroup.objects.all():
+        for group in PortalGroup.objects.all():
             action = make_assign_to_group_action(group)
             actions[action.__name__] = (action,
                                         action.__name__,
@@ -454,7 +458,7 @@ class PortalUserAdmin(UserAdmin):
 
     def render_change_form(self, request, context, *args, **kwargs):
         if 'service_account' in context['adminform'].form.fields:
-            context['adminform'].form.fields['service_account'].queryset = models.KubernetesServiceAccount.objects.filter(
+            context['adminform'].form.fields['service_account'].queryset = KubernetesServiceAccount.objects.filter(
                 namespace__visible=True)
         return super().render_change_form(request, context, *args, **kwargs)
 
@@ -476,25 +480,25 @@ class PortalUserAdmin(UserAdmin):
         context = dict(
             self.admin_site.each_context(request),
             user=user,
-            all_namespaces=models.KubernetesNamespace.objects.all(),
+            all_namespaces=KubernetesNamespace.objects.all(),
             current_ns=current_ns
         )
         if request.method == 'POST':
             if request.POST['choice'] == "approve_choose":
                 new_ns = get_object_or_404(
-                    models.KubernetesNamespace, name=request.POST['approve_choose_name'])
+                    KubernetesNamespace, name=request.POST['approve_choose_name'])
                 new_svc = get_object_or_404(
-                    models.KubernetesServiceAccount, namespace=new_ns, name="default")
+                    KubernetesServiceAccount, namespace=new_ns, name="default")
                 if user.approve(request, new_svc):
                     user.save()
             if request.POST['choice'] == "approve_create":
-                new_ns = models.KubernetesNamespace(
+                new_ns = KubernetesNamespace(
                     name=request.POST['approve_create_name'])
                 new_ns.save()
                 # creates "default" service account automatically
-                if kubernetes.sync(request):
+                if k8s_sync.sync(request):
                     new_svc = get_object_or_404(
-                        models.KubernetesServiceAccount, namespace=new_ns, name="default")
+                        KubernetesServiceAccount, namespace=new_ns, name="default")
                     if user.approve(request, new_svc):
                         user.save()
                     else:
@@ -536,10 +540,10 @@ class OidcClientAdmin(admin.ModelAdmin):
 
 
 admin_site = CustomAdminSite()
-admin_site.register(models.User, PortalUserAdmin)
-admin_site.register(models.PortalGroup, PortalGroupAdmin)
-admin_site.register(models.KubernetesServiceAccount,
+admin_site.register(User, PortalUserAdmin)
+admin_site.register(PortalGroup, PortalGroupAdmin)
+admin_site.register(KubernetesServiceAccount,
                     KubernetesServiceAccountAdmin)
-admin_site.register(models.KubernetesNamespace, KubernetesNamespaceAdmin)
-admin_site.register(models.WebApplication, WebApplicationAdmin)
+admin_site.register(KubernetesNamespace, KubernetesNamespaceAdmin)
+admin_site.register(WebApplication, WebApplicationAdmin)
 admin_site.register(Client, OidcClientAdmin)

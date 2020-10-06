@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from colorama import init, Fore, Style
 
-from kubeportal.kubernetes import sync
+import k8s_sync
 
 
 class Command(BaseCommand):
@@ -20,7 +20,7 @@ class Command(BaseCommand):
     def handle(self, *args, **option):
         init()
 
-        ns_logs, svca_logs = sync()
+        ns_logs, svca_logs = k8s_sync.sync(request=None)
         print("Namespace synchronization:")
         for line in ns_logs:
             self.print_line(line)

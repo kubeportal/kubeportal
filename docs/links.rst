@@ -50,56 +50,56 @@ Example configuration for Grafana:
 
 .. code-block:: 
 
-	apiVersion: apps/v1beta2
-	kind: Deployment
-	metadata:
-	  labels:
-	    app: grafana
-	  name: grafana
-	  namespace: monitor
-	spec:
-	  replicas: 1
-	  selector:
-	    matchLabels:
-	      app: grafana
-	  template:
-	    metadata:
-	      labels:
-	        app: grafana
-	    spec:
-	      containers:
-	      - image: grafana/grafana:5.4.3
-	        name: grafana
-	        env:
-	          - name: GF_AUTH_ANONYMOUS_ENABLED
-	            value: "true"
-	          - name: GF_AUTH_ANONYMOUS_ORG_NAME
-	            value: "Internet"
-	          - name: GF_AUTH_ANONYMOUS_ORG_ROLE
-	            value: "Viewer"
-	          - name: GF_AUTH_BASIC_ENABLED
-	            value: "false"
-	          - name: GF_SERVER_ROOT_URL
-	            value: "https://monitoring.example.com"
-	          - name: GF_AUTH_DISABLE_LOGIN_FORM
-	            value: "true"
-	          - name: GF_AUTH_GENERIC_OAUTH_ENABLED
-	            value: "true"
-	          - name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
-	            value: "monitoring-service"  
-	          - name: GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
-	            value: "c444e7641dc8cc5c638fhh83e6bc0f2288854cda355ed103b3e1118ea3cd3e5"
-	          - name: GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP
-	            value: "true"
-	          - name: GF_AUTH_GENERIC_OAUTH_SCOPES
-	            value: "openid profile email"
-	          - name: GF_AUTH_GENERIC_OAUTH_AUTH_URL
-	            value: "https://portal.example.com/oidc/authorize"
-	          - name: GF_AUTH_GENERIC_OAUTH_TOKEN_URL
-	            value: "https://portal.example.com/oidc/token"
-	          - name: GF_AUTH_GENERIC_OAUTH_API_URL
-	            value: "https://portal.example.com/oidc/userinfo"
-	  ...
+    apiVersion: apps/v1beta2
+    kind: Deployment
+    metadata:
+      labels:
+        app: grafana
+      name: grafana
+      namespace: monitor
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: grafana
+      template:
+        metadata:
+          labels:
+            app: grafana
+        spec:
+          containers:
+          - image: grafana/grafana:5.4.3
+            name: grafana
+            env:
+              - name: GF_AUTH_ANONYMOUS_ENABLED
+                value: "true"
+              - name: GF_AUTH_ANONYMOUS_ORG_NAME
+                value: "Internet"
+              - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+                value: "Viewer"
+              - name: GF_AUTH_BASIC_ENABLED
+                value: "false"
+              - name: GF_SERVER_ROOT_URL
+                value: "https://monitoring.example.com"
+              - name: GF_AUTH_DISABLE_LOGIN_FORM
+                value: "true"
+              - name: GF_AUTH_GENERIC_OAUTH_ENABLED
+                value: "true"
+              - name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
+                value: "monitoring-service"
+              - name: GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+                value: "c444e7641dc8cc5c638fhh83e6bc0f2288854cda355ed103b3e1118ea3cd3e5"
+              - name: GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP
+                value: "true"
+              - name: GF_AUTH_GENERIC_OAUTH_SCOPES
+                value: "openid profile email"
+              - name: GF_AUTH_GENERIC_OAUTH_AUTH_URL
+                value: "https://portal.example.com/oidc/authorize"
+              - name: GF_AUTH_GENERIC_OAUTH_TOKEN_URL
+                value: "https://portal.example.com/oidc/token"
+              - name: GF_AUTH_GENERIC_OAUTH_API_URL
+                value: "https://portal.example.com/oidc/userinfo"
+      ...
 
 
 Login through portal (sub-auth)
@@ -133,8 +133,8 @@ Example:
       - "dashboard.example.com"
     rules:
     - host: "dashboard.example.com"
-      http: 
-        paths: 
+      http:
+        paths:
         - path:
           backend:
             serviceName: kubernetes-dashboard

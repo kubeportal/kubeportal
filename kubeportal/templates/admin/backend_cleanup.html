@@ -1,65 +1,163 @@
 {% extends 'admin/custom_backend_view.html' %}
 
+{% load i18n admin_urls %}
+
 {% block content %}
 
 <div id="content-main">
-
-  <h2>Visible K8S namespaces without assigned users:</h2>
-  {% if namespaces_no_portal_users %}
-  <table class="table table-striped table-responsive-sm">
-    <tr>
-      <th>Namespace ID</th><th>Namespace Name</th>
-    </tr>
-    {% for ns in namespaces_no_portal_users %}
-    <tr>
-      <td>{{ ns.uid }}</td>
-      <td>{{ ns.name }}</td>
-    </tr>
-    {% endfor %}
-  </table>
+  <h2>Visible K8S namespaces without assigned service accounts:</h2>
+  {% if namespaces_no_service_acc %}
+  <div class="container">
+    <form id="namespaces-no-service-acc" action="{% url 'admin:prune' %}" method="POST">
+      {% csrf_token %}
+      <table class="table table-striped table-responsive-sm">
+        <tr>
+          <th>Selection</th><th>Namespace ID</th><th>Namespace Name</th>
+        </tr>
+        {% for ns in namespaces_no_service_acc %}
+        <tr>
+          <td><input class="namespaces-no-service-acc-checkbox" type="checkbox" name="namespaces" value="{{ ns.name }}"></input></td>
+          <td>{{ ns.uid }}</td>
+          <td>{{ ns.name }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </form>
+  </div>
+  <button class="select-all-btn" onclick="selectAll('.namespaces-no-service-acc-checkbox')">Select All</button>
+  <button form=namespaces-no-service-acc name="prune" value="namespaces-no-service-acc" onclick="return confirm('Are you sure you want to delete ' + amountOfSelected('.namespaces-no-service-acc-checkbox') + ' namespace(s)?')" type="submit" class="prune-btn">Prune</button>
   {% else %}
   There are no visible namespaces without portal users.
   {% endif %}
 
+
+
   <h2>Visible K8S namespaces without pods:</h2>
   {% if namespaces_no_pods %}
-  <table class="table table-striped table-responsive-sm">
-    <tr>
-      <th>Namespace ID</th><th>Namespace Name</th>
-    </tr>
-    {% for ns in namespaces_no_pods %}
-    <tr>
-      <td>{{ ns.uid }}</td>
-      <td>{{ ns.name }}</td>
-    </tr>
-    {% endfor %}
-  </table>
+  <div class="container">
+    <form id="namespaces-no-pods" action="{% url 'admin:prune' %}" method="POST">
+      {% csrf_token %}
+      <table class="table table-striped table-responsive-sm">
+        <tr>
+          <th>Selection</th><th>Namespace ID</th><th>Namespace Name</th>
+        </tr>
+        {% for ns in namespaces_no_pods %}
+        <tr>
+          <td><input class="namespaces-no-pods-checkbox" type="checkbox" name="namespaces" value={{ ns.name }}></input></td>
+          <td>{{ ns.uid }}</td>
+          <td>{{ ns.name }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </form>
+  </div>
+  <button class="select-all-btn" onclick="selectAll('.namespaces-no-pods-checkbox')">Select All</button>
+  <button form="namespaces-no-pods" name="prune" value="namespaces-no-pods" onclick="return confirm('Are you sure you want to delete ' + amountOfSelected('.namespaces-no-pods-checkbox') + ' namespace(s)?')" type="submit" class="prune-btn">Prune</button>
   {% else %}
   There are no visible namespaces without pods.
   {% endif %}
 
-  <h2>Users created a long time ago:</h2>
-  {% if old_service_accounts %}
-  <table class="table table-striped table-responsive-sm">
-    <tr>
-      <th>Username</th><th>E-Mail</th><th>Creation Date</th><th>Comments</th>
-    </tr>
-    {% for s in old_service_accounts %}
-    <tr>
-      <td>{{ s.username }}</td>
-      <td>{{ s.email }}</td>
-      <td>{{ s.date_joined }}</td>
-      <td>{{ s.comments }}</td>
-    </tr>
-    {% endfor %}
-  </table>
+
+
+  <h2>Users that logged in a long time ago:</h2>
+  {% if inactive_users %}
+  <div class="container">
+    <form id="inactive-users" action="{% url 'admin:prune' %}" method="POST">
+      {% csrf_token %}
+      <table class="table table-striped table-responsive-sm">
+        <tr>
+          <th>Selection</th><th>Username</th><th>E-Mail</th><th>Last Login</th><th>Comments</th>
+        </tr>
+        {% for u in inactive_users %}
+        <tr>
+          <td><input class="inactive-users-checkbox" type="checkbox" name="users" value="{{ u.username }}"></input></td>
+          <td>{{ u.username }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.last_login }}</td>
+          <td>{{ u.comments }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </form>
+  </div>
+  <button class="select-all-btn" onclick="selectAll('.inactive-users-checkbox')">Select All</button>
+  <button form="inactive-users" name="prune" value="inactive-users" onclick="return confirm('Are you sure you want to delete ' + amountOfSelected('.inactive-users-checkbox') + ' user(s)?')" type="submit" class="prune-btn">Prune</button>
   {% else %}
-  There are no users older than {{ months }} months.
+  There are no users that logged in longer ago than {{ months }} months.
   {% endif %}
 
-
-  </table>
-
 </div>
+
+<script>
+  function amountOfSelected(checkboxClassName) {
+    let checkboxes = document.querySelectorAll(checkboxClassName);
+    let amountOfBoxes = 0;
+    for (box of checkboxes) {
+      if (box.checked) {
+        amountOfBoxes++;
+      }
+    }
+    return amountOfBoxes;
+  }
+
+// select all if some but not all selected, select none if all selected
+function selectAll(checkboxClassName) {
+  let checkboxes = document.querySelectorAll(checkboxClassName);
+  all_boxes_checked = true
+  for (box of checkboxes) {
+    if (!box.checked) {
+      all_boxes_checked = false;
+    }
+  }
+
+  for (box of checkboxes) {
+    if (all_boxes_checked) {
+      box.checked = false;
+    } else {
+      box.checked = true;
+    }
+  }
+}
+
+// prevent submit on click for select all buttons
+for (btn of document.querySelectorAll(".select-all-btn")) {
+  btn.addEventListener("click", function(event){
+    event.preventDefault()
+  });
+}
+</script>
+
+{# Needs to be here until we figure out how to load bootstrap css in custom_backend_views #}
+<style>
+.container {
+  border:2px solid #ccc;
+  height: auto;
+  max-height: 250px;
+  overflow-y: scroll;
+}
+
+.prune-btn, .select-all-btn {
+  color: white;
+  padding: 0.4rem 0.8rem;
+  margin: 0.4rem 0.8rem;
+  border: 1px solid transparent;
+  transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+  border-radius: .25rem;
+}
+
+.prune-btn.focus, .prune-btn:focus {
+  box-shadow: 0 0 0 .2rem rgba(220,53,69,.5);
+}
+
+.prune-btn {
+  background: #dc3545;
+  border-color: #dc3545;
+}
+
+.select-all-btn {
+  background: #007bff;
+  border-color: #007bff;
+}
+</style>
 
 {% endblock %}

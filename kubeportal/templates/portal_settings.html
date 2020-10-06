@@ -34,7 +34,7 @@
           <form action="/settings/update" method="POST">
               {% csrf_token %}
               <div class="form-group">
-                  <label for="default-email">New primary email address:</label>
+                  <label for="default-email-selection">New primary email address:</label>
                   <select class="form-control" name="default-email" id="default-email-selection">
                       {% for address in user.alt_mails %}
                       {% if address == user.email %}

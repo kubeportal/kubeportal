@@ -6,14 +6,15 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import RequestFactory
 from django.test import override_settings
 from django.urls import reverse
-from kubeportal import kubernetes
-from kubeportal import models
-from kubeportal.models import KubernetesNamespace
-from kubeportal.models import KubernetesServiceAccount
-from kubeportal.models import PortalGroup
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models import UserState
 from kubeportal.tests import AdminLoggedInTestCase
 from unittest.mock import patch
 from kubeportal.admin import merge_users, UserAdmin
+from kubeportal.k8s import k8s_sync, kubernetes_api as api
+from kubeportal.admin_views import prune
 
 
 class Backend(AdminLoggedInTestCase):
@@ -32,12 +33,23 @@ class Backend(AdminLoggedInTestCase):
         setattr(request, '_messages', messages)
         return request
 
+    def _build_full_post_request_mock(self, short_url, data):
+        url = reverse(short_url)
+        request = self.factory.post(url, data)
+        request.user = self.admin
+        middleware = SessionMiddleware()
+        middleware.process_request(request)
+        request.session.save()
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        return request
+
     def _call_sync(self, expect_success=True):
         # We are calling the sync method directly here, and not through the view,
         # so that the result of sync is directly analyzed
         request = self._build_full_request_mock('admin:index')
-        sync_success = kubernetes.sync(request)
-        self.assertEquals(sync_success, expect_success)
+        sync_success = k8s_sync.sync(request)
+        self.assertEqual(sync_success, expect_success)
 
     def setUp(self):
         super().setUp()
@@ -64,25 +76,22 @@ class Backend(AdminLoggedInTestCase):
         new_ns = KubernetesNamespace(name="foo")
         new_ns.save()
         self._call_sync()
-        ns_names = [ns.metadata.name for ns in kubernetes.get_namespaces()]
+        ns_names = [ns.metadata.name for ns in api.get_namespaces()]
         self.assertIn("foo", ns_names)
 
     def test_new_ns_broken_name_sync(self):
-        core_v1, rbac_v1 = kubernetes._load_config()
-        test_cases = {  "foo_bar": "foobar",
-                        "ABCDEF": "abcdef"}
-        for old, new  in test_cases.items():
+        test_cases = {"foo_bar": "foobar", "ABCDEF": "abcdef"}
+        for old, new in test_cases.items():
             new_ns = KubernetesNamespace(name=old)
             new_ns.save()
             self._call_sync()
-            ns_names = [ns.metadata.name for ns in kubernetes.get_namespaces()]
+            ns_names = [ns.metadata.name for ns in api.get_namespaces()]
             self.assertNotIn(old, ns_names)
             self.assertIn(new, ns_names)
 
     def test_new_external_ns_sync(self):
         self._call_sync()
-        core_v1, rbac_v1 = kubernetes._load_config()
-        kubernetes._create_k8s_ns("new-external-ns1", core_v1)
+        api.create_k8s_ns("new-external-ns1")
         try:
             self._call_sync()
             new_ns_object = KubernetesNamespace.objects.get(
@@ -91,18 +100,17 @@ class Backend(AdminLoggedInTestCase):
             for svc_account in new_ns_object.service_accounts.all():
                 self.assertEqual(svc_account.is_synced(), True)
         finally:
-            kubernetes._delete_k8s_ns("new-external-ns1", core_v1)
+            api.delete_k8s_ns("new-external-ns1")
 
     def test_exists_both_sides_sync(self):
         self._call_sync()
-        core_v1, rbac_v1 = kubernetes._load_config()
-        kubernetes._create_k8s_ns("new-external-ns2", core_v1)
+        api.create_k8s_ns("new-external-ns2")
         new_ns = KubernetesNamespace(name="new-external-ns2")
         new_ns.save()
         try:
             self._call_sync()
         finally:
-            kubernetes._delete_k8s_ns("new-external-ns2", core_v1)
+            api.delete_k8s_ns("new-external-ns2")
 
     def test_new_svc_sync(self):
         self._call_sync()
@@ -111,7 +119,7 @@ class Backend(AdminLoggedInTestCase):
         new_svc.save()
         self._call_sync()
         svc_names = [
-            svc.metadata.name for svc in kubernetes.get_service_accounts()]
+            svc.metadata.name for svc in api.get_service_accounts()]
         self.assertIn("foobar", svc_names)
 
     def test_admin_index_view(self):
@@ -119,26 +127,26 @@ class Backend(AdminLoggedInTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_k8s_sync_error_no_crash(self):
-        with patch('kubeportal.kubernetes._load_config', return_value=(None, None)):
+        with patch('kubeportal.k8s.utils.load_config', return_value=(None, None)):
             # K8S login mocked away, view should not crash
             self._call_sync()
 
     def test_special_k8s_approved(self):
         # Creating an auto_add_approved group should not change its member list.
-        group = models.PortalGroup.objects.get(special_k8s_accounts=True)
-        self.assertEquals(group.members.count(), 0)
+        group = PortalGroup.objects.get(special_k8s_accounts=True)
+        self.assertEqual(group.members.count(), 0)
         # Create a new user should not change the member list
         User = get_user_model()
         u = User(username="Hugo", email="a@b.de")
         u.save()
-        self.assertEquals(group.members.count(), 0)
+        self.assertEqual(group.members.count(), 0)
         # walk through approval workflow
         url = reverse('welcome')
         request = self.factory.get(url)
         u.send_access_request(request)
         u.save()
         # Just sending an approval request should not change to member list
-        self.assertEquals(group.members.count(), 0)
+        self.assertEqual(group.members.count(), 0)
         # Build full-fledged request object for logged-in admin
         request = self._build_full_request_mock('admin:index')
         # Prepare K8S namespace
@@ -150,11 +158,10 @@ class Backend(AdminLoggedInTestCase):
         assert(u.approve(request, new_svc))
         u.save()
         # Should lead to addition of user to the add_approved group
-        self.assertEquals(group.members.count(), 1)
-
+        self.assertEqual(group.members.count(), 1)
 
     def test_special_k8s_unapproved(self):
-        group = models.PortalGroup.objects.get(special_k8s_accounts=True)
+        group = PortalGroup.objects.get(special_k8s_accounts=True)
         ns = KubernetesNamespace(name="default")
         ns.save()
         new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
@@ -163,15 +170,14 @@ class Backend(AdminLoggedInTestCase):
         # create approved user
         u = User(username="Hugo",
                  email="a@b.de",
-                 state=models.UserState.ACCESS_APPROVED,
+                 state=UserState.ACCESS_APPROVED,
                  service_account = new_svc)
         u.save()
-        self.assertEquals(group.members.count(), 1)
+        self.assertEqual(group.members.count(), 1)
         # unapprove
-        u.state=models.UserState.ACCESS_REJECTED
+        u.state=UserState.ACCESS_REJECTED
         u.save()
-        self.assertEquals(group.members.count(), 0)
-
+        self.assertEqual(group.members.count(), 0)
 
     def _test_user_rejection(self):
         User = get_user_model()
@@ -226,7 +232,7 @@ class Backend(AdminLoggedInTestCase):
         new_svc.save()
         secondary = User(
                 username="hugo",
-                state=models.UserState.ACCESS_APPROVED,
+                state=UserState.ACCESS_APPROVED,
                 email="a@b.de",
                 comments = "secondary user comment",
                 service_account = new_svc)
@@ -258,7 +264,7 @@ class Backend(AdminLoggedInTestCase):
         primary = User.objects.get(pk = primary.id)
 
         # Does primary have all the values of secondary user?
-        self.assertEquals(primary.comments, "secondary user comment")
+        self.assertEqual(primary.comments, "secondary user comment")
         assert(primary.portal_groups.filter(name = group1.name))
         assert(primary.portal_groups.filter(name = group2.name))
         assert(primary.has_access_approved)
@@ -289,10 +295,10 @@ class Backend(AdminLoggedInTestCase):
 
         secondary = User(
                 username="hugo",
-                state=models.UserState.ACCESS_APPROVED,
+                state=UserState.ACCESS_APPROVED,
                 email="a@b.de",
-                comments = "secondary user comment",
-                service_account = new_svc)
+                comments="secondary user comment",
+                service_account=new_svc)
         secondary.save()
 
         # Build full-fledged request object for logged-in admin
@@ -302,7 +308,7 @@ class Backend(AdminLoggedInTestCase):
 
         # the merge method only accepts a queryset of users since that's what
         # the admin interface creates
-        queryset_of_users = User.objects.filter(pk__in = [primary.id, secondary.id])
+        queryset_of_users = User.objects.filter(pk__in=[primary.id, secondary.id])
 
         # merge both users. shouldn't return anything
         assert(not merge_users(UserAdmin, request, queryset_of_users))
@@ -311,9 +317,115 @@ class Backend(AdminLoggedInTestCase):
         # we need to query for the updated user again
         primary = User.objects.get(pk = primary.id)
 
-        assert(primary.has_access_rejected)
-
+        assert primary.has_access_rejected
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend', EMAIL_HOST_PASSWORD='sdsds')
     def test_user_rejection_mail_broken(self):
         self._test_user_rejection()
+
+    def test_backend_cleanup_view(self):
+        User = get_user_model()
+        u = User(
+                username="HUGO",
+                email="a@b.de")
+        u.save()
+
+        # we need an inactive user for the the filter to work
+        from dateutil.parser import parse
+        u.last_login = parse("2017-09-23 11:21:52.909020")
+        u.save()
+
+        ns = KubernetesNamespace(name="aaasdfadfasdfasdf", visible=True)
+        ns.save()
+
+        new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
+        new_svc.save()
+        new_svc.delete()
+
+        request = self._build_full_request_mock('admin:cleanup')
+        assert(request)
+
+    @staticmethod
+    def test_backend_cleanup_entitity_getters():
+        User = get_user_model()
+        from dateutil.parser import parse
+        # we need an inactive user for the the filter to work
+        u = User(
+                username="HUGO",
+                email="a@b.de",
+                last_login = parse("2017-09-23 11:21:52.909020")
+                )
+        u.save()
+
+        ns = KubernetesNamespace(name="asdfadfasdfasdf", visible=True)
+        ns.save()
+
+        assert(User.inactive_users()[0] == User.objects.get(username=u.username))
+        assert(KubernetesNamespace.without_pods()[0] == ns)
+        assert(KubernetesNamespace.without_service_accounts()[0] == ns)
+
+    def test_backend_prune_view(self):
+        User = get_user_model()
+        from dateutil.parser import parse
+        # we need an inactive user for the the filter to work
+
+        user_list = [
+            User.objects.create_user(
+                    username="HUGO1",
+                    email="a@b.de",
+                    last_login = parse("2017-09-23 11:21:52.909020")
+                    ),
+
+            User.objects.create_user(
+                    username="HUGO2",
+                    email="b@b.de",
+                    last_login = parse("2017-09-23 11:21:52.909020")
+                    ),
+
+            User.objects.create_user(
+                    username="HUGO3",
+                    email="c@b.de",
+                    last_login = parse("2017-09-23 11:21:52.909020")
+                    )
+        ]
+
+        ns_list = [
+            KubernetesNamespace.objects.create(name="test-namespace1"),
+            KubernetesNamespace.objects.create(name="test-namespace2"),
+            KubernetesNamespace.objects.create(name="test-namespace3")
+        ]
+
+        ## prune visible namespaces without an assigned service account
+        request = self._build_full_post_request_mock("admin:prune", {
+            'prune': "namespaces-no-service-acc",
+            "namespaces": [ns.name for ns in ns_list]
+        })
+        prune(request)
+
+        assert(not KubernetesNamespace.objects.filter(name__in=[ns.name for ns in ns_list]))
+
+        ns_list = [
+            KubernetesNamespace.objects.create(name="test-namespace1"),
+            KubernetesNamespace.objects.create(name="test-namespace2"),
+            KubernetesNamespace.objects.create(name="test-namespace3")
+        ]
+
+        # prune visible namespaces without pods
+        request = self._build_full_post_request_mock("admin:prune", {
+            'prune': "namespaces-no-pods",
+            "namespaces": [ns.name for ns in ns_list]
+        })
+        prune(request)
+
+        # have all been pruned?
+        assert(not KubernetesNamespace.objects.filter(name__in=[ns.name for ns in ns_list]))
+
+        # prune service accounts that haven't logged in for a long time
+        request = self._build_full_post_request_mock("admin:prune", {
+            'prune': "inactive-users",
+            "users": [u.username for u in user_list]
+        })
+        prune(request)
+
+        # have all been pruned?
+        assert(not KubernetesServiceAccount.objects.filter(name__in=[u.username for u in user_list]))

@@ -1,125 +1,34 @@
-from django.contrib.auth.models import AbstractUser
-from django.contrib import messages
-from django.db import models
-from django_fsm import FSMField, transition
-from django.core.mail import send_mail
-from django.urls import reverse
-from django.conf import settings
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags, mark_safe
-from oidc_provider.models import Client
-from multi_email_field.fields import MultiEmailField
+"""
+The custom Users model cannot be refactored into its own module:
+
+https://docs.djangoproject.com/en/3.1/topics/auth/customizing/#changing-to-a-custom-user-model-mid-project
+
+Given that, it is the only model that lives on the scope here.
+"""
+
+
 import uuid
+from datetime import datetime, timedelta
+
+from django.contrib import messages
+from django.contrib.auth.models import AbstractUser
+from django.core.mail import send_mail
+from django.db import models
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils.html import strip_tags
+from django.utils.safestring import mark_safe
+from django_fsm import FSMField, transition
+from django.conf import settings
+from multi_email_field.fields import MultiEmailField
+
 import logging
+
 
 logger = logging.getLogger('KubePortal')
 
 
-class KubernetesNamespace(models.Model):
-    '''
-    A replication of namespaces known to the API server.
-    '''
-    name = models.CharField(
-        max_length=100, help_text="Lower case alphanumeric characters or '-', and must start and end with an alphanumeric character (e.g. 'my-name', or '123-abc').")
-    uid = models.CharField(max_length=50, null=True, editable=False)
-    visible = models.BooleanField(
-        default=True, help_text='Visibility in admin interface. Can only be configured by a superuser.')
-
-    def __str__(self):
-        return self.name
-
-    def is_synced(self):
-        return self.uid is not None
-
-
-class KubernetesServiceAccount(models.Model):
-    '''
-    A replication of service accounts known to the API server.
-    '''
-    name = models.CharField(
-        max_length=100, help_text="Lower case alphanumeric characters or '-', and must start and end with an alphanumeric character (e.g. 'my-name', or '123-abc').")
-    uid = models.CharField(max_length=50, null=True, editable=False)
-    namespace = models.ForeignKey(
-        KubernetesNamespace, related_name="service_accounts", on_delete=models.CASCADE)
-
-    def is_synced(self):
-        return self.uid is not None
-
-    def __str__(self):
-        '''
-        Used on welcome page for showing the users Kubernetes account.
-        '''
-        return "{1}:{0}".format(self.name, self.namespace)
-
-
-class WebApplication(models.Model):
-    '''
-    A web application protected and / or linked by KubePortal.
-    '''
-    name = models.CharField(max_length=100)
-    link_show = models.BooleanField(
-        verbose_name="Show link",
-        default=False,
-        help_text="Show link on the landing page when user has access rights.")
-    link_name = models.CharField(
-        null=True, blank=True,
-        verbose_name="Link title",
-        help_text="The title of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}'.", max_length=100)
-    link_url = models.URLField(
-        null=True, blank=True,
-        verbose_name="Link URL",
-        help_text="The URL of the link on the landing page. You can use the placeholders '{{namespace}}' and '{{serviceaccount}}'.")
-    oidc_client = models.OneToOneField(
-        Client, null=True, blank=True, on_delete=models.SET_NULL, verbose_name="OpenID Connect Client")
-    can_subauth = models.BooleanField(
-        verbose_name="Enable sub-authentication URL",
-        help_text="Enables an URL to allow proxy sub-authentication for this web application.",
-        default=False)
-
-    class Meta:
-        verbose_name = 'web application'
-
-    def __str__(self):
-        return self.name
-
-
-class PortalGroup(models.Model):
-    '''
-    A group of portal users.
-    '''
-    name = models.CharField(
-        max_length=100,
-        verbose_name='Name')
-    special_k8s_accounts = models.BooleanField(
-        default=False)  # special group, automatically contains all k8s account holders
-    special_all_accounts = models.BooleanField(
-        default=False)  # special group, automatically contains all accounts
-    can_admin = models.BooleanField(
-        verbose_name="Backend access",
-        help_text="Enabling this allows members of this group to access the administrative backend.",
-        default=False)
-    can_web_applications = models.ManyToManyField(
-        WebApplication,
-        blank=True,
-        verbose_name='Web applications',
-        help_text="Web applications that are accessible for members of this group.",
-        related_name='portal_groups')
-
-    def __str__(self):
-        return self.name
-
-    def is_special_group(self):
-        ''' Returns if this is a special group with automatic member management.'''
-        return self.special_k8s_accounts or self.special_all_accounts
-
-    def has_member(self, user):
-        return self.members.filter(pk=user.pk).exists()
-
-    class Meta:
-        verbose_name = "User Group"
-
-
-class UserState():
+class UserState:
     NEW = 'not requested'
     ACCESS_REQUESTED = 'requested'
     ACCESS_REJECTED = 'rejected'
@@ -134,38 +43,42 @@ user_state_list = ((UserState.NEW, UserState.NEW),
 
 
 class User(AbstractUser):
-    '''
+    """
     A portal user.
-    '''
+    """
     state = FSMField(default=UserState.NEW, verbose_name="Cluster access",
                      help_text="The state of the cluster access approval workflow.", choices=user_state_list)
     approval_id = models.UUIDField(
         default=uuid.uuid4, editable=False, null=True)
     answered_by = models.ForeignKey(
-        'User', help_text="Which user approved the cluster access for this user.", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Approved by")
+        'User', help_text="Which user approved the cluster access for this user.", on_delete=models.SET_NULL, null=True,
+        blank=True, verbose_name="Approved by")
     comments = models.CharField(
         max_length=150, default="", null=True, blank=True)
     alt_mails = MultiEmailField(default=None, null=True, blank=True)
     portal_groups = models.ManyToManyField(
-        PortalGroup, blank=True, verbose_name='Groups', help_text="The user groups this account belongs to.", related_name='members')
+        'PortalGroup', blank=True, verbose_name='Groups', help_text="The user groups this account belongs to.",
+        related_name='members')
 
     service_account = models.ForeignKey(
-        KubernetesServiceAccount, related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
+        'KubernetesServiceAccount', related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
 
     def k8s_namespace(self):
-        '''
+        """
         Property used by the API serializer.
-        '''
+        """
         if self.service_account:
             return self.service_account.namespace
         else:
             return None
 
     def web_applications(self, include_invisible):
-        '''
+        """
         Returns a querset for the list of web applications allowed for this
         user.
-        '''
+        """
+        from kubeportal.models.webapplication import WebApplication
         if include_invisible:
             return WebApplication.objects.filter(portal_groups__members__pk=self.pk)
         else:
@@ -178,7 +91,8 @@ class User(AbstractUser):
             logger.debug("Subauth allowed for app {} with user {} due to membership in groups".format(webapp, self))
             return True
         else:
-            logger.debug("Subauth not allowed for user {}, none of the user groups allows the app {}".format(self, webapp))
+            logger.debug(
+                "Subauth not allowed for user {}, none of the user groups allows the app {}".format(self, webapp))
             return False
 
     def has_access_approved(self):
@@ -196,9 +110,19 @@ class User(AbstractUser):
         logger.debug("Access requested by user {0}: {1}".format(self, result))
         return result
 
-    @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED, UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
+    @classmethod
+    def inactive_users(cls):
+        """
+        returns a list of users that haven't logged in x months ago.
+        """
+        x_months_ago = datetime.now() - timedelta(
+            days=30 * settings.LAST_LOGIN_MONTHS_AGO)  # 30 days (1 month times the amount of months we look behind)
+        return list(cls.objects.filter(last_login__lte=x_months_ago))
+
+    @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED,
+                                     UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
     def send_access_request(self, request, administrator=None):
-        '''
+        """
         Requests approval for cluster access.
 
         Note: The user object must be saved by the caller, to reflect the state change,
@@ -206,13 +130,17 @@ class User(AbstractUser):
 
         Note: The parameter administrator is an optional argument which can be
               used to send an access request to a specific super user.
-        '''
+        """
         self.approval_id = uuid.uuid4()
 
         html_mail = render_to_string('mail_access_request.html', {'branding': settings.BRANDING,
                                                                   'user': str(self),
-                                                                  'approve_url': request.build_absolute_uri(reverse('admin:access_approve', kwargs={'approval_id': self.approval_id})),
-                                                                  'reject_url': request.build_absolute_uri(reverse('admin:access_reject', kwargs={'approval_id': self.approval_id}))
+                                                                  'approve_url': request.build_absolute_uri(
+                                                                      reverse('admin:access_approve', kwargs={
+                                                                          'approval_id': self.approval_id})),
+                                                                  'reject_url': request.build_absolute_uri(
+                                                                      reverse('admin:access_reject',
+                                                                              kwargs={'approval_id': self.approval_id}))
                                                                   })
 
         text_mail = strip_tags(html_mail)
@@ -244,14 +172,14 @@ class User(AbstractUser):
 
     @transition(field=state, source='*', target=UserState.ACCESS_REJECTED)
     def reject(self, request):
-        '''
+        """
         Answers a approval request with "rejected".
         The state transition happens automatically, an additional information
         is send to the denied user by email.
 
         Note: The user object must be saved by the caller, to reflect the state change,
               when this method returns "True".
-        '''
+        """
         messages.add_message(request, messages.INFO,
                              "Access request for '{0}' was rejected.".format(self))
         logger.info("Access for user '{0}' was rejected by user '{1}'.".format(
@@ -267,7 +195,7 @@ class User(AbstractUser):
         try:
             if self.email:
                 send_mail(subject, text_mail, settings.ADMIN_EMAIL, [
-                          self.email, ], html_message=html_mail, fail_silently=False)
+                    self.email, ], html_message=html_mail, fail_silently=False)
                 logger.debug(
                     "Sent email to user '{0}' about access request rejection".format(self))
         except Exception:
@@ -281,19 +209,21 @@ class User(AbstractUser):
 
     @transition(field=state, source='*', target=UserState.ACCESS_APPROVED)
     def approve(self, request, new_svc):
-        '''
+        """
         Answers a approval request with "approved".
         The state transition happens automatically.
 
         Note: The user object must be saved by the caller, to reflect the state change,
               when this method returns "True".
-        '''
+        """
         self.service_account = new_svc
         self.answered_by = request.user
         messages.info(
-            request, "User '{0}' is now assigned to existing Kubernetes namespace '{1}'.".format(self, new_svc.namespace))
+            request,
+            "User '{0}' is now assigned to existing Kubernetes namespace '{1}'.".format(self, new_svc.namespace))
         logger.info(
-            "User '{0}' was assigned to existing Kubernetes namespace {1} by {2}.".format(self, new_svc.namespace, request.user))
+            "User '{0}' was assigned to existing Kubernetes namespace {1} by {2}.".format(self, new_svc.namespace,
+                                                                                          request.user))
 
         html_mail = render_to_string('mail_access_approved.html', {'branding': settings.BRANDING,
                                                                    'user': str(self),
@@ -306,7 +236,7 @@ class User(AbstractUser):
         try:
             if self.email:
                 send_mail(subject, text_mail, settings.ADMIN_EMAIL, [
-                          self.email, ], html_message=html_mail, fail_silently=False)
+                    self.email, ], html_message=html_mail, fail_silently=False)
                 logger.debug(
                     "Sent email to user '{0}' about access request approval".format(self))
                 messages.info(
@@ -321,15 +251,16 @@ class User(AbstractUser):
     def approve_link(self):
         if self.has_access_requested():
             uri = reverse('admin:access_approve', kwargs={
-                          'approval_id': self.approval_id})
+                'approval_id': self.approval_id})
             return mark_safe('<a class="grp-button" href="{0}" target="blank">Approve request</a>'.format(uri))
         else:
             return None
-    approve_link.short_description = ('Action')
+
+    approve_link.short_description = 'Action'
 
     @property
     def token(self):
-        from kubeportal.kubernetes import get_token
+        from kubeportal.k8s.kubernetes_api import get_token
         try:
             return get_token(self.service_account)
         except Exception:

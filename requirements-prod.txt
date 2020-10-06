@@ -9,7 +9,6 @@ dj-database-url
 django-fsm
 djangorestframework
 python-jose
-django-cors-middleware
 django-sortedm2m-filter-horizontal-widget
 django-multi-email-field
 dj-rest-auth[with_social]
