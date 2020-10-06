@@ -22,28 +22,38 @@ class ApiTestCase(AdminLoggedOutTestCase):
     def setUp(self):
         super().setUp()
         self.client = RequestsClient()
+        self.jwt = None
 
         # Obtain the CSRF token for later POST requests
         response = self.get('/')
         self.assertEqual(response.status_code, 200)
         self.csrftoken = response.cookies['csrftoken']
 
-    def get(self, relative_url, headers=None):
+    def get(self, relative_url, headers={}):
+        if self.jwt:
+            headers["Authorization"] = "Bearer " + self.jwt
         return self.client.get('http://testserver' + relative_url, headers=headers)
 
-    def patch(self, relative_url, data):
+    def patch(self, relative_url, data, headers={}):
+        if self.jwt:
+            headers["Authorization"] = "Bearer " + self.jwt
+        headers['X-CSRFToken'] = self.csrftoken
         return self.client.patch('http://testserver' + relative_url,
-                                 json=data,
-                                 headers={'X-CSRFToken': self.csrftoken})
+                                 json=data, headers=headers)
 
-    def post(self, relative_url, data={}):
+    def post(self, relative_url, data=None, headers={}):
+        if self.jwt:
+            headers["Authorization"] = "Bearer " + self.jwt
+        headers['X-CSRFToken'] = self.csrftoken
         return self.client.post('http://testserver' + relative_url,
-                                json=data,
-                                headers={'X-CSRFToken': self.csrftoken})
+                                json=data, headers=headers)
 
     def api_login(self):
         response = self.post(f'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('token', data)
+        self.jwt = data['token']
 
 
 class ApiAnonymous(ApiTestCase):
@@ -57,26 +67,44 @@ class ApiAnonymous(ApiTestCase):
     def test_api_login(self):
         response = self.post(f'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
-        # The login API call returns the JWT + extra information as JSON in the body, but also sets a cookie with the JWT.
-        # This means that for all test cases here, the JWT must not handed over explicitely,
-        # since the Python http client has the cookie anyway.
-        self.assertIn('Set-Cookie', response.headers)
-        self.assertIn('kubeportal-auth=', response.headers['Set-Cookie'])
-        from http.cookies import SimpleCookie
-        cookie = SimpleCookie()
-        cookie.load(response.headers['Set-Cookie'])
-        self.assertEqual(cookie['kubeportal-auth']['path'], '/')
-        self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
-        self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
+        # JWT_AUTH_COOKIE not used
+        #
+        #self.assertIn('Set-Cookie', response.headers)
+        #self.assertIn('kubeportal-auth=', response.headers['Set-Cookie'])
+        #from http.cookies import SimpleCookie
+        #cookie = SimpleCookie()
+        #cookie.load(response.headers['Set-Cookie'])
+        #self.assertEqual(cookie['kubeportal-auth']['path'], '/')
+        #self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
+        #self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
         data = response.json()
         self.assertEqual(3, len(data))
         self.assertIn('firstname', data)
         self.assertIn('id', data)
         self.assertEqual(data['id'], self.admin.pk)
+        self.assertIn('token', data)
 
     def test_api_wrong_login(self):
         response = self.post(f'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': 'blabla'})
         self.assertEqual(response.status_code, 400)
+
+    def test_js_api_bearer_auth(self):
+        """
+        Disable the cookie-based authentication and test the bearer
+        auth with the token returned.
+        """
+        # Get JWT token
+        response = self.post(f'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('token', data)
+        jwt = data['token']
+        # Disable auth cookie
+        del(self.client.cookies['kubeportal-auth'])
+        # Simulate JS code calling, add Bearer token
+        headers = {'Origin': 'http://testserver', 'Authorization': f'Bearer {jwt}'}
+        response = self.get(f'/api/{API_VERSION}/cluster/portal_version', headers=headers)
+        self.assertEqual(response.status_code, 200)
 
     def test_cluster_denied(self):
         for stat in ClusterViewSet.stats.keys():
@@ -167,21 +195,25 @@ class ApiLocalUser(ApiTestCase):
         for url in relative_urls:
             with self.subTest(url=url):
                 response = self.get(url, headers=headers)
-                self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'http://testserver')
-                self.assertEqual(response.headers['Access-Control-Allow-Credentials'], 'true')
+                self.assertEqual(
+                    response.headers['Access-Control-Allow-Origin'], 'http://testserver')
+                self.assertEqual(
+                    response.headers['Access-Control-Allow-Credentials'], 'true')
 
     @override_settings(ALLOWED_URLS=['http://testserver', 'https://example.org:8000'])
     def test_cors_multiple_allowed(self):
         headers = {'Origin': 'http://testserver'}
         response = self.get(f'/api/{API_VERSION}/cluster/portal_version', headers=headers)
-        self.assertEqual(response.headers['Access-Control-Allow-Origin'], 'http://testserver')
+        self.assertEqual(
+            response.headers['Access-Control-Allow-Origin'], 'http://testserver')
 
     def test_cluster_invalid(self):
         response = self.get(f'/api/{API_VERSION}/cluster/foobar')
         self.assertEqual(response.status_code, 404)
 
     def test_webapp_user_not_in_group(self):
-        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
+        app1 = WebApplication(name="app1", link_show=True,
+                              link_name="app1", link_url="http://www.heise.de")
         app1.save()
 
         response = self.get(f'/api/{API_VERSION}/webapps/{app1.pk}')
@@ -192,7 +224,8 @@ class ApiLocalUser(ApiTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_webapp_invisible(self):
-        app1 = WebApplication(name="app1", link_show=False, link_name="app1", link_url="http://www.heise.de")
+        app1 = WebApplication(name="app1", link_show=False,
+                              link_name="app1", link_url="http://www.heise.de")
         app1.save()
         self.admin_group.can_web_applications.add(app1)
 
@@ -200,7 +233,8 @@ class ApiLocalUser(ApiTestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_webapp(self):
-        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
+        app1 = WebApplication(name="app1", link_show=True,
+                              link_name="app1", link_url="http://www.heise.de")
         app1.save()
         self.admin_group.can_web_applications.add(app1)
 
@@ -219,7 +253,8 @@ class ApiLocalUser(ApiTestCase):
                        ]
 
         for name, link_show, link_url in test_values:
-            app = WebApplication(name=name, link_show=link_show, link_name=name, link_url=link_url)
+            app = WebApplication(name=name, link_show=link_show,
+                                 link_name=name, link_url=link_url)
             app.save()
             if name is not 'app4':
                 self.admin_group.can_web_applications.add(app)
@@ -227,10 +262,14 @@ class ApiLocalUser(ApiTestCase):
         response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/webapps')
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertIn({'link_name': 'app1', 'link_url': 'http://www.heise.de'}, data)
-        self.assertIn({'link_name': 'app2', 'link_url': 'http://www.spiegel.de'}, data)
-        self.assertNotIn({'link_name': 'app3', 'link_url': 'http://www.crappydemo.de'}, data)
-        self.assertNotIn({'link_name': 'app4', 'link_url': 'http://www.unrelatedapp.de'}, data)
+        self.assertIn(
+            {'link_name': 'app1', 'link_url': 'http://www.heise.de'}, data)
+        self.assertIn(
+            {'link_name': 'app2', 'link_url': 'http://www.spiegel.de'}, data)
+        self.assertNotIn(
+            {'link_name': 'app3', 'link_url': 'http://www.crappydemo.de'}, data)
+        self.assertNotIn(
+            {'link_name': 'app4', 'link_url': 'http://www.unrelatedapp.de'}, data)
 
     def test_user_webapps_invalid_id(self):
         response = self.get(f'/api/{API_VERSION}/users/777/webapps')
