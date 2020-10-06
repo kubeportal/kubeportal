@@ -1,5 +1,6 @@
 from dj_rest_auth import serializers as dj_serializers
 from django.contrib.auth import get_user_model
+from django.middleware import csrf
 from rest_framework import serializers
 
 from kubeportal.models.portalgroup import PortalGroup
@@ -57,7 +58,9 @@ class LoginSuccessSerializer(serializers.Serializer):
         pass
 
     def to_representation(self, instance):
+        request = self.context.get("request")
         return {'id': instance['user'].pk,
                 'firstname': instance['user'].first_name,
-                'token': str(instance['access_token'])
+                'access_token': str(instance['access_token']),
+                'csrf_token': csrf.get_token(request)
                 }

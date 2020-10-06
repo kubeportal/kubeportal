@@ -23,11 +23,7 @@ class ApiTestCase(AdminLoggedOutTestCase):
         super().setUp()
         self.client = RequestsClient()
         self.jwt = None
-
-        # Obtain the CSRF token for later POST requests
-        response = self.get('/')
-        self.assertEqual(response.status_code, 200)
-        self.csrftoken = response.cookies['csrftoken']
+        self.csrf = None
 
     def get(self, relative_url, headers={}):
         if self.jwt:
@@ -37,14 +33,14 @@ class ApiTestCase(AdminLoggedOutTestCase):
     def patch(self, relative_url, data, headers={}):
         if self.jwt:
             headers["Authorization"] = "Bearer " + self.jwt
-        headers['X-CSRFToken'] = self.csrftoken
+        headers['X-CSRFToken'] = self.csrf
         return self.client.patch('http://testserver' + relative_url,
                                  json=data, headers=headers)
 
     def post(self, relative_url, data=None, headers={}):
         if self.jwt:
             headers["Authorization"] = "Bearer " + self.jwt
-        headers['X-CSRFToken'] = self.csrftoken
+        headers['X-CSRFToken'] = self.csrf
         return self.client.post('http://testserver' + relative_url,
                                 json=data, headers=headers)
 
@@ -52,8 +48,10 @@ class ApiTestCase(AdminLoggedOutTestCase):
         response = self.post(f'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertIn('token', data)
-        self.jwt = data['token']
+        self.assertIn('access_token', data)
+        self.assertIn('csrf_token', data)
+        self.jwt = data['access_token']
+        self.csrf = data['csrf_token']
 
 
 class ApiAnonymous(ApiTestCase):
@@ -78,11 +76,12 @@ class ApiAnonymous(ApiTestCase):
         #self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
         #self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
         data = response.json()
-        self.assertEqual(3, len(data))
+        self.assertEqual(4, len(data))
         self.assertIn('firstname', data)
         self.assertIn('id', data)
         self.assertEqual(data['id'], self.admin.pk)
-        self.assertIn('token', data)
+        self.assertIn('access_token', data)
+        self.assertIn('csrf_token', data)
 
     def test_api_wrong_login(self):
         response = self.post(f'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': 'blabla'})
@@ -97,8 +96,8 @@ class ApiAnonymous(ApiTestCase):
         response = self.post(f'/api/{API_VERSION}/login', {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertIn('token', data)
-        jwt = data['token']
+        self.assertIn('access_token', data)
+        jwt = data['access_token']
         # Disable auth cookie
         del(self.client.cookies['kubeportal-auth'])
         # Simulate JS code calling, add Bearer token
@@ -256,7 +255,7 @@ class ApiLocalUser(ApiTestCase):
             app = WebApplication(name=name, link_show=link_show,
                                  link_name=name, link_url=link_url)
             app.save()
-            if name is not 'app4':
+            if name != 'app4':
                 self.admin_group.can_web_applications.add(app)
 
         response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/webapps')
