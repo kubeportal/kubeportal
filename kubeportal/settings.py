@@ -75,7 +75,7 @@ class Common(Configuration):
                 'rest_framework_simplejwt.authentication.JWTAuthentication',
                 ],
             'DEFAULT_PERMISSION_CLASSES': [
-                'rest_framework.permissions.IsAuthenticated',
+                'kubeportal.middleware.AllowOptionsAuthentication',
                 ],
             'DEFAULT_VERSION': API_VERSION,
             'ALLOWED_VERSIONS': [
