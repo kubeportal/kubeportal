@@ -66,7 +66,7 @@ def _sync_namespaces(request):
     for portal_ns in portal_ns_list:
         try:
             if portal_ns.uid:
-                ns_utils.check_if_portal_ns_exists_in_k8s(portal_ns, request, k8s_ns_uids, success_count_push)
+                ns_utils.check_if_portal_ns_exists_in_k8s(request, portal_ns, k8s_ns_uids, success_count_push)
             else:
                 # Portal namespaces without UID are new and should be created in K8S
                 ns_utils.add_namespace_to_kubernetes(portal_ns, request, api)
@@ -136,18 +136,15 @@ def _sync_svcaccounts(request):
                 if portal_svca.uid in k8s_svca_uids:
                     # No action needed
                     logger.info(
-                        "Found existing Kubernetes service account for record '{0}:{1}'".format(portal_ns.name,
-                                                                                                portal_svca.name))
+                        f"Found existing Kubernetes service account for record '{portal_ns.name}:{portal_svca.name}'")
                     success_count_push += 1
                 else:
-                    # Remove stale record
+                    # Remove stale record from portal
                     logger.warning(
-                        "Removing stale record for Kubernetes service account '{0}:{1}'".format(portal_ns.name,
-                                                                                                portal_svca.name))
+                        f"Removing stale record for Kubernetes service account '{portal_ns.name}:{portal_svca.name}'")
                     portal_svca.delete()
                     messages.info(request,
-                                  "Service account '{0}:{1}' no longer exists in Kubernetes and was removed.".format(
-                                      portal_ns.name, portal_svca.name))
+                                  f"Service account '{portal_ns.name}:{portal_svca.name}' no longer exists in portal and was removed.")
             else:
                 # Portal service accounts without UID are new and should be created in K8S
                 svca_utils.add_svca_to_kubernetes(request, portal_svca, portal_ns)
