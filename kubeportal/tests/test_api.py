@@ -202,8 +202,8 @@ class ApiLocalUser(ApiTestCase):
                 response = self.get(f'/api/{API_VERSION}/cluster/{stat}/')
                 self.assertEqual(200, response.status_code)
                 data = response.json()
-                self.assertIn('value', data.keys())
-                self.assertIsNotNone(data['value'])
+                self.assertIn(stat, data.keys())
+                self.assertIsNotNone(data[stat])
 
     @override_settings(ALLOWED_URLS=['http://testserver', ])
     def test_cors_single_origin(self):

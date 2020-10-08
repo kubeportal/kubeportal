@@ -2,6 +2,7 @@ from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import reverse
 from kubeportal import settings
+from rest_framework.permissions import IsAuthenticated
 import logging
 
 logger = logging.getLogger('KubePortal')
@@ -94,3 +95,10 @@ class CorsMiddleware:
                                                    "Access-Control-Request-Method, Access-Control-Request-Headers," \
                                                    "Authorization, X-CSRFToken"
         return response
+
+
+class AllowOptionsAuthentication(IsAuthenticated):
+    def has_permission(self, request, view):
+        if request.method == 'OPTIONS':
+            return True
+        return request.user and request.user.is_authenticated

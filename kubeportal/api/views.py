@@ -157,7 +157,7 @@ class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     def retrieve(self, request, *args, **kwargs):
         key = kwargs['pk']
         if key in self.stats.keys():
-            return Response({'value': self.stats[key]()})
+            return Response({key: self.stats[key]()})
         else:
             raise NotFound
 
@@ -173,6 +173,5 @@ class BootstrapView(APIView):
             'csrf_token': csrf.get_token(request),
             'portal_version': 'v' + get_kubeportal_version(),
             'default_api_version': settings.API_VERSION
-
         }
         return Response(data)
