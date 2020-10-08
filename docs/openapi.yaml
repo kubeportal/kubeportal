@@ -1,9 +1,17 @@
 openapi: 3.0.0
+
 info:
   version: v1.4.0
   title: Kubportal Backend API
+
+servers:
+  - url: '{server}/api/v1.4.0'
+    variables:
+      server:
+        default: http://localhost:8000  # dev server
+
 paths:
-  /cluster/{slug}:
+  /cluster/{slug}/:
     get:
       summary: Get information about the cluster.
       security:
@@ -34,7 +42,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'   
                     
-  /webapps/{id}:
+  /webapps/{id}/:
     get:
       summary: Get details about a web application.
       security:
@@ -60,7 +68,19 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'   
 
-  /groups/{id}:
+  /:
+    get:
+      summary: Get bootstrap information for talking to the API.
+      responses:
+        '200':
+          description: Information for talking to the API.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootstrapSuccess'
+
+
+  /groups/{id}/:
     get:
       summary: Get details about a user group.
       security:
@@ -87,7 +107,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'   
 
 
-  /users/{id}/webapps:
+  /users/{id}/webapps/:
     get:
       summary: Get web apps of this user.
       security:
@@ -115,7 +135,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'   
 
-  /users/{id}/groups:
+  /users/{id}/groups/:
     get:
       summary: Get groups of this user.
       security:
@@ -144,7 +164,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'   
 
 
-  /users/{id}:
+  /users/{id}/:
     get:
       summary: Get details for this user.
       security:
@@ -210,7 +230,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'   
 
                     
-  /login:
+  /login/:
     post:
       summary: Authorize an user with name and password
       requestBody:
@@ -236,7 +256,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/LoginSuccess'
 
-  /login_google:
+  /login_google/:
     post:
       summary: Authorize a Google user with OAuth credentials
       requestBody:
@@ -261,7 +281,7 @@ paths:
         '400':
           description: Invalid credentials, login denied.
       
-  /logout:
+  /logout/:
     get:
       summary: Invalidate API login session.
       security:
@@ -299,9 +319,18 @@ components:
         access_token:
           type: string
           example: 'urzgfkbrejshrflkjfsdlkfj'
-        csrf_token:
+    BootstrapSuccess:
+      type: object
+      properties:
+        csrf_token: 
           type: string
-          example: '73zr8gf8gzoiughi3feef#2'
+          example: 'OIiIQkMv5xGfrI75GDAfnm1C1BPxxWlyMgUudmaTBaNKmtulGpSCWQje8uWrQjsb'
+        portal_version:
+          type: string
+          example: 'v0.4.0'
+        default_api_version:
+          type: string
+          example: 'v1.4.0'
     User:
       type: object
       properties:
@@ -350,3 +379,4 @@ components:
         name:
           type: string
           example: Kubernetes users
+          

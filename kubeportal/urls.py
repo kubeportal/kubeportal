@@ -42,9 +42,9 @@ urlpatterns = [
     path('.well-known/openid-configuration', ProviderInfoView.as_view(), name='provider_info'),
 
     # frontend API views
-    path('api/<str:version>/login', dj_rest_views.LoginView.as_view(), name='rest_login'),
-    path('api/<str:version>/logout', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
-    path('api/<str:version>/login_google', views.GoogleApiLoginView.as_view(), name='api_google_login'),
+    path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
+    path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
+    path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/', include(router.urls)),
     path('api/<str:version>/', include(users_router.urls)),
     path('api/', api_views.BootstrapView.as_view()),
