@@ -9,7 +9,7 @@ import logging
 import re
 
 logger = logging.getLogger('KubePortal')
-HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
+HIDDEN_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease']
 
 
 def check_role_bindings_of_namespaces(request):
