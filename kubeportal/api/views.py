@@ -1,7 +1,9 @@
 from rest_framework import viewsets, mixins
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
 from rest_framework.renderers import JSONRenderer
+from django.middleware import csrf
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.contrib.auth import get_user_model
@@ -158,3 +160,19 @@ class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return Response({'value': self.stats[key]()})
         else:
             raise NotFound
+
+
+class BootstrapView(APIView):
+    """
+    Retreive basic information needed to interact with the API.
+    """
+    permission_classes = []
+
+    def get(self, request, format=None):
+        data = {
+            'csrf_token': csrf.get_token(request),
+            'portal_version': 'v' + get_kubeportal_version(),
+            'default_api_version': settings.API_VERSION
+
+        }
+        return Response(data)

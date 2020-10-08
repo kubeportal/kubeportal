@@ -17,30 +17,35 @@ class ApiTestCase(AdminLoggedOutTestCase):
     We take the more complicated way here, and implement the API tests
     with Python requests. This ensures that we are getting as close as possible
     to 'real' API clients, e.g. from JavaScript.
+
+    CRSF token and JWT are transported as cookie by default, in Django.
+    The HTTP verb methods allow to override this and add according headers
+    with the information. This is intended to support testing JavaScript AJAX calls,
+    with seem to have trouble accessing the cookies sometimes. Ask @Kat-Hi.
     '''
 
     def setUp(self):
         super().setUp()
         self.client = RequestsClient()
-        self.jwt = None
-        self.csrf = None
 
-    def get(self, relative_url, headers={}):
-        if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
+    def get(self, relative_url, headers={}, jwt=None, csrf=None):
+        if jwt:
+            headers["Authorization"] = "Bearer " + jwt
         return self.client.get('http://testserver' + relative_url, headers=headers)
 
     def patch(self, relative_url, data, headers={}):
         if self.jwt:
             headers["Authorization"] = "Bearer " + self.jwt
-        headers['X-CSRFToken'] = self.csrf
+        if self.csrf:
+            headers['X-CSRFToken'] = self.csrf
         return self.client.patch('http://testserver' + relative_url,
                                  json=data, headers=headers)
 
     def post(self, relative_url, data=None, headers={}):
         if self.jwt:
             headers["Authorization"] = "Bearer " + self.jwt
-        headers['X-CSRFToken'] = self.csrf
+        if self.crsf:
+            headers['X-CSRFToken'] = self.csrf
         return self.client.post('http://testserver' + relative_url,
                                 json=data, headers=headers)
 
@@ -50,6 +55,7 @@ class ApiTestCase(AdminLoggedOutTestCase):
         data = response.json()
         self.assertIn('access_token', data)
         self.assertIn('csrf_token', data)
+        # Use cookie-based CRSF / JWT auth by default.
         self.jwt = data['access_token']
         self.csrf = data['csrf_token']
 

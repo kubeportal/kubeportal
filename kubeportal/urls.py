@@ -47,6 +47,7 @@ urlpatterns = [
     path('api/<str:version>/login_google', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/', include(router.urls)),
     path('api/<str:version>/', include(users_router.urls)),
+    path('api/', api_views.BootstrapView.as_view()),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),
