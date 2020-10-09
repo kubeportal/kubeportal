@@ -46,10 +46,12 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['clusterapps'] = self.request.user.web_applications(include_invisible=False)
+        context['clusterapps'] = self.request.user.web_applications(
+            include_invisible=False)
 
         User = get_user_model()
-        context['portal_administrators'] = list(User.objects.filter(is_staff=True).exclude(username="root"))
+        context['portal_administrators'] = list(
+            User.objects.filter(is_staff=True).exclude(username="root"))
         return context
 
 
@@ -90,7 +92,8 @@ class AccessRequestView(LoginRequiredMixin, RedirectView):
             try:
                 admin = User.objects.get(username=admin_username)
             except Exception:
-                logger.warning("Access request to unknown administrator username ({admin_username}).")
+                logger.warning(
+                    "Access request to unknown administrator username ({admin_username}).")
 
             # if administrator exists and access request was successfull...
             if admin and request.user.send_access_request(request, administrator=admin):
@@ -148,7 +151,8 @@ class SubAuthRequestView(View):
                 response['Authorization'] = 'Bearer ' + token
                 return response
             else:
-                logger.error("Error while fetching Kubernetes secret bearer token for user {0}, must reject valid  authorization for {1} through subrequest.".format(request.user, webapp))
+                logger.error("Error while fetching Kubernetes secret bearer token for user {0}, must reject valid  authorization for {1} through subrequest.".format(
+                    request.user, webapp))
                 return HttpResponse(status=401)
 
 
@@ -160,7 +164,8 @@ class ConfigDownloadView(LoginRequiredMixin, TemplateView):
         username = self.request.user.username
         context['username'] = username
         User = get_user_model()
-        context['portal_administrators'] = list(User.objects.filter(is_superuser=True))
+        context['portal_administrators'] = list(
+            User.objects.filter(is_superuser=True))
         return context
 
     def render_to_response(self, context, **response_kwargs):
@@ -177,5 +182,6 @@ class ConfigView(LoginRequiredMixin, TemplateView):
         username = self.request.user.username
         context['username'] = username
         User = get_user_model()
-        context['portal_administrators'] = list(User.objects.filter(is_staff=True).exclude(username="root"))
+        context['portal_administrators'] = list(
+            User.objects.filter(is_staff=True).exclude(username="root"))
         return context

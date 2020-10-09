@@ -80,9 +80,9 @@ class User(AbstractUser):
         """
         from kubeportal.models.webapplication import WebApplication
         if include_invisible:
-            return WebApplication.objects.filter(portal_groups__members__pk=self.pk)
+            return WebApplication.objects.filter(portal_groups__members__pk=self.pk).distinct()
         else:
-            return WebApplication.objects.filter(portal_groups__members__pk=self.pk, link_show=True)
+            return WebApplication.objects.filter(portal_groups__members__pk=self.pk, link_show=True).distinct()
 
     def can_subauth(self, webapp):
         user_groups_with_this_app = self.portal_groups.filter(can_web_applications__in=[webapp.pk])
