@@ -1,11 +1,11 @@
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
 from rest_framework.renderers import JSONRenderer
 from django.middleware import csrf
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import Http404, JsonResponse, HttpResponse
 from django.contrib.auth import get_user_model
 from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer, PortalGroupSerializer
 from django.conf import settings
@@ -14,6 +14,7 @@ from kubeportal.models.webapplication import WebApplication
 from kubeportal.k8s import kubernetes_api as api
 
 import logging
+import json
 
 logger = logging.getLogger('KubePortal')
 
@@ -36,31 +37,26 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
             else:
                 raise Http404
 
-    # def partial_update(self, request, *args, **kwargs):
-    #     pk = int(self.kwargs['pk'])
+    def partial_update(self, request, *args, **kwargs):
+        pk = int(self.kwargs['pk'])
+        if pk != self.request.user.pk:
+            if User.objects.filter(pk=pk).exists():
+                raise PermissionDenied
+            else:
+                raise Http404
 
-    #     if pk != self.request.user.pk:
-    #         if User.objects.filter(pk=pk).exists():
-    #             raise PermissionDenied
-    #         else:
-    #             raise Http404
-
-    #     target_user = User.objects.get(pk=pk)
-
-    #     if len(request.data) == 0:
-    #         logger.warning(f"Got empty body in patch request for user {target_user}.")
-    #         return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-    #     else:
-    #         serializer = UserSerializer(target_user, data=request.data, partial=True) 
-    #         if serializer.is_valid():
-    #             serializer.save()
-    #             response = JsonResponse(data=serializer.data)
-    #             response.status_code = 204
-    #             return response
-    #         else:
-    #             logger.warning(f"Got invalid body in patch request for user {target_user}.")
-    #             return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
+        target_user = User.objects.get(pk=pk)
+        if len(request.data) == 0:
+            logger.warning(f"Got empty body in patch request for user {target_user}.")
+            return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        else:
+            serializer = UserSerializer(target_user, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(data=serializer.data, status=200)
+            else:
+                logger.warning(f"Got invalid body in patch request for user {target_user}.")
+                return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
 class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -70,7 +66,7 @@ class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = WebApplicationSerializer
 
     def get_queryset(self):
-        if 'user_pk' in self.kwargs:
+        if 'user_pk' in self.kwargs and self.kwargs['user_pk'] != 'null':
             # Query for webapp list of a specific user
             # For the moment, a user can only query its own web apps.
             query_pk = int(self.kwargs['user_pk'])
@@ -80,7 +76,7 @@ class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
             u = User.objects.get(pk=query_pk)
             return u.web_applications(include_invisible=False)
 
-        elif 'pk' in self.kwargs:
+        elif 'pk' in self.kwargs and self.kwargs['pk'] != 'null':
             # Query for single webapp, based on the ID
             # Users only get the web applications available for them
             user_webapp = self.request.user.web_applications(include_invisible=False).filter(pk=self.kwargs['pk'])
