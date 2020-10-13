@@ -175,3 +175,15 @@ class BootstrapView(APIView):
             'default_api_version': settings.API_VERSION
         }
         return Response(data)
+
+
+class PodViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
+
+    def retrieve(self, request, *args, **kwargs):
+        key = kwargs['pk']
+        if key != self.request.user.pk:
+            logger.debug(f"Current user ID is {self.request.user.pk}, denying access to groups.")
+            raise PermissionDenied
+        user = User.objects.get(pk=key)
+        namespace = user.namespace
+        print(f'usernamespace: {namespace}')
