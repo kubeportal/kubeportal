@@ -366,26 +366,25 @@ class Backend(AdminLoggedInTestCase):
 
     def test_backend_prune_view(self):
         User = get_user_model()
-        from dateutil.parser import parse
+        from django.utils import dateparse
         # we need an inactive user for the the filter to work
-
         user_list = [
             User.objects.create_user(
                     username="HUGO1",
                     email="a@b.de",
-                    last_login = parse("2017-09-23 11:21:52.909020")
+                    last_login = dateparse.parse_datetime("2017-09-23 11:21:52.909020 +02:00")
                     ),
 
             User.objects.create_user(
                     username="HUGO2",
                     email="b@b.de",
-                    last_login = parse("2017-09-23 11:21:52.909020")
+                    last_login = dateparse.parse_datetime("2017-09-23 11:21:52.909020 +02:00")
                     ),
 
             User.objects.create_user(
                     username="HUGO3",
                     email="c@b.de",
-                    last_login = parse("2017-09-23 11:21:52.909020")
+                    last_login = dateparse.parse_datetime("2017-09-23 11:21:52.909020 +02:00")
                     )
         ]
 
