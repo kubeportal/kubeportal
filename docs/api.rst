@@ -6,7 +6,7 @@ KubePortal provides an API for working with information stored in the portal dat
 First call
 ----------
 
-The first call should be a `GET` call to the `/api/` endpoint of your installation. It provides the CSRF token that is neccessary for subsequent requests, and the default API version currently supported by the installation:
+The initial call should be a `GET` call to the `/api/` endpoint of your installation. It provides the CSRF token that is neccessary for subsequent requests, and the default API version currently supported by the installation:
 
 .. code-block:: json
 
