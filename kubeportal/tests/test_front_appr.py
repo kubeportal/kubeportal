@@ -17,59 +17,31 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
     def setUp(self):
         super().setUp()
         os.system("(minikube status | grep Running) || minikube start")
-        self.c.get(reverse('admin:sync'))
+        self.client.get(reverse('admin:sync'))
         default_ns = KubernetesNamespace.objects.get(name='default')
         self.admin.service_account = default_ns.service_accounts.get(
             name='default')
         self.admin.save()
 
     def test_welcome_view(self):
-        response = self.c.get('/welcome/')
+        response = self.client.get('/welcome/')
         self.assertEqual(response.status_code, 200)
 
-    def test_webapp_user_not_in_group(self):
-        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
-        app1.save()
-        response = self.c.get('/welcome/')
-        # User is not in a group that has this web app enabled
-        self.assertNotContains(response, "http://www.heise.de")
-
-    def test_webapp_user_in_group(self):
-        app1 = WebApplication(name="app1", link_show=True, link_name="app1", link_url="http://www.heise.de")
-        app1.save()
-        group = PortalGroup()
-        group.save()
-        self.admin.portal_groups.add(group)
-        response = self.c.get('/welcome/')
-        # User is in group, but this group has the web app not enabled
-        self.assertNotContains(response, "http://www.heise.de")
-
-        group.can_web_applications.add(app1)
-        response = self.c.get('/welcome/')
-        # User is now in a group that has this web app enabled
-        self.assertContains(response, "http://www.heise.de")
-
-        app1.link_show = False
-        app1.save()
-        response = self.c.get('/welcome/')
-        # User is now in a group that has this web app, but disabled
-        self.assertNotContains(response, "http://www.heise.de")
-
     def test_config_view(self):
-        response = self.c.get(reverse('config'))
+        response = self.client.get(reverse('config'))
         self.assertEqual(response.status_code, 200)
 
     def test_config_download_view(self):
-        response = self.c.get(reverse('config_download'))
+        response = self.client.get(reverse('config_download'))
         self.assertEqual(response.status_code, 200)
 
     def test_stats_view(self):
-        response = self.c.get('/stats/')
+        response = self.client.get('/stats/')
         self.assertEqual(response.status_code, 200)
 
     def test_stats_with_broken_k8s_view(self):
         with patch('kubeportal.k8s.utils.load_config'):
-            response = self.c.get('/stats/')
+            response = self.client.get('/stats/')
             self.assertEqual(response.status_code, 200)
 
     def _prepare_subauth_test(self, user_in_group1, user_in_group2, app_in_group1, app_in_group2, app_enabled):
@@ -92,7 +64,7 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         if app_in_group2:
             group2.can_web_applications.add(app1)
 
-        return self.c.get('/subauthreq/{}/'.format(app1.pk))
+        return self.client.get('/subauthreq/{}/'.format(app1.pk))
 
     def test_subauth_invalid_cases(self):
         # Constellations for group membership of user and app

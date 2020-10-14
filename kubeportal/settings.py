@@ -6,7 +6,7 @@ from kubeportal.secret import get_secret_key
 
 class Common(Configuration):
     VERSION = '0.4.0'
-    API_VERSION = 'v1.3.0'
+    API_VERSION = 'v1.4.0'
 
     SITE_ID = 1
 
@@ -75,7 +75,7 @@ class Common(Configuration):
                 'rest_framework_simplejwt.authentication.JWTAuthentication',
                 ],
             'DEFAULT_PERMISSION_CLASSES': [
-                'rest_framework.permissions.IsAuthenticated',
+                'kubeportal.middleware.AllowOptionsAuthentication',
                 ],
             'DEFAULT_VERSION': API_VERSION,
             'ALLOWED_VERSIONS': [
@@ -84,7 +84,6 @@ class Common(Configuration):
             }
 
     REST_USE_JWT = True
-
 
     WSGI_APPLICATION = 'kubeportal.wsgi.application'
 
