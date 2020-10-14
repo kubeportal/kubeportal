@@ -48,7 +48,7 @@ jobs:
       - name: run Unittest
         run: pytest
 
-  test-k8s-18:
+  test-plus-coverage-k8s-18:
     runs-on: ubuntu-latest
 
     steps:
