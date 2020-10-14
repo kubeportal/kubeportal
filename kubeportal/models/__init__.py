@@ -8,7 +8,8 @@ Given that, it is the only model that lives on the scope here.
 
 
 import uuid
-from django.utils import timezone
+from datetime import datetime, timedelta
+
 from django.contrib import messages
 from django.contrib.auth.models import AbstractUser
 from django.core.mail import send_mail
@@ -114,8 +115,8 @@ class User(AbstractUser):
         """
         returns a list of users that haven't logged in x months ago.
         """
-        # 30 days (1 month times the amount of months we look behind)
-        x_months_ago = timezone.now() - timezone.timedelta(days=30 * settings.LAST_LOGIN_MONTHS_AGO)
+        x_months_ago = datetime.now() - timedelta(
+            days=30 * settings.LAST_LOGIN_MONTHS_AGO)  # 30 days (1 month times the amount of months we look behind)
         return list(cls.objects.filter(last_login__lte=x_months_ago))
 
     @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED,

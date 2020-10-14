@@ -58,18 +58,18 @@ class Backend(AdminLoggedInTestCase):
 
     def test_kube_ns_changelist(self):
         self._call_sync()
-        response = self.client.get(
+        response = self.c.get(
             reverse('admin:kubeportal_kubernetesnamespace_changelist'))
         self.assertEqual(response.status_code, 200)
 
     def test_kube_svc_changelist(self):
         self._call_sync()
-        response = self.client.get(
+        response = self.c.get(
             reverse('admin:kubeportal_kubernetesserviceaccount_changelist'))
         self.assertEqual(response.status_code, 200)
 
     def test_user_changelist(self):
-        response = self.client.get(reverse('admin:kubeportal_user_changelist'))
+        response = self.c.get(reverse('admin:kubeportal_user_changelist'))
         self.assertEqual(response.status_code, 200)
 
     def test_new_ns_sync(self):
@@ -123,7 +123,7 @@ class Backend(AdminLoggedInTestCase):
         self.assertIn("foobar", svc_names)
 
     def test_admin_index_view(self):
-        response = self.client.get('/admin/')
+        response = self.c.get('/admin/')
         self.assertEqual(response.status_code, 200)
 
     def test_k8s_sync_error_no_crash(self):

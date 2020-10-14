@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.test import override_settings
 from rest_framework.test import RequestsClient
 from kubeportal.models.portalgroup import PortalGroup
@@ -5,6 +6,10 @@ from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
 from kubeportal.api.views import ClusterViewSet
 from django.conf import settings
+import logging
+import json
+
+logger = logging.getLogger('KubePortal')
 
 from django.contrib.auth import get_user_model
 
@@ -50,9 +55,6 @@ class ApiTestCase(AdminLoggedOutTestCase):
             headers['X-CSRFToken'] = self.csrf
         return self.client.post('http://testserver' + relative_url,
                                 json=data, headers=headers)
-
-    def options(self, relative_url, headers={}):
-        return self.client.options('http://testserver' + relative_url)
 
     def api_login(self):
         response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': admin_clear_password})
@@ -155,27 +157,13 @@ class ApiAnonymous(ApiTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_user_groups_denied(self):
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/groups/')
+        response = self.get(f'/api/{API_VERSION}/groups/{self.admin_group.pk}/')
         self.assertEqual(response.status_code, 401)
 
     def test_logout(self):
         # logout should work anyway, even when nobody is logged in
         response = self.post(f'/api/{API_VERSION}/logout/')
         self.assertEqual(response.status_code, 200)
-
-    def test_options_preflight_without_auth(self):
-        test_path = [('/api/', 'GET'),
-                     (f'/api/{API_VERSION}/users/{self.admin.pk}', 'GET'),
-                     (f'/api/{API_VERSION}/users/{self.admin.pk}/webapps', 'GET'),
-                     (f'/api/{API_VERSION}/users/{self.admin.pk}', 'PATCH'),
-                     (f'/api/{API_VERSION}/groups/{self.admin_group.pk}', 'GET'),
-                     (f'/api/{API_VERSION}/cluster/k8s_apiserver', 'GET'),
-                     (f'/api/{API_VERSION}/login/', 'POST'),
-        ]
-        for path, request_method in test_path:
-            with self.subTest(path=path):
-                response = self.options(path)
-                self.assertEqual(response.status_code, 200)
 
     @override_settings(SOCIALACCOUNT_PROVIDERS={'google': {
         'APP': {
@@ -359,14 +347,13 @@ class ApiLocalUser(ApiTestCase):
                 self.assertIn(key, data)
 
     def test_patch_user(self):
-        # The implementation of correct patch() calls here failed,
-        # the HTML-based version in the dev server works, however.
-        # Somehow the PATCH request body sent here gets lost on the
-        # way to the DRF code, even the serializer validator does
-        # not see it
-        #
-        # We therefore restrict ourselves here to simple error cases.
-        pass
+        data_mock = {"primary_email": "foo@bar.de"}
+
+        response = self.patch(f'/api/{API_VERSION}/users/{self.admin.pk}/', data_mock)
+
+        updated_primary_email = json.loads(response.text)['primary_email']
+        self.assertEqual(updated_primary_email, data_mock['primary_email'])
+        self.assertEqual(response.status_code, 200)
 
     def test_patch_user_invalid_id(self):
         response = self.patch(f'/api/{API_VERSION}/users/777/', {})

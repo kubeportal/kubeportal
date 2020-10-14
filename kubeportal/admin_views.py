@@ -8,6 +8,7 @@ from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models import User
 from .k8s import k8s_sync
 
+from datetime import datetime, timedelta
 import logging
 
 logger = logging.getLogger('KubePortal')

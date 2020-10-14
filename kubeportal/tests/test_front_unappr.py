@@ -14,31 +14,31 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
 
     def test_index_view(self):
         # User is already logged in, expecting welcome redirect
-        response = self.client.get('/')
+        response = self.c.get('/')
         self.assertEqual(response.status_code, 302)
 
     def test_welcome_view(self):
-        response = self.client.get('/welcome/')
+        response = self.c.get('/welcome/')
         self.assertEqual(response.status_code, 200)
 
     def test_config_view(self):
-        response = self.client.get(reverse('config'))
+        response = self.c.get(reverse('config'))
         self.assertEqual(response.status_code, 200)
 
     def test_config_download_view(self):
-        response = self.client.get(reverse('config_download'))
+        response = self.c.get(reverse('config_download'))
         self.assertEqual(response.status_code, 200)
 
     def test_stats_view(self):
-        response = self.client.get('/stats/')
+        response = self.c.get('/stats/')
         self.assertEqual(response.status_code, 200)
 
     def test_root_redirect_with_next_param(self):
-        response = self.client.get('/?next=/config')
+        response = self.c.get('/?next=/config')
         self.assertEqual(response.status_code, 302)
 
     def test_root_redirect_with_rd_param(self):
-        response = self.client.get('/?next=/config')
+        response = self.c.get('/?next=/config')
         self.assertEqual(response.status_code, 302)
 
     def test_subauth_view(self):
@@ -49,15 +49,15 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
         app1 = WebApplication(name="app1", can_subauth=True)
         app1.save()
 
-        response = self.client.get('/subauthreq/{}/'.format(app1.pk))
+        response = self.c.get('/subauthreq/{}/'.format(app1.pk))
 
         self.assertEqual(response.status_code, 401)
 
     def test_acess_request_view(self):
-        response = self.client.post('/access/request/', {'selected-administrator' : self.admin.username })
+        response = self.c.post('/access/request/', {'selected-administrator' : self.admin.username })
         self.assertRedirects(response, '/config/')
 
     def test_acess_request_view_mail_broken(self):
         with patch('kubeportal.models.User.send_access_request', return_value=False):
-            response = self.client.post('/access/request/', {'selected-administrator' : self.admin.username })
+            response = self.c.post('/access/request/', {'selected-administrator' : self.admin.username })
             self.assertRedirects(response, '/config/')

@@ -206,12 +206,6 @@ paths:
           application/json:
             schema:
               properties:
-                firstname: 
-                  type: string
-                  example: 'Mandarin'
-                name:
-                  type: string
-                  example: 'Orange'
                 primary_email:
                   type: string
                   example: 'foo@bar.de'

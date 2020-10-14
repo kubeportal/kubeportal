@@ -23,7 +23,6 @@ admin_data = {
     'is_superuser': True
 }
 
-
 class BaseTestCase(TestCase):
     '''
     Nobody is logged in. No user is prepared.
@@ -33,7 +32,7 @@ class BaseTestCase(TestCase):
 
     def setUp(self):
         super().setUp()
-        self.client = client.Client()
+        self.c = client.Client()
         assert(is_minikube())
 
 
@@ -70,7 +69,7 @@ class AdminLoggedInTestCase(AdminLoggedOutTestCase):
     '''
 
     def login_admin(self):
-        self.client.login(username=admin_data['username'],
+        self.c.login(username=admin_data['username'],
                      password=admin_clear_password)
 
     def setUp(self):
