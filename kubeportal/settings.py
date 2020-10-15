@@ -85,7 +85,6 @@ class Common(Configuration):
 
     REST_USE_JWT = True
 
-
     WSGI_APPLICATION = 'kubeportal.wsgi.application'
 
     AUTH_PASSWORD_VALIDATORS = [

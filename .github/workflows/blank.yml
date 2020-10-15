@@ -18,23 +18,14 @@ jobs:
       - name: install dependencies
         run: |
           pip install -r requirements-prod.txt -r requirements-dev.txt
-      - name: install coverage tool
-        run: |
-          pip install pytest-cov
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.0.0
         with:
           minikube version: 'v1.6.2'
           kubernetes version: 'v1.16.0'
           github token: ${{ secrets.GITHUB_TOKEN }}
-      - name: run Unittest, including coverage analysis
-        run: pytest --cov=./ --cov-report=xml
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-          flags: unittests
+      - name: run Unittest
+        run: pytest 
 
   test-k8s-17:
     runs-on: ubuntu-latest
@@ -48,25 +39,16 @@ jobs:
       - name: install dependencies
         run: |
           pip install -r requirements-prod.txt -r requirements-dev.txt
-      - name: install coverage tool
-        run: |
-          pip install pytest-cov
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.0.0
         with:
           minikube version: 'v1.6.2'
           kubernetes version: 'v1.17.0'
           github token: ${{ secrets.GITHUB_TOKEN }}
-      - name: run Unittest, including coverage analysis
-        run: pytest --cov=./ --cov-report=xml
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
-          flags: unittests
+      - name: run Unittest
+        run: pytest
 
-  test-k8s-18:
+  test-plus-coverage-k8s-18:
     runs-on: ubuntu-latest
 
     steps:

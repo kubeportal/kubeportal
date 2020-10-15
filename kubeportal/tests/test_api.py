@@ -56,6 +56,9 @@ class ApiTestCase(AdminLoggedOutTestCase):
         return self.client.post('http://testserver' + relative_url,
                                 json=data, headers=headers)
 
+    def options(self, relative_url, headers={}):
+        return self.client.options('http://testserver' + relative_url)
+
     def api_login(self):
         response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
@@ -164,6 +167,20 @@ class ApiAnonymous(ApiTestCase):
         # logout should work anyway, even when nobody is logged in
         response = self.post(f'/api/{API_VERSION}/logout/')
         self.assertEqual(response.status_code, 200)
+
+    def test_options_preflight_without_auth(self):
+        test_path = [('/api/', 'GET'),
+                     (f'/api/{API_VERSION}/users/{self.admin.pk}', 'GET'),
+                     (f'/api/{API_VERSION}/users/{self.admin.pk}/webapps', 'GET'),
+                     (f'/api/{API_VERSION}/users/{self.admin.pk}', 'PATCH'),
+                     (f'/api/{API_VERSION}/groups/{self.admin_group.pk}', 'GET'),
+                     (f'/api/{API_VERSION}/cluster/k8s_apiserver', 'GET'),
+                     (f'/api/{API_VERSION}/login/', 'POST'),
+        ]
+        for path, request_method in test_path:
+            with self.subTest(path=path):
+                response = self.options(path)
+                self.assertEqual(response.status_code, 200)
 
     @override_settings(SOCIALACCOUNT_PROVIDERS={'google': {
         'APP': {

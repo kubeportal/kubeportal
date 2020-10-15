@@ -3,9 +3,9 @@ import os
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
-from django.test import RequestFactory
-from django.test import override_settings
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
+from unittest import skip
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 from kubeportal.models.portalgroup import PortalGroup
@@ -58,18 +58,18 @@ class Backend(AdminLoggedInTestCase):
 
     def test_kube_ns_changelist(self):
         self._call_sync()
-        response = self.c.get(
+        response = self.client.get(
             reverse('admin:kubeportal_kubernetesnamespace_changelist'))
         self.assertEqual(response.status_code, 200)
 
     def test_kube_svc_changelist(self):
         self._call_sync()
-        response = self.c.get(
+        response = self.client.get(
             reverse('admin:kubeportal_kubernetesserviceaccount_changelist'))
         self.assertEqual(response.status_code, 200)
 
     def test_user_changelist(self):
-        response = self.c.get(reverse('admin:kubeportal_user_changelist'))
+        response = self.client.get(reverse('admin:kubeportal_user_changelist'))
         self.assertEqual(response.status_code, 200)
 
     def test_new_ns_sync(self):
@@ -123,7 +123,7 @@ class Backend(AdminLoggedInTestCase):
         self.assertIn("foobar", svc_names)
 
     def test_admin_index_view(self):
-        response = self.c.get('/admin/')
+        response = self.client.get('/admin/')
         self.assertEqual(response.status_code, 200)
 
     def test_k8s_sync_error_no_crash(self):
@@ -171,11 +171,11 @@ class Backend(AdminLoggedInTestCase):
         u = User(username="Hugo",
                  email="a@b.de",
                  state=UserState.ACCESS_APPROVED,
-                 service_account = new_svc)
+                 service_account=new_svc)
         u.save()
         self.assertEqual(group.members.count(), 1)
         # unapprove
-        u.state=UserState.ACCESS_REJECTED
+        u.state = UserState.ACCESS_REJECTED
         u.save()
         self.assertEqual(group.members.count(), 0)
 
@@ -219,11 +219,12 @@ class Backend(AdminLoggedInTestCase):
     portal groups of the secondary user.
     The secondary user should be deleted.
     '''
+
     def test_user_merge_access_approved(self):
         User = get_user_model()
         primary = User(
-                username="HUGO",
-                email="a@b.de")
+            username="HUGO",
+            email="a@b.de")
         primary.save()
 
         ns = KubernetesNamespace(name="default")
@@ -231,11 +232,11 @@ class Backend(AdminLoggedInTestCase):
         new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
         new_svc.save()
         secondary = User(
-                username="hugo",
-                state=UserState.ACCESS_APPROVED,
-                email="a@b.de",
-                comments = "secondary user comment",
-                service_account = new_svc)
+            username="hugo",
+            state=UserState.ACCESS_APPROVED,
+            email="a@b.de",
+            comments="secondary user comment",
+            service_account=new_svc)
         secondary.save()
 
         group1 = PortalGroup(name="testgroup1")
@@ -254,19 +255,20 @@ class Backend(AdminLoggedInTestCase):
 
         # the merge method only accepts a queryset of users since that's what
         # the admin interface creates
-        queryset_of_users = User.objects.filter(pk__in = [primary.id, secondary.id])
+        queryset_of_users = User.objects.filter(
+            pk__in=[primary.id, secondary.id])
 
         # merge both users. shouldn't return anything
         assert(not merge_users(UserAdmin, request, queryset_of_users))
 
         # the primary user has been altered but the old object is still in memory
         # we need to query for the updated user again
-        primary = User.objects.get(pk = primary.id)
+        primary = User.objects.get(pk=primary.id)
 
         # Does primary have all the values of secondary user?
         self.assertEqual(primary.comments, "secondary user comment")
-        assert(primary.portal_groups.filter(name = group1.name))
-        assert(primary.portal_groups.filter(name = group2.name))
+        assert(primary.portal_groups.filter(name=group1.name))
+        assert(primary.portal_groups.filter(name=group2.name))
         assert(primary.has_access_approved)
 
     '''
@@ -275,13 +277,14 @@ class Backend(AdminLoggedInTestCase):
     The primary user should be assigned the rejected cluster access.
     The secondary user should be deleted.
     '''
+
     def test_user_merge_access_rejected(self):
         request = self._build_full_request_mock('admin:index')
 
         User = get_user_model()
         primary = User(
-                username="HUGO",
-                email="a@b.de")
+            username="HUGO",
+            email="a@b.de")
         primary.save()
 
         ns = KubernetesNamespace(name="default")
@@ -294,11 +297,11 @@ class Backend(AdminLoggedInTestCase):
         primary.save()
 
         secondary = User(
-                username="hugo",
-                state=UserState.ACCESS_APPROVED,
-                email="a@b.de",
-                comments="secondary user comment",
-                service_account=new_svc)
+            username="hugo",
+            state=UserState.ACCESS_APPROVED,
+            email="a@b.de",
+            comments="secondary user comment",
+            service_account=new_svc)
         secondary.save()
 
         # Build full-fledged request object for logged-in admin
@@ -308,14 +311,15 @@ class Backend(AdminLoggedInTestCase):
 
         # the merge method only accepts a queryset of users since that's what
         # the admin interface creates
-        queryset_of_users = User.objects.filter(pk__in=[primary.id, secondary.id])
+        queryset_of_users = User.objects.filter(
+            pk__in=[primary.id, secondary.id])
 
         # merge both users. shouldn't return anything
         assert(not merge_users(UserAdmin, request, queryset_of_users))
 
         # the primary user has been altered but the old object is still in memory
         # we need to query for the updated user again
-        primary = User.objects.get(pk = primary.id)
+        primary = User.objects.get(pk=primary.id)
 
         assert primary.has_access_rejected
 
@@ -323,11 +327,12 @@ class Backend(AdminLoggedInTestCase):
     def test_user_rejection_mail_broken(self):
         self._test_user_rejection()
 
+    @skip("Function disabled")
     def test_backend_cleanup_view(self):
         User = get_user_model()
         u = User(
-                username="HUGO",
-                email="a@b.de")
+            username="HUGO",
+            email="a@b.de")
         u.save()
 
         # we need an inactive user for the the filter to work
@@ -345,48 +350,53 @@ class Backend(AdminLoggedInTestCase):
         request = self._build_full_request_mock('admin:cleanup')
         assert(request)
 
-    @staticmethod
+    @skip("Function disabled")
     def test_backend_cleanup_entitity_getters():
         User = get_user_model()
-        from dateutil.parser import parse
+        from django.utils import dateparse
         # we need an inactive user for the the filter to work
         u = User(
-                username="HUGO",
-                email="a@b.de",
-                last_login = parse("2017-09-23 11:21:52.909020")
-                )
+            username="HUGO",
+            email="a@b.de",
+            last_login=dateparse.parse_datetime(
+                "2017-09-23 11:21:52.909020 +02.00")
+        )
         u.save()
 
         ns = KubernetesNamespace(name="asdfadfasdfasdf", visible=True)
         ns.save()
 
-        assert(User.inactive_users()[0] == User.objects.get(username=u.username))
+        assert(User.inactive_users()[0] ==
+               User.objects.get(username=u.username))
         assert(KubernetesNamespace.without_pods()[0] == ns)
         assert(KubernetesNamespace.without_service_accounts()[0] == ns)
 
+    @skip("Function disabled")
     def test_backend_prune_view(self):
         User = get_user_model()
-        from dateutil.parser import parse
+        from django.utils import dateparse
         # we need an inactive user for the the filter to work
-
         user_list = [
             User.objects.create_user(
-                    username="HUGO1",
-                    email="a@b.de",
-                    last_login = parse("2017-09-23 11:21:52.909020")
-                    ),
+                username="HUGO1",
+                email="a@b.de",
+                last_login=dateparse.parse_datetime(
+                    "2017-09-23 11:21:52.909020 +02:00")
+            ),
 
             User.objects.create_user(
-                    username="HUGO2",
-                    email="b@b.de",
-                    last_login = parse("2017-09-23 11:21:52.909020")
-                    ),
+                username="HUGO2",
+                email="b@b.de",
+                last_login=dateparse.parse_datetime(
+                    "2017-09-23 11:21:52.909020 +02:00")
+            ),
 
             User.objects.create_user(
-                    username="HUGO3",
-                    email="c@b.de",
-                    last_login = parse("2017-09-23 11:21:52.909020")
-                    )
+                username="HUGO3",
+                email="c@b.de",
+                last_login=dateparse.parse_datetime(
+                    "2017-09-23 11:21:52.909020 +02:00")
+            )
         ]
 
         ns_list = [
@@ -395,14 +405,15 @@ class Backend(AdminLoggedInTestCase):
             KubernetesNamespace.objects.create(name="test-namespace3")
         ]
 
-        ## prune visible namespaces without an assigned service account
+        # prune visible namespaces without an assigned service account
         request = self._build_full_post_request_mock("admin:prune", {
             'prune': "namespaces-no-service-acc",
             "namespaces": [ns.name for ns in ns_list]
         })
         prune(request)
 
-        assert(not KubernetesNamespace.objects.filter(name__in=[ns.name for ns in ns_list]))
+        assert(not KubernetesNamespace.objects.filter(
+            name__in=[ns.name for ns in ns_list]))
 
         ns_list = [
             KubernetesNamespace.objects.create(name="test-namespace1"),
@@ -418,7 +429,8 @@ class Backend(AdminLoggedInTestCase):
         prune(request)
 
         # have all been pruned?
-        assert(not KubernetesNamespace.objects.filter(name__in=[ns.name for ns in ns_list]))
+        assert(not KubernetesNamespace.objects.filter(
+            name__in=[ns.name for ns in ns_list]))
 
         # prune service accounts that haven't logged in for a long time
         request = self._build_full_post_request_mock("admin:prune", {
@@ -428,4 +440,5 @@ class Backend(AdminLoggedInTestCase):
         prune(request)
 
         # have all been pruned?
-        assert(not KubernetesServiceAccount.objects.filter(name__in=[u.username for u in user_list]))
+        assert(not KubernetesServiceAccount.objects.filter(
+            name__in=[u.username for u in user_list]))
