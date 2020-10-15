@@ -135,6 +135,7 @@ class Common(Configuration):
     USE_TZ = True
 
     ALLOWED_URLS = values.ListValue(["http://localhost:8000", "http://127.0.0.1:8000"], environ_prefix='KUBEPORTAL')
+    ALLOWED_URLS.setup('ALLOWED_URLS')
     ALLOWED_HOSTS = [urlparse(url).netloc.split(":")[0] for url in ALLOWED_URLS.value]
 
     AUTH_USER_MODEL = 'kubeportal.User'
