@@ -16,15 +16,6 @@ web-run: venv
 	set -o allexport; source .env; set +o allexport; \
 	./venv/bin/python ./manage.py runserver --configuration=Development
 
-# Runs the production Docker image in Minikube
-# Configuration: Production
-staging-run: staging-build minikube-start
-	kubectl apply -k ./deployment/k8s/staging/
-	kubectl -n kubeportal delete configmap kubeportal --ignore-not-found=true
-	kubectl -n kubeportal create configmap kubeportal --from-env-file=.env
-	kubectl -n kubeportal logs deployment/kubeportal
-	kubectl -n kubeportal port-forward svc/kubeportal 8000:8000
-
 # Clean temporary files
 clean: 
 	find . -name "*.bak" -delete
@@ -87,7 +78,3 @@ minikube-check:
 	|| test -f /bin/minikube \
 	|| (echo ERROR: Minikube installation is missing on your machine. && exit 1)
 
-# Prepare a staging test Docker image in the Minikube environment
-# This works by utilizing the Docker environment inside Minikube
-staging-build: minikube-start
-	eval $$(minikube docker-env); docker build -t troeger/kubeportal:staging .
