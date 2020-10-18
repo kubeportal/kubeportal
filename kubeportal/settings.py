@@ -134,10 +134,9 @@ class Common(Configuration):
     USE_L10N = True
     USE_TZ = True
 
-    # Allow frontend dev server addresses as default, so that dev mode
-    # works without an extra env variable being set
-    ALLOWED_URLS = values.ListValue([], environ_prefix='KUBEPORTAL')
-    ALLOWS_HOSTS = [urlparse(url).netloc for url in ALLOWED_URLS.value]
+    ALLOWED_URLS = values.ListValue(["http://localhost:8000", "http://127.0.0.1:8000"], environ_prefix='KUBEPORTAL')
+    ALLOWED_URLS.setup('ALLOWED_URLS')
+    ALLOWED_HOSTS = [urlparse(url).netloc.split(":")[0] for url in ALLOWED_URLS.value]
 
     AUTH_USER_MODEL = 'kubeportal.User'
 
@@ -277,6 +276,11 @@ class Production(Common):
                 'propagate': True
             },
             'KubePortal': {
+                'handlers': ['mail_admins', 'console', ],
+                'level': LOG_LEVEL_PORTAL.value,
+                'propagate': True
+            },
+            'django': {
                 'handlers': ['mail_admins', 'console', ],
                 'level': LOG_LEVEL_PORTAL.value,
                 'propagate': True
