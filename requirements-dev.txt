@@ -5,3 +5,4 @@ sphinx-issues
 coverage
 pytest-django
 django-configurations
+sphinxcontrib-openapi
