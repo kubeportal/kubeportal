@@ -22,17 +22,6 @@ class ActiveDirectoryBackend():
         if not self.server_adr:
             return None
 
-        if 'login' in request.POST:
-            username = request.POST['login'].lower()
-        elif 'username' in request.POST:
-            username = request.POST['username'].lower()
-        else:
-            return None
-        if 'password' in request.POST:
-            password = request.POST['password']
-        else:
-            return None
-
         # User Principal Name
         upn = "{}@{}".format(username, self.domainname)
         server = ldap3.Server(self.server_adr, get_info=ldap3.DSA, connect_timeout=1)
