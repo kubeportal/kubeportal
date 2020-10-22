@@ -59,7 +59,9 @@ class ActiveDirectoryBackend():
                 defaults['alt_mails'] = [i.lower().replace("unix:", "").replace("smtp:", "") for i in entries['proxyAddresses'].value]
 
             try:
-                user, created = User.objects.update_or_create(username__iexact=username, defaults=defaults)
+                # update_or_create is not an option here, since this would 
+                # overwrite a modified default mail address
+                user, created = User.objects.get_or_create(username__iexact=username, defaults=defaults)
                 if created:
                     logger.debug("Created new user for Active Directory account {}".format(username))
                 else:
