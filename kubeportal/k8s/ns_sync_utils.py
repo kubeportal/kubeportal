@@ -3,7 +3,6 @@ from django.contrib import messages
 
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubernetes import client
-from kubeportal.k8s.utils import error_log
 from kubeportal.k8s.kubernetes_api import rbac_v1
 import logging
 import re
@@ -23,7 +22,7 @@ def check_role_bindings_of_namespaces(request):
         try:
             rolebindings = rbac_v1.list_namespaced_role_binding(portal_ns.name).items
         except Exception as e:
-            error_log(request, e, portal_ns, "Could not fetch role bindings for namespace '{}': {}.")
+            logger.exception(f"Could not fetch role bindings for namespace {portal_ns}")
             continue
         # Get all cluster roles this namespace is currently bound to
         clusterroles_active = [rolebinding.role_ref.name for rolebinding in rolebindings if
@@ -36,8 +35,7 @@ def check_role_bindings_of_namespaces(request):
                     logger.info(f"Namespace '{portal_ns}' is not bound to cluster role '{clusterrole}', fixing this ...")
                     _bind_namespace_to_cluster_role(clusterrole, portal_ns)
                 except Exception as e:
-                    error_log(request, e, (portal_ns.name, clusterrole),
-                              "Could not create binding of namespace '{}' to cluster role '{}': {}.")
+                    logger.exception(f"Could not create binding of namespace '{portal_ns}' to cluster role '{clusterrole}'")
                     continue
 
 
