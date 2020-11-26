@@ -5,7 +5,7 @@ from kubeportal.secret import get_secret_key
 
 
 class Common(Configuration):
-    VERSION = '0.5.2'
+    VERSION = '0.5.3'
     API_VERSION = 'v1.4.0'
 
     SITE_ID = 1
