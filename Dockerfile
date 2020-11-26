@@ -3,7 +3,7 @@ FROM python:3.8-buster
 COPY requirements-prod.txt /tmp/
 
 RUN apt-get update && \
-    apt-get install -y postgresql-client gcc make libc-dev musl-dev libffi-dev libssl-dev libpcre3-dev && \
+    apt-get install -y sqlite3 postgresql-client gcc make libc-dev musl-dev libffi-dev libssl-dev libpcre3-dev && \
     pip install --no-cache-dir -r /tmp/requirements-prod.txt uwsgi && \
     mkdir /code/ && \
     mkdir /data/
