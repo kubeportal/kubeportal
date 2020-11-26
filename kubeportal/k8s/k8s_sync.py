@@ -71,7 +71,7 @@ def _sync_namespaces(request):
                 # Portal namespaces without UID are new and should be created in K8S
                 ns_utils.add_namespace_to_kubernetes(portal_ns, request, api)
         except Exception as e:
-            logger.exception(f"Sync from portal to Kubernetes for namespace '{portal_ns}' failed.")
+            logger.exception(f"Sync from portal to Kubernetes for namespace '{portal_ns.name}' failed.")
 
     if success_count_push == success_count_pull:
         messages.success(request, "All valid namespaces are in sync.")
@@ -149,7 +149,7 @@ def _sync_svcaccounts(request):
                 # Portal service accounts without UID are new and should be created in K8S
                 svca_utils.add_svca_to_kubernetes(request, portal_svca, portal_ns)
         except Exception as e:
-            logger.exception(f"Sync from portal to Kubernetes for service account '{portal_svca}' failed.")
+            logger.exception(f"Sync from portal to Kubernetes for service account '{portal_svca.name}' failed.")
 
     if success_count_push == success_count_pull:
         messages.success(request, "All valid service accounts are in sync.")
