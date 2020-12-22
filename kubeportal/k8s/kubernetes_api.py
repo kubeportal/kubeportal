@@ -1,13 +1,5 @@
 '''
-    Synchronization between Kubernetes API server and portal database.
-
-    The API server is the master data source, the portal just mirrors it.
-    The only exception are newly created records in the portal, which should
-    lead to according resource creation in in API server.
-
-    Kubeportal will never delete resources in Kubernetes, so there is no code
-    and no UI for that. Admins should perform deletion operation directly
-    in Kubernetes, e.g. through kubectl, and sync KubePortal afterwards.
+    A set of functions wrapping K8S API calls.
 '''
 
 from django.conf import settings
@@ -76,7 +68,15 @@ def get_pods():
     try:
         return core_v1.list_pod_for_all_namespaces().items
     except Exception as e:
-        logger.error("Exception: {0}".format(e))
+        logger.exception("Error while fetching list of all pods from Kubernetes")
+        return None
+
+
+def get_pods_user(user):
+    try:
+        return core_v1.list_namespaced_pod(user.k8s_namespace().name)
+    except Exception as e:
+        logger.exception(f"Error while fetching pods of user {user}")
         return None
 
 

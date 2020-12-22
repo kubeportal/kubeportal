@@ -98,6 +98,8 @@ class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
             raise Http404
 
 
+class PodViewSet
+
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     '''
     API endpoint that allows for groups to queried
