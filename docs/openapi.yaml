@@ -1,11 +1,11 @@
 openapi: 3.0.0
 
 info:
-  version: v1.4.0
+  version: v1.5.0
   title: Kubportal Backend API
 
 servers:
-  - url: '{server}/api/v1.4.0'
+  - url: '{server}/api/v1.5.0'
     variables:
       server:
         default: http://localhost:8000  # dev server
@@ -134,6 +134,35 @@ paths:
           $ref: '#/components/responses/NotFound'   
         '401':
           $ref: '#/components/responses/Unauthorized'   
+
+  /users/{id}/pods/:
+    get:
+      summary: Get pods for the primary service account resp. namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pod'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 
   /users/{id}/groups/:
     get:
@@ -367,6 +396,24 @@ components:
         link_url:
           type: string
           example: 'https://mango-saft.com'
+    Pod:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'coredns-6955765f44-6dfnm'
+        creation_timestamp:
+          type: string
+          example: '2020-12-05T13:06:44Z'
+        containers:
+          type: object
+          properties:
+            image:
+              type: string
+              example: 'k8s.gcr.io/coredns:1.6.5'
+            name:
+              type: string
+              example: 'coredns'
     Group:
       type: object
       properties:

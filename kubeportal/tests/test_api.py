@@ -415,6 +415,7 @@ class ApiLocalUser(ApiTestCase):
         self.admin.save()
         response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/pods/')
         self.assertEqual(200, response.status_code)
+        assert(len(json.loads(response.content))>0)
 
 class ApiLogout(ApiTestCase):
     '''
