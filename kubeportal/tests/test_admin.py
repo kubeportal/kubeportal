@@ -1,59 +1,28 @@
 import os
+from unittest import skip
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
-from django.contrib.messages.storage.fallback import FallbackStorage
-from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
-from unittest import skip
+
+from kubeportal.admin import merge_users, UserAdmin
+from kubeportal.admin_views import prune
+from kubeportal.k8s import kubernetes_api as api
+from kubeportal.models import UserState
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 from kubeportal.models.portalgroup import PortalGroup
-from kubeportal.models import UserState
 from kubeportal.tests import AdminLoggedInTestCase
-from unittest.mock import patch
-from kubeportal.admin import merge_users, UserAdmin
-from kubeportal.k8s import k8s_sync, kubernetes_api as api
-from kubeportal.admin_views import prune
 
 
 class Backend(AdminLoggedInTestCase):
     '''
     Tests for backend functionality when admin is logged in.
-     '''
-
-    def _build_full_request_mock(self, short_url):
-        url = reverse(short_url)
-        request = self.factory.get(url)
-        request.user = self.admin
-        middleware = SessionMiddleware()
-        middleware.process_request(request)
-        request.session.save()
-        messages = FallbackStorage(request)
-        setattr(request, '_messages', messages)
-        return request
-
-    def _build_full_post_request_mock(self, short_url, data):
-        url = reverse(short_url)
-        request = self.factory.post(url, data)
-        request.user = self.admin
-        middleware = SessionMiddleware()
-        middleware.process_request(request)
-        request.session.save()
-        messages = FallbackStorage(request)
-        setattr(request, '_messages', messages)
-        return request
-
-    def _call_sync(self, expect_success=True):
-        # We are calling the sync method directly here, and not through the view,
-        # so that the result of sync is directly analyzed
-        request = self._build_full_request_mock('admin:index')
-        sync_success = k8s_sync.sync(request)
-        self.assertEqual(sync_success, expect_success)
+    '''
 
     def setUp(self):
         super().setUp()
-        self.factory = RequestFactory()
         os.system("(minikube status | grep Running) || minikube start")
 
     def test_kube_ns_changelist(self):

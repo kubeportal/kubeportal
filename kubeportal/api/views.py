@@ -98,8 +98,6 @@ class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
             raise Http404
 
 
-class PodViewSet
-
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     '''
     API endpoint that allows for groups to queried
@@ -165,6 +163,27 @@ class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             return Response({key: self.stats[key]()})
         else:
             raise NotFound
+
+
+class PodViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    renderer_classes = [JSONRenderer]
+
+    def list(self, request, *args, **kwargs):
+        if 'user_pk' in self.kwargs:
+            # Query for pod list of a specific user
+            try:
+                query_pk = int(self.kwargs['user_pk'])
+            except Exception as e:
+                logger.error(f'Request failed. Requested user_pk {self.kwargs["user_pk"]} is invalid: {e}')
+                return JsonResponse(data='invalid user_pk', status=404)
+            if query_pk != self.request.user.pk:
+                logger.debug(f"Current user ID is {self.request.user.pk}, denying access to pods.")
+                raise PermissionDenied
+            u = User.objects.get(pk=query_pk)
+            return Response(u.pods())
+        else:
+            raise Http404
+
 
 
 class BootstrapView(APIView):

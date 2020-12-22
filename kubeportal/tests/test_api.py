@@ -1,6 +1,8 @@
 from django.http import JsonResponse
 from django.test import override_settings
 from rest_framework.test import RequestsClient
+
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
@@ -406,6 +408,13 @@ class ApiLocalUser(ApiTestCase):
         response = self.get(f'/api/{API_VERSION}/groups/')
         self.assertEqual(response.status_code, 404)
 
+    def test_user_pods_list(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
+        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/pods/')
+        self.assertEqual(200, response.status_code)
 
 class ApiLogout(ApiTestCase):
     '''

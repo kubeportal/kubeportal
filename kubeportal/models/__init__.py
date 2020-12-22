@@ -20,6 +20,7 @@ from django.utils.safestring import mark_safe
 from django_fsm import FSMField, transition
 from django.conf import settings
 from multi_email_field.fields import MultiEmailField
+from kubeportal.k8s.kubernetes_api import get_pods_user
 
 import logging
 
@@ -82,6 +83,15 @@ class User(AbstractUser):
             return WebApplication.objects.filter(portal_groups__members__pk=self.pk).distinct()
         else:
             return WebApplication.objects.filter(portal_groups__members__pk=self.pk, link_show=True).distinct()
+
+    def pods(self):
+        """
+        Returns a list of pods for this user.
+        """
+        if self.service_account:
+            return get_pods_user(self.service_account.namespace.name)
+        else:
+            logger.debug(f"Cannot determine list of pods for user {self}, since she has no service account attached.")
 
     def can_subauth(self, webapp):
         user_groups_with_this_app = self.portal_groups.filter(can_web_applications__in=[webapp.pk])

@@ -72,11 +72,27 @@ def get_pods():
         return None
 
 
-def get_pods_user(user):
+def get_pods_user(namespace):
+    '''
+    Get all pods for a specific Kubernetes namespace in the cluster.
+    '''
     try:
-        return core_v1.list_namespaced_pod(user.k8s_namespace().name)
+        pods = core_v1.list_namespaced_pod(namespace)
+        # logger.debug(f"Got list of pods for namespace {namespace}: {pods.items}")
+        stripped_pods = []
+        for pod in pods.items:
+            stripped_pod = {'name': pod.metadata.name,
+                            'creation_timestamp': pod.metadata.creation_timestamp}
+            stripped_containers = []
+            for container in pod.spec.containers:
+                c = {'image': container.image,
+                     'name': container.name}
+                stripped_containers.append(c)
+            stripped_pod['containers'] = stripped_containers
+            stripped_pods.append(stripped_pod)
+        return stripped_pods
     except Exception as e:
-        logger.exception(f"Error while fetching pods of user {user}")
+        logger.exception(f"Error while fetching pods of namespace {namespace}")
         return None
 
 
