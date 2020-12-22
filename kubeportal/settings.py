@@ -35,6 +35,7 @@ class Common(Configuration):
         'allauth.socialaccount.providers.oauth2',
         'silk',
         'django_extensions',
+        'drf_yasg'
     ]
 
     MIDDLEWARE = [
@@ -170,6 +171,10 @@ class Common(Configuration):
     # override default response format for /api/login endpoint
     REST_AUTH_SERIALIZERS = {
         'JWT_SERIALIZER': 'kubeportal.api.serializers.LoginSuccessSerializer'
+    }
+
+    SWAGGER_SETTINGS = {
+        'USE_SESSION_AUTH': False
     }
 
 

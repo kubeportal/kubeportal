@@ -1,5 +1,6 @@
 from django.conf.urls import include
 from django.urls import path
+from django.conf import settings
 from django.views.generic.base import RedirectView
 from oidc_provider.views import ProviderInfoView
 from dj_rest_auth import views as dj_rest_views
@@ -8,7 +9,11 @@ from kubeportal import views
 from kubeportal.api import views as api_views
 from kubeportal.admin import admin_site
 
+from rest_framework import permissions
 from rest_framework_nested import routers
+
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 
 
 router = routers.SimpleRouter()
@@ -20,6 +25,18 @@ router.register('groups', api_views.GroupViewSet, basename='groups')
 users_router = routers.NestedSimpleRouter(router, 'users', lookup='user')
 users_router.register('webapps', api_views.WebApplicationViewSet, basename='user-webapplications')
 users_router.register('groups', api_views.GroupViewSet, basename='user-groups')
+
+
+schema_view = get_schema_view(
+   openapi.Info(
+      title="KubePortal API",
+      default_version=settings.API_VERSION,
+      contact=openapi.Contact(email="peter@troeger.eu"),
+      license=openapi.License(name="GNU Affero General Public License v3.0"),
+   ),
+   public=True,
+   permission_classes=[permissions.AllowAny],
+)
 
 urlpatterns = [
     # frontend web views
@@ -48,6 +65,7 @@ urlpatterns = [
     path('api/<str:version>/', include(router.urls)),
     path('api/<str:version>/', include(users_router.urls)),
     path('api/', api_views.BootstrapView.as_view()),
+    path('api/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),

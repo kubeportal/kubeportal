@@ -53,6 +53,5 @@ CORS headers are sent by this application, but the code behaves differently in d
 API methods
 -----------
 
-The complete API description is available as `OpenAPI specification <https://raw.githubusercontent.com/kubeportal/kubeportal/master/docs/openapi.yaml>`_. Here is an overview of the available methods:
+The complete API description is available in your installation at `/api/docs/`.
 
-.. openapi:: openapi.yaml
