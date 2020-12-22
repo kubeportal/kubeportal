@@ -12,9 +12,6 @@ from kubeportal.admin import admin_site
 from rest_framework import permissions
 from rest_framework_nested import routers
 
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
-
 
 router = routers.SimpleRouter()
 router.register('users', api_views.UserViewSet, basename='users')
@@ -26,17 +23,6 @@ users_router = routers.NestedSimpleRouter(router, 'users', lookup='user')
 users_router.register('webapps', api_views.WebApplicationViewSet, basename='user-webapplications')
 users_router.register('groups', api_views.GroupViewSet, basename='user-groups')
 
-
-schema_view = get_schema_view(
-   openapi.Info(
-      title="KubePortal API",
-      default_version=settings.API_VERSION,
-      contact=openapi.Contact(email="peter@troeger.eu"),
-      license=openapi.License(name="GNU Affero General Public License v3.0"),
-   ),
-   public=True,
-   permission_classes=[permissions.AllowAny],
-)
 
 urlpatterns = [
     # frontend web views
@@ -64,8 +50,8 @@ urlpatterns = [
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/', include(router.urls)),
     path('api/<str:version>/', include(users_router.urls)),
+    path('api/docs/', views.ApiDocsView.as_view(), name='api_docs'),
     path('api/', api_views.BootstrapView.as_view()),
-    path('api/docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),

@@ -21,6 +21,7 @@ class Common(Configuration):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'sortedm2m_filter_horizontal_widget',
+        'swagger_ui',
         'oidc_provider',
         'rest_framework',
         'rest_framework.authtoken',
@@ -34,8 +35,7 @@ class Common(Configuration):
         'allauth.socialaccount.providers.google',
         'allauth.socialaccount.providers.oauth2',
         'silk',
-        'django_extensions',
-        'drf_yasg'
+        'django_extensions'
     ]
 
     MIDDLEWARE = [
@@ -70,19 +70,21 @@ class Common(Configuration):
     ]
 
     REST_FRAMEWORK = {
-            'DEFAULT_VERSIONING_CLASS':
-            'rest_framework.versioning.URLPathVersioning',
-            'DEFAULT_AUTHENTICATION_CLASSES': [
-                'rest_framework_simplejwt.authentication.JWTAuthentication',
-                ],
-            'DEFAULT_PERMISSION_CLASSES': [
-                'kubeportal.middleware.AllowOptionsAuthentication',
-                ],
-            'DEFAULT_VERSION': API_VERSION,
-            'ALLOWED_VERSIONS': [
-                API_VERSION
-                ]
-            }
+        'DEFAULT_RENDERER_CLASSES': (
+            'rest_framework.renderers.JSONRenderer',
+        ),
+        'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+            ],
+        'DEFAULT_PERMISSION_CLASSES': [
+            'kubeportal.middleware.AllowOptionsAuthentication',
+            ],
+        'DEFAULT_VERSION': API_VERSION,
+        'ALLOWED_VERSIONS': [
+            API_VERSION
+            ]
+    }
 
     REST_USE_JWT = True
 
@@ -173,17 +175,7 @@ class Common(Configuration):
         'JWT_SERIALIZER': 'kubeportal.api.serializers.LoginSuccessSerializer'
     }
 
-    SWAGGER_SETTINGS = {
-        'USE_SESSION_AUTH': False,
-        'SECURITY_DEFINITIONS': {
-            'Bearer': {
-                'type': 'apiKey',
-                'name': 'Authorization',
-                'in': 'header'
-            }
-        }
-    }
-
+    SWAGGER_YAML_FILE = 'docs/openapi.yaml'
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

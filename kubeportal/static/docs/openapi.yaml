@@ -2,15 +2,75 @@ openapi: 3.0.0
 
 info:
   version: v1.4.0
-  title: Kubportal Backend API
+  title: Kubeportal Backend API
 
 servers:
-  - url: '{server}/api/v1.4.0'
+  - url: '{server}/api/{version}'
     variables:
       server:
         default: http://localhost:8000  # dev server
+      version:
+        default: v1.4.0
 
 paths:
+  /login/:
+    post:
+      summary: Authorize an user with name and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: 'root'
+                password:
+                  type: string
+                  example: 'rootpw'
+      responses:
+        '200':
+          description: Ok. Authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccess'
+
+  /login_google/:
+    post:
+      summary: Authorize a Google user with OAuth credentials
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: 'asfldhgwe847g'
+      responses:
+        '200':
+          description: OK. Authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccess'
+        '400':
+          description: Invalid credentials, login denied.
+      
+  /logout/:
+    get:
+      summary: Invalidate API login session.
+      security:
+        - JWT: [ ]
+      responses:
+        '200':
+          description: OK
+
   /cluster/{slug}/:
     get:
       summary: Get information about the cluster.
@@ -37,127 +97,6 @@ paths:
       responses:
         '200':
           description: A single information value as JSON dictionary with one entry. The key is the slug name.
-        '404':
-          $ref: '#/components/responses/NotFound'   
-        '401':
-          $ref: '#/components/responses/Unauthorized'   
-                    
-  /webapps/{id}/:
-    get:
-      summary: Get details about a web application.
-      security:
-        - JWT: [ ]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: The ID of the web application.
-      responses:
-        '200':
-          description: Attributes of the web application.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/WebApp'
-        '403':
-          description: The user is not in a group assigned to this application, or the link is configured to not being shown.
-        '404':
-          $ref: '#/components/responses/NotFound'   
-        '401':
-          $ref: '#/components/responses/Unauthorized'   
-
-  /:
-    get:
-      summary: Get bootstrap information for talking to the API.
-      responses:
-        '200':
-          description: Information for talking to the API.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BootstrapSuccess'
-
-
-  /groups/{id}/:
-    get:
-      summary: Get details about a user group.
-      security:
-        - JWT: [ ]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: The ID of the user group.
-      responses:
-        '200':
-          description: Attributes of the user group.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-        '403':
-          description: The user is not in this group.
-        '404':
-          $ref: '#/components/responses/NotFound'   
-        '401':
-          $ref: '#/components/responses/Unauthorized'   
-
-
-  /users/{id}/webapps/:
-    get:
-      summary: Get web apps of this user.
-      security:
-        - JWT: [ ]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: ID of the user
-      responses:
-        '200':
-          description: Ok
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/WebApp'
-        '403':
-          description: The current user is not allowed to get information for the requested user ID.
-        '404':
-          $ref: '#/components/responses/NotFound'   
-        '401':
-          $ref: '#/components/responses/Unauthorized'   
-
-  /users/{id}/groups/:
-    get:
-      summary: Get groups of this user.
-      security:
-        - JWT: [ ]
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-          description: ID of the user
-      responses:
-        '200':
-          description: Ok
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Group'
-        '403':
-          description: The current user is not allowed to get information for the requested user ID.
         '404':
           $ref: '#/components/responses/NotFound'   
         '401':
@@ -223,74 +162,140 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'   
 
-                    
-  /login/:
-    post:
-      summary: Authorize an user with name and password
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: object
-                properties:
-                  username:
-                    type: string
-                    example: 's77777'
-                  password:
-                    type: string
-                    example: 'test'
-      responses:
-        '200':
-          description: Ok. Authorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginSuccess'
-
-  /login_google/:
-    post:
-      summary: Authorize a Google user with OAuth credentials
-      requestBody:
-        required: true
-        content: 
-          application/json:
-            schema:
-              type: array
-              items:
-                type: object
-                properties:
-                  access_token:
-                    type: string
-                    example: 'asfldhgwe847g'
-      responses:
-        '200':
-          description: OK. Authorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LoginSuccess'
-        '400':
-          description: Invalid credentials, login denied.
-      
-  /logout/:
+  /users/{id}/webapps/:
     get:
-      summary: Invalidate API login session.
+      summary: Get web apps of this user.
       security:
         - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
       responses:
         '200':
-          description: OK
-    
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebApp'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+  /users/{id}/groups/:
+    get:
+      summary: Get groups of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+                                        
+  /webapps/{id}/:
+    get:
+      summary: Get details about a web application.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the web application.
+      responses:
+        '200':
+          description: Attributes of the web application.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebApp'
+        '403':
+          description: The user is not in a group assigned to this application, or the link is configured to not being shown.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+
+
+  /groups/{id}/:
+    get:
+      summary: Get details about a user group.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the user group.
+      responses:
+        '200':
+          description: Attributes of the user group.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '403':
+          description: The user is not in this group.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+  /:
+    servers:
+      - url: '{server}/api'
+        variables:
+          server:
+            default: http://localhost:8000  # dev server
+    get:
+      summary: Get bootstrap information for talking to the API.
+      responses:
+        '200':
+          description: Information for talking to the API.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootstrapSuccess'
+
+
 
 components:
   securitySchemes:
-    JWT: # arbitrary name for the security scheme
-      type: apiKey
-      in: header # can be "header", "query" or "cookie"
-      name: Authorization # name of the header, query parameter or cookie
+    JWT:            
+      type: http
+      scheme: bearer
+      bearerFormat: JWT    
 
   responses:
     NotFound:
