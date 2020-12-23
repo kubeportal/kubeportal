@@ -14,18 +14,17 @@ from django.contrib import messages
 from kubernetes import client
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
-from kubeportal.k8s.utils import load_config
 from kubeportal.k8s import ns_sync_utils as ns_utils
 from kubeportal.k8s import svca_sync_utils as svca_utils
 from kubeportal.k8s import kubernetes_api as api
+from kubeportal.k8s.kubernetes_api import core_v1, rbac_v1
 
+import logging
 import json
 import logging
 
 
 logger = logging.getLogger('KubePortal')
-
-core_v1, rbac_v1 = load_config()
 
 k8s_ns_uids = []
 

@@ -3,8 +3,7 @@
 '''
 
 from django.conf import settings
-from kubernetes import client
-from kubeportal.k8s.utils import load_config, is_minikube
+from kubernetes import client, config
 from base64 import b64decode
 
 import logging
@@ -13,9 +12,23 @@ logger = logging.getLogger('KubePortal')
 
 HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 
+try:
+    # Production mode
+    config.load_incluster_config()
+except Exception:
+    # Dev mode
+    config.load_kube_config()
 
-core_v1, rbac_v1 = load_config()
+core_v1 = client.CoreV1Api()
+rbac_v1 = client.RbacAuthorizationV1Api()
+apps_v1 = client.AppsV1Api()
 
+def is_minikube():
+    '''
+    Checks if the current context is minikube. This is needed for checks in the test code.
+    '''
+    contexts, active_context = config.list_kube_config_contexts()
+    return active_context['context']['cluster'] == 'minikube'
 
 def create_k8s_ns(name):
     logger.info(
@@ -75,6 +88,9 @@ def get_pods():
 def get_pods_user(namespace):
     '''
     Get all pods for a specific Kubernetes namespace in the cluster.
+
+    Make sure to update the 'Pod' component at static/docs/openapi.yaml
+    when touching this code.
     '''
     try:
         pods = core_v1.list_namespaced_pod(namespace)
@@ -93,7 +109,46 @@ def get_pods_user(namespace):
         return stripped_pods
     except Exception as e:
         logger.exception(f"Error while fetching pods of namespace {namespace}")
-        return None
+        return []
+
+def get_deployments_user(namespace):
+    '''
+    Get all deployments for a specific Kubernetes namespace in the cluster.
+
+    Make sure to update the 'Deployment' component at static/docs/openapi.yaml
+    when touching this code.
+    '''
+    try:
+        deployments = apps_v1.list_namespaced_deployment(namespace)
+        stripped_deployments = []
+        for deployment in deployments.items:
+            stripped_depl = {'name': deployment.metadata.name,
+                             'creation_timestamp': deployment.metadata.creation_timestamp,
+                             'replicas': deployment.spec.replicas}
+            stripped_deployments.append(stripped_depl)
+        return stripped_deployments
+    except Exception as e:
+        logger.exception(f"Error while fetching deployments of namespace {namespace}")
+        return []
+
+def get_services_user(namespace):
+    '''
+    Get all services for a specific Kubernetes namespace in the cluster.
+
+    Make sure to update the 'Service' component at static/docs/openapi.yaml
+    when touching this code.
+    '''
+    try:
+        services = core_v1.list_namespaced_service(namespace)
+        stripped_services = []
+        for svc in services.items:
+            stripped_svc = {'name': svc.metadata.name,
+                             'creation_timestamp': svc.metadata.creation_timestamp}
+            stripped_services.append(stripped_svc)
+        return stripped_services
+    except Exception as e:
+        logger.exception(f"Error while fetching services of namespace {namespace}")
+        return []
 
 
 def get_token(kubeportal_service_account):

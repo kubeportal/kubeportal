@@ -23,6 +23,8 @@ users_router = routers.NestedSimpleRouter(router, 'users', lookup='user')
 users_router.register('webapps', api_views.WebApplicationViewSet, basename='user-webapplications')
 users_router.register('groups', api_views.GroupViewSet, basename='user-groups')
 users_router.register('pods', api_views.PodViewSet, basename='user-pods')
+users_router.register('deployments', api_views.DeploymentViewSet, basename='user-deployments')
+users_router.register('services', api_views.ServiceViewSet, basename='user-services')
 
 
 urlpatterns = [

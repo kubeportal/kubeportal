@@ -165,25 +165,38 @@ class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             raise NotFound
 
 
-class PodViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class K8SResourceViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    '''
+    Generic base class for fetching a particular Kubernetes resource type for a portal user.
+    '''
     renderer_classes = [JSONRenderer]
 
     def list(self, request, *args, **kwargs):
         if 'user_pk' in self.kwargs:
-            # Query for pod list of a specific user
             try:
                 query_pk = int(self.kwargs['user_pk'])
             except Exception as e:
-                logger.error(f'Request failed. Requested user_pk {self.kwargs["user_pk"]} is invalid: {e}')
+                logger.info(f'Request failed. Requested user_pk {self.kwargs["user_pk"]} is invalid: {e}')
                 return JsonResponse(data='invalid user_pk', status=404)
             if query_pk != self.request.user.pk:
-                logger.debug(f"Current user ID is {self.request.user.pk}, denying access to pods.")
+                logger.info(f"Permission denied: Current user ID is {self.request.user.pk}, which is different from the requested user ID.")
                 raise PermissionDenied
             u = User.objects.get(pk=query_pk)
-            return Response(u.pods())
+            return self.list_response(u)
         else:
             raise Http404
 
+class PodViewSet(K8SResourceViewSet):
+    def list_response(self, user):
+        return Response(user.pods())
+
+class DeploymentViewSet(K8SResourceViewSet):
+    def list_response(self, user):
+        return Response(user.deployments())
+
+class ServiceViewSet(K8SResourceViewSet):
+    def list_response(self, user):
+        return Response(user.services())
 
 
 class BootstrapView(APIView):

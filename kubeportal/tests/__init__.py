@@ -9,7 +9,7 @@ from django.test import client
 from django.urls import reverse
 
 from kubeportal.k8s import k8s_sync
-from kubeportal.k8s.utils import is_minikube
+from kubeportal.k8s.kubernetes_api import is_minikube
 from kubeportal.models.portalgroup import PortalGroup
 
 logging.getLogger('KubePortal').setLevel(logging.DEBUG)

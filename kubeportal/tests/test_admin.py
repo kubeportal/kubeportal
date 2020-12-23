@@ -95,11 +95,6 @@ class Backend(AdminLoggedInTestCase):
         response = self.client.get('/admin/')
         self.assertEqual(response.status_code, 200)
 
-    def test_k8s_sync_error_no_crash(self):
-        with patch('kubeportal.k8s.utils.load_config', return_value=(None, None)):
-            # K8S login mocked away, view should not crash
-            self._call_sync()
-
     def test_special_k8s_approved(self):
         # Creating an auto_add_approved group should not change its member list.
         group = PortalGroup.objects.get(special_k8s_accounts=True)

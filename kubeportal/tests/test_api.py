@@ -415,7 +415,29 @@ class ApiLocalUser(ApiTestCase):
         self.admin.save()
         response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/pods/')
         self.assertEqual(200, response.status_code)
-        assert(len(json.loads(response.content))>0)
+        data = json.loads(response.content)
+        self.assertIn("coredns", data[0]['name'])
+
+    def test_user_deployments_list(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
+        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/deployments/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertIn("coredns", data[0]['name'])
+
+    def test_user_services_list(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
+        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/services/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertIn("kube-dns", data[0]['name'])
+
 
 class ApiLogout(ApiTestCase):
     '''

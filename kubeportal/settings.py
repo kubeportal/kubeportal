@@ -175,8 +175,6 @@ class Common(Configuration):
         'JWT_SERIALIZER': 'kubeportal.api.serializers.LoginSuccessSerializer'
     }
 
-    SWAGGER_YAML_FILE = 'docs/openapi.yaml'
-
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {

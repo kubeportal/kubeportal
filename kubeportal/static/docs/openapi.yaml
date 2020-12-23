@@ -1,7 +1,7 @@
 openapi: 3.0.0
 
 info:
-  version: v1.4.0
+  version: v1.5.0
   title: Kubeportal Backend API
 
 servers:
@@ -10,7 +10,7 @@ servers:
       server:
         default: http://localhost:8000  # dev server
       version:
-        default: v1.4.0
+        default: v1.5.0
 
 paths:
   /login/:
@@ -189,6 +189,91 @@ paths:
           $ref: '#/components/responses/NotFound'   
         '401':
           $ref: '#/components/responses/Unauthorized'   
+
+  /users/{id}/pods/:
+    get:
+      summary: Get pods of the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pod'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+  /users/{id}/deployments/:
+    get:
+      summary: Get deployments of the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deployment'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+  /users/{id}/services/:
+    get:
+      summary: Get services of the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
 
   /users/{id}/groups/:
     get:
@@ -378,4 +463,42 @@ components:
         name:
           type: string
           example: Kubernetes users
-          
+    Pod:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'coredns-6955765f44-6dfnm'
+        creation_timestamp:
+          type: string
+          example: '2020-12-05T13:06:44Z'
+        containers:
+          type: object
+          properties:
+            image:
+              type: string
+              example: 'k8s.gcr.io/coredns:1.6.5'
+            name:
+              type: string
+              example: 'coredns'          
+    Deployment:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'coredns'
+        creation_timestamp:
+          type: string
+          example: '2020-12-05T13:06:44Z'
+        replicas:
+          type: int
+          example: 1
+    Service:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'kube-dns'
+        creation_timestamp:
+          type: string
+          example: '2020-12-05T13:06:44Z'
