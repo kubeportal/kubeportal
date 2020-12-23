@@ -20,7 +20,7 @@ from django.utils.safestring import mark_safe
 from django_fsm import FSMField, transition
 from django.conf import settings
 from multi_email_field.fields import MultiEmailField
-from kubeportal.k8s.kubernetes_api import get_pods_user, get_deployments_user, get_services_user
+from kubeportal.k8s import kubernetes_api
 
 import logging
 
@@ -66,7 +66,9 @@ class User(AbstractUser):
 
     def k8s_namespace(self):
         """
-        Property used by the API serializer.
+        Returns the primary namespace of this user.
+
+        Used as property by the API serializer.
         """
         if self.service_account:
             return self.service_account.namespace
@@ -84,35 +86,46 @@ class User(AbstractUser):
         else:
             return WebApplication.objects.filter(portal_groups__members__pk=self.pk, link_show=True).distinct()
 
-    def pods(self):
+    def k8s_pods(self):
         """
         Returns a list of K8S pods for this user.
         """
         if self.service_account:
-            return get_pods_user(self.service_account.namespace.name)
+            return kubernetes_api.get_namespaced_pods(self.service_account.namespace.name)
         else:
             logger.error(f"Cannot determine list of pods for user {self}, since she has no service account attached.")
             return []
 
-    def deployments(self):
+    def k8s_deployments(self):
         """
         Returns a list of K8 deployments for this user.
         """
         if self.service_account:
-            return get_deployments_user(self.service_account.namespace.name)
+            return kubernetes_api.get_namespaced_deployments(self.service_account.namespace.name)
         else:
             logger.error(f"Cannot determine list of deployments for user {self}, since she has no service account attached.")
             return []
 
-    def services(self):
+    def k8s_services(self):
         """
         Returns a list of K8S services for this user.
         """
         if self.service_account:
-            return get_services_user(self.service_account.namespace.name)
+            return kubernetes_api.get_namespaced_services(self.service_account.namespace.name)
         else:
             logger.error(f"Cannot determine list of services for user {self}, since she has no service account attached.")
             return []
+
+    def k8s_ingresses(self):
+        """
+        Returns a list of K8S ingresses for this user.
+        """
+        if self.service_account:
+            return kubernetes_api.get_namespaced_ingresses(self.service_account.namespace.name)
+        else:
+            logger.error(f"Cannot determine list of ingresses for user {self}, since she has no service account attached.")
+            return []
+
 
     def can_subauth(self, webapp):
         user_groups_with_this_app = self.portal_groups.filter(can_web_applications__in=[webapp.pk])

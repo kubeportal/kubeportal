@@ -274,6 +274,34 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'   
 
+  /users/{id}/ingresses/:
+    get:
+      summary: Get ingresses of the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ingress'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
 
   /users/{id}/groups/:
     get:
@@ -493,6 +521,20 @@ components:
         replicas:
           type: int
           example: 1
+    Ingress:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'website'
+        creation_timestamp:
+          type: string
+          example: '2020-12-05T13:06:44Z'
+        hosts:
+          type: array
+          items:
+            type: string
+            example: 'my.site.example.com'
     Service:
       type: object
       properties:

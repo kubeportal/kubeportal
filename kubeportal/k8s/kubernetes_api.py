@@ -19,9 +19,11 @@ except Exception:
     # Dev mode
     config.load_kube_config()
 
+api_client = client.ApiClient()
 core_v1 = client.CoreV1Api()
 rbac_v1 = client.RbacAuthorizationV1Api()
 apps_v1 = client.AppsV1Api()
+net_v1 = client.NetworkingV1beta1Api()
 
 def is_minikube():
     '''
@@ -31,6 +33,10 @@ def is_minikube():
     return active_context['context']['cluster'] == 'minikube'
 
 def create_k8s_ns(name):
+    '''
+    Create the Kubernetes namespace with the given name in the cluster.
+    An existing namespace with the same name leads to a no-op.
+    '''
     logger.info(
         "Creating Kubernetes namespace '{0}'".format(name))
     try:
@@ -48,6 +54,9 @@ def create_k8s_ns(name):
 
 
 def delete_k8s_ns(name):
+    '''
+    Delete the given namespace in the cluster, but only when its Minikube.
+    '''
     if is_minikube():
         logger.info("Deleting Kubernetes namespace '{0}'".format(name))
         core_v1.delete_namespace(name)
@@ -57,7 +66,7 @@ def delete_k8s_ns(name):
 
 def get_namespaces():
     '''
-    Returns the list of cluster namespaces.
+    Returns the list of cluster namespaces, or None on error.
     '''
     try:
         return core_v1.list_namespace().items
@@ -68,7 +77,7 @@ def get_namespaces():
 
 def get_service_accounts():
     '''
-    Returns the list of service accounts.
+    Returns the list of service accounts in the cluster, or None on error.
     '''
     try:
         return core_v1.list_service_account_for_all_namespaces().items
@@ -78,6 +87,9 @@ def get_service_accounts():
 
 
 def get_pods():
+    '''
+    Returns the list of pods in the cluster, or None on error.
+    '''
     try:
         return core_v1.list_pod_for_all_namespaces().items
     except Exception as e:
@@ -85,7 +97,7 @@ def get_pods():
         return None
 
 
-def get_pods_user(namespace):
+def get_namespaced_pods(namespace):
     '''
     Get all pods for a specific Kubernetes namespace in the cluster.
 
@@ -111,7 +123,7 @@ def get_pods_user(namespace):
         logger.exception(f"Error while fetching pods of namespace {namespace}")
         return []
 
-def get_deployments_user(namespace):
+def get_namespaced_deployments(namespace):
     '''
     Get all deployments for a specific Kubernetes namespace in the cluster.
 
@@ -131,7 +143,7 @@ def get_deployments_user(namespace):
         logger.exception(f"Error while fetching deployments of namespace {namespace}")
         return []
 
-def get_services_user(namespace):
+def get_namespaced_services(namespace):
     '''
     Get all services for a specific Kubernetes namespace in the cluster.
 
@@ -148,6 +160,27 @@ def get_services_user(namespace):
         return stripped_services
     except Exception as e:
         logger.exception(f"Error while fetching services of namespace {namespace}")
+        return []
+
+
+def get_namespaced_ingresses(namespace):
+    '''
+    Get all ingress for a specific Kubernetes namespace in the cluster.
+
+    Make sure to update the 'Ingress' component at static/docs/openapi.yaml
+    when touching this code.
+    '''
+    try:
+        ings = net_v1.list_namespaced_ingress(namespace)
+        stripped_ings = []
+        for ing in ings.items:
+            stripped_ing = {'name': ing.metadata.name,
+                            'creation_timestamp': ing.metadata.creation_timestamp,
+                            'hosts': [rule.host for rule in ing.spec.rules]}
+            stripped_ings.append(stripped_ing)
+        return stripped_ings
+    except Exception as e:
+        logger.exception(f"Error while fetching ingresses of namespace {namespace}")
         return []
 
 

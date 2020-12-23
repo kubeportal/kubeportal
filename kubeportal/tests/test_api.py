@@ -1,12 +1,14 @@
 from django.http import JsonResponse
 from django.test import override_settings
 from rest_framework.test import RequestsClient
+from kubernetes import utils as k8s_utils
 
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
 from kubeportal.api.views import ClusterViewSet
+from kubeportal.k8s.kubernetes_api import api_client
 from django.conf import settings
 import logging
 import json
@@ -17,7 +19,6 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 API_VERSION = settings.API_VERSION
-
 
 class ApiTestCase(AdminLoggedOutTestCase):
     """
@@ -437,6 +438,27 @@ class ApiLocalUser(ApiTestCase):
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         self.assertIn("kube-dns", data[0]['name'])
+
+    def test_user_ingresses_list(self):
+        self._call_sync()
+        default_namespace = KubernetesNamespace.objects.get(name="default")
+        self.admin.service_account = default_namespace.service_accounts.all()[0]
+        self.admin.save()
+
+        try:
+            k8s_utils.create_from_yaml(api_client, "kubeportal/tests/fixtures/ingress.yml")
+        except k8s_utils.FailToCreateError as e:
+            if e.api_exceptions[0].reason == "Conflict":
+                pass # test namespace still exists in Minikube from another run
+            else:
+                raise e
+
+        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/ingresses/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertEqual("minimal-ingress", data[0]['name'])
+
+
 
 
 class ApiLogout(ApiTestCase):

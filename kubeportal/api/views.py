@@ -188,16 +188,19 @@ class K8SResourceViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 class PodViewSet(K8SResourceViewSet):
     def list_response(self, user):
-        return Response(user.pods())
+        return Response(user.k8s_pods())
 
 class DeploymentViewSet(K8SResourceViewSet):
     def list_response(self, user):
-        return Response(user.deployments())
+        return Response(user.k8s_deployments())
 
 class ServiceViewSet(K8SResourceViewSet):
     def list_response(self, user):
-        return Response(user.services())
+        return Response(user.k8s_services())
 
+class IngressViewSet(K8SResourceViewSet):
+    def list_response(self, user):
+        return Response(user.k8s_ingresses())
 
 class BootstrapView(APIView):
     """

@@ -40,7 +40,7 @@ class BaseTestCase(TestCase):
         super().setUp()
         self.factory = RequestFactory()
         self.client = client.Client()
-        assert(is_minikube())
+        assert(is_minikube())   # prevent polluting production clusters with test data
 
     def _build_full_request_mock(self, short_url):
         url = reverse(short_url)
