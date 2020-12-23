@@ -124,3 +124,12 @@ class PortalGroups(AnonymousTestCase):
         self.second_user.refresh_from_db()  # catch changes from signal handlers
         self.assertEqual(self.second_user.is_superuser, True)
         self.assertEqual(self.second_user.is_staff, True)
+
+    def test_special_groups(self):
+        """
+        WIth a fresh database, only the two special groups exist.
+        """
+        groups = PortalGroup.objects.all()
+        self.assertEqual(2, len(groups))
+        for group in groups:
+            self.assertEqual(True, group.is_special_group())

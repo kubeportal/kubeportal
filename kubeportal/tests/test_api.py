@@ -348,7 +348,7 @@ class ApiLocalUser(ApiTestCase):
         response = self.get(f'/api/{API_VERSION}/groups/{group1.pk}/')
         self.assertEqual(response.status_code, 403)
 
-    def test_group_invalid_id(self):
+    def test_user_group_invalid_id(self):
         response = self.get(f'/api/{API_VERSION}/users/777/groups/')
         self.assertEqual(response.status_code, 403)
 
@@ -372,6 +372,11 @@ class ApiLocalUser(ApiTestCase):
         self.assertEqual(updated_primary_email, data_mock['primary_email'])
         self.assertEqual(response.status_code, 200)
 
+    def test_patch_user_invalid_body(self):
+        response = self.patch(f'/api/{API_VERSION}/users/{self.admin.pk}/', {})
+        self.assertEqual(response.status_code, 422)
+
+
     def test_patch_user_invalid_id(self):
         response = self.patch(f'/api/{API_VERSION}/users/777/', {})
         self.assertEqual(response.status_code, 404)
@@ -393,6 +398,14 @@ class ApiLocalUser(ApiTestCase):
 
         response = self.get(f'/api/{API_VERSION}/users/{u.pk}/')
         self.assertEqual(response.status_code, 403)
+
+    def test_user_not_himself_webapps(self):
+        u = User()
+        u.save()
+
+        response = self.get(f'/api/{API_VERSION}/users/{u.pk}/webapps/')
+        self.assertEqual(response.status_code, 403)
+
 
     def test_no_general_user_list(self):
         response = self.get(f'/api/{API_VERSION}/users/')
