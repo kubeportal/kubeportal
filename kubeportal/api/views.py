@@ -173,6 +173,7 @@ class K8SResourceViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     def list(self, request, *args, **kwargs):
         if 'user_pk' in self.kwargs:
+            # List call for a specific user ID
             try:
                 query_pk = int(self.kwargs['user_pk'])
             except Exception as e:
@@ -182,25 +183,51 @@ class K8SResourceViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
                 logger.info(f"Permission denied: Current user ID is {self.request.user.pk}, which is different from the requested user ID.")
                 raise PermissionDenied
             u = User.objects.get(pk=query_pk)
+            # Call specialized content fetching method from sub-class
             return self.list_response(u)
+        else:
+            # General list call
+            # Call specialized content fetching method from sub-class
+            return self.list_response()
+
+class PodViewSet(K8SResourceViewSet):
+    def list_response(self, user=None):
+        if user:
+            return Response(user.k8s_pods())
         else:
             raise Http404
 
-class PodViewSet(K8SResourceViewSet):
-    def list_response(self, user):
-        return Response(user.k8s_pods())
-
 class DeploymentViewSet(K8SResourceViewSet):
-    def list_response(self, user):
-        return Response(user.k8s_deployments())
+    def list_response(self, user=None):
+        if user:
+            return Response(user.k8s_deployments())
+        else:
+            raise Http404            
 
 class ServiceViewSet(K8SResourceViewSet):
-    def list_response(self, user):
-        return Response(user.k8s_services())
+    def list_response(self, user=None):
+        if user:
+            return Response(user.k8s_services())
+        else:
+            raise Http404            
 
 class IngressViewSet(K8SResourceViewSet):
-    def list_response(self, user):
-        return Response(user.k8s_ingresses())
+    def list_response(self, user=None):
+        if user:
+            return Response(user.k8s_ingresses())
+        else:
+            raise Http404                        
+
+class IngressHostsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    '''
+    View set to return the list of all host names used in Ingress definitions
+    across all namespaces. This is used by the frontend for checking host names
+    '''
+    renderer_classes = [JSONRenderer]
+
+    def list(self, request, *args, **kwargs):
+        return Response(api.get_ingress_hosts())
+
 
 class BootstrapView(APIView):
     """

@@ -217,6 +217,16 @@ class ApiLocalUser(ApiTestCase):
         'k8s_token',
     ]
 
+    def _apply_yml(self, path):
+        try:
+            k8s_utils.create_from_yaml(api_client, path)
+        except k8s_utils.FailToCreateError as e:
+            if e.api_exceptions[0].reason == "Conflict":
+                pass # test namespace still exists in Minikube from another run
+            else:
+                raise e
+
+
     def setUp(self):
         super().setUp()
         self.api_login()
@@ -417,7 +427,9 @@ class ApiLocalUser(ApiTestCase):
         response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/pods/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
-        self.assertIn("coredns", data[0]['name'])
+        names = [record['name'] for record in data]
+        self.assertIn("kube-apiserver-minikube", names)
+        self.assertIn("etcd-minikube", names)
 
     def test_user_deployments_list(self):
         self._call_sync()
@@ -445,18 +457,21 @@ class ApiLocalUser(ApiTestCase):
         self.admin.service_account = default_namespace.service_accounts.all()[0]
         self.admin.save()
 
-        try:
-            k8s_utils.create_from_yaml(api_client, "kubeportal/tests/fixtures/ingress.yml")
-        except k8s_utils.FailToCreateError as e:
-            if e.api_exceptions[0].reason == "Conflict":
-                pass # test namespace still exists in Minikube from another run
-            else:
-                raise e
+        self._apply_yml("kubeportal/tests/fixtures/ingress1.yml")
 
         response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/ingresses/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
-        self.assertEqual("minimal-ingress", data[0]['name'])
+        self.assertEqual("test-ingress-1", data[0]['name'])
+
+    def test_ingress_list(self):
+        self._apply_yml("kubeportal/tests/fixtures/ingress1.yml")
+        self._apply_yml("kubeportal/tests/fixtures/ingress2.yml")
+
+        response = self.get(f'/api/{API_VERSION}/ingresses/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertEqual(["visbert.demo.datexis.com", "tasty.demo.datexis.com"], data)
 
 
 

@@ -74,6 +74,20 @@ def get_namespaces():
         logger.exception("Error while fetching namespaces from Kubernetes")
         return None
 
+def get_ingress_hosts():
+    '''
+    Returns the list of host names used in ingresses accross all namespaces, 
+    or None on error.
+    '''
+    try:
+        ings =  net_v1.list_ingress_for_all_namespaces()
+        host_list = [rule.host for ing in ings.items for rule in ing.spec.rules]
+        return host_list
+
+    except Exception:
+        logger.exception("Error while fetching all ingresses from Kubernetes")
+        return None
+
 
 def get_service_accounts():
     '''
