@@ -185,3 +185,7 @@ class ConfigView(LoginRequiredMixin, TemplateView):
         context['portal_administrators'] = list(
             User.objects.filter(is_staff=True).exclude(username="root"))
         return context
+
+class ApiDocsView(TemplateView):
+    template_name = "api_docs.html"
+
