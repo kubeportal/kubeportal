@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: ''
-  version: 0.0.0
+  title: Kubeportal Backend API
+  version: v1.5.0
 paths:
   /api/:
     get:
@@ -819,3 +819,11 @@ components:
       type: http
       scheme: bearer
       bearerFormat: Bearer
+servers:
+- url: '{server}/api/{version}'
+  variables:
+  - server:
+      default: http://localhost:8000
+  - version:
+      default: v1.5.0
+

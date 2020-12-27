@@ -87,7 +87,7 @@ class Common(Configuration):
         'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     }
 
-    SPECTACULAR_DEFAULTS = {
+    SPECTACULAR_SETTINGS = {
         'TITLE': 'Kubeportal Backend API',
         'VERSION': API_VERSION,
         'SERVERS': [
