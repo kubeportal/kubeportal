@@ -1,5 +1,5 @@
-from django.http import JsonResponse
 from django.test import override_settings
+from django.contrib.auth import get_user_model
 from rest_framework.test import RequestsClient
 from kubernetes import utils as k8s_utils
 
@@ -8,14 +8,13 @@ from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
 from kubeportal.api.views import ClusterViewSet
-from kubeportal.k8s.kubernetes_api import api_client
+from kubeportal.k8s.kubernetes_api import api_client, get_namespaced_deployments
 from django.conf import settings
 import logging
 import json
 
 logger = logging.getLogger('KubePortal')
 
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 API_VERSION = settings.API_VERSION
@@ -428,8 +427,7 @@ class ApiLocalUser(ApiTestCase):
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         names = [record['name'] for record in data]
-        self.assertIn("kube-apiserver-minikube", names)
-        self.assertIn("etcd-minikube", names)
+        self.assertTrue(len(names)>0)
 
     def test_user_deployments_list(self):
         self._call_sync()
@@ -440,6 +438,17 @@ class ApiLocalUser(ApiTestCase):
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         self.assertIn("coredns", data[0]['name'])
+
+    def test_user_deployments_create(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
+        old_count = len(get_namespaced_deployments("kube-system"))
+        response = self.post(f'/api/{API_VERSION}/users/{self.admin.pk}/deployments/', {'name': 'test-deployment'})
+        self.assertEqual(201, response.status_code)
+        new_count = len(get_namespaced_deployments("kube-system"))
+        self.assertEqual(old_count+1, new_count)
 
     def test_user_services_list(self):
         self._call_sync()
