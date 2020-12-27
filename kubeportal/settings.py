@@ -21,7 +21,6 @@ class Common(Configuration):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'sortedm2m_filter_horizontal_widget',
-        'drf_spectacular',
         'oidc_provider',
         'rest_framework',
         'rest_framework.authtoken',
@@ -35,7 +34,8 @@ class Common(Configuration):
         'allauth.socialaccount.providers.google',
         'allauth.socialaccount.providers.oauth2',
         'silk',
-        'django_extensions'
+        'django_extensions',
+        'drf_spectacular', # do late to enable correct config loading
     ]
 
     MIDDLEWARE = [
