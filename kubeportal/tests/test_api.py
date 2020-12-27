@@ -8,7 +8,7 @@ from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
 from kubeportal.api.views import ClusterViewSet
-from kubeportal.k8s.kubernetes_api import api_client, get_namespaced_deployments
+from kubeportal.k8s.kubernetes_api import api_client, get_namespaced_deployments, apps_v1
 from django.conf import settings
 import logging
 import json
@@ -445,10 +445,24 @@ class ApiLocalUser(ApiTestCase):
         self.admin.service_account = system_namespace.service_accounts.all()[0]
         self.admin.save()
         old_count = len(get_namespaced_deployments("kube-system"))
-        response = self.post(f'/api/{API_VERSION}/users/{self.admin.pk}/deployments/', {'name': 'test-deployment'})
-        self.assertEqual(201, response.status_code)
-        new_count = len(get_namespaced_deployments("kube-system"))
-        self.assertEqual(old_count+1, new_count)
+        try:
+            response = self.post(f'/api/{API_VERSION}/users/{self.admin.pk}/deployments/',
+                                 {'name': 'test-deployment',
+                                  'replicas': 1,
+                                  'matchLabels': {'app': 'webapp'},
+                                  'template': {
+                                      'name': 'webapp',
+                                      'labels': {'app': 'webapp'},
+                                      'containers': [{
+                                          'name': 'busybox',
+                                          'image': 'busybox'
+                                      },]
+                                  }})
+            self.assertEqual(201, response.status_code)
+            new_count = len(get_namespaced_deployments("kube-system"))
+            self.assertEqual(old_count+1, new_count)
+        finally:
+            apps_v1.delete_namespaced_deployment(name="test-deployment", namespace="kube-system")
 
     def test_user_services_list(self):
         self._call_sync()

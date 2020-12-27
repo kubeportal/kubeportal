@@ -42,6 +42,24 @@ class PortalGroupSerializer(serializers.ModelSerializer):
         model = PortalGroup
         fields = ('name', )
 
+class ClusterInfoSerializer(serializers.Serializer):
+    pass
+
+class IngressHostsSerializer(serializers.Serializer):
+    pass
+
+class PodSerializer(serializers.Serializer):
+    pass
+
+class DeploymentSerializer(serializers.Serializer):
+    pass
+
+class ServiceSerializer(serializers.Serializer):
+    name = serializers.CharField()
+
+class IngressSerializer(serializers.Serializer):
+    pass
+
 
 class LoginSuccessSerializer(serializers.Serializer):
     """

@@ -53,24 +53,24 @@ def create_k8s_ns(name):
     return core_v1.read_namespace(name=name)
 
 
-def create_k8s_deployment(name):
-    '''
-    Create the Kubernetes deployment in the cluster in the cluste.
-    '''
-    logger.info(
-        "Creating Kubernetes namespace '{0}'".format(name))
-    try:
-        k8s_ns = client.V1Namespace(
-            api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=name))
-        core_v1.create_namespace(k8s_ns)
-    except client.rest.ApiException as e:
-        # Race condition or earlier sync error - the K8S namespace is already there
-        if e.status == 409:
-            logger.warning("Tried to create already existing Kubernetes namespace {}. "
-                           "Skipping the creation and using the existing one.".format(name))
-        else:
-            raise e
-    return core_v1.read_namespace(name=name)
+def create_k8s_deployment(namespace, name, replicas, match_labels, tpl):
+    """
+    Create a Kubernetes deployment in the cluster.
+    """
+    logger.info(f"Creating Kubernetes deployment '{name}'")
+    k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in tpl["containers"]]
+    k8s_pod_tpl = client.V1PodTemplateSpec(
+        metadata=client.V1ObjectMeta(name=tpl['name'], labels=tpl['labels']),
+        spec=client.V1PodSpec(containers=k8s_containers)
+    )
+    k8s_deployment = client.V1Deployment(
+        metadata=client.V1ObjectMeta(name=name),
+        spec=client.V1DeploymentSpec(replicas=replicas,
+                                     selector=client.V1LabelSelector(match_labels=match_labels),
+                                     template=k8s_pod_tpl
+                                     )
+    )
+    apps_v1.create_namespaced_deployment(namespace, k8s_deployment)
 
 
 def delete_k8s_ns(name):
@@ -135,7 +135,7 @@ def get_namespaced_pods(namespace):
     '''
     Get all pods for a specific Kubernetes namespace in the cluster.
 
-    Make sure to update the 'Pod' component at static/docs/openapi.yaml
+    Make sure to update the 'Pod' component at static/docs/openapi_manual.yaml
     when touching this code.
     '''
     try:
@@ -161,7 +161,7 @@ def get_namespaced_deployments(namespace):
     '''
     Get all deployments for a specific Kubernetes namespace in the cluster.
 
-    Make sure to update the 'Deployment' component at static/docs/openapi.yaml
+    Make sure to update the 'Deployment' component at static/docs/openapi_manual.yaml
     when touching this code.
     '''
     try:
@@ -181,7 +181,7 @@ def get_namespaced_services(namespace):
     '''
     Get all services for a specific Kubernetes namespace in the cluster.
 
-    Make sure to update the 'Service' component at static/docs/openapi.yaml
+    Make sure to update the 'Service' component at static/docs/openapi_manual.yaml
     when touching this code.
     '''
     try:
@@ -201,7 +201,7 @@ def get_namespaced_ingresses(namespace):
     '''
     Get all ingress for a specific Kubernetes namespace in the cluster.
 
-    Make sure to update the 'Ingress' component at static/docs/openapi.yaml
+    Make sure to update the 'Ingress' component at static/docs/openapi_manual.yaml
     when touching this code.
     '''
     try:

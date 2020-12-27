@@ -21,7 +21,7 @@ class Common(Configuration):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'sortedm2m_filter_horizontal_widget',
-        'swagger_ui',
+        'drf_spectacular',
         'oidc_provider',
         'rest_framework',
         'rest_framework.authtoken',
@@ -83,7 +83,21 @@ class Common(Configuration):
         'DEFAULT_VERSION': API_VERSION,
         'ALLOWED_VERSIONS': [
             API_VERSION
-            ]
+            ],
+        'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    }
+
+    SPECTACULAR_DEFAULTS = {
+        'TITLE': 'Kubeportal Backend API',
+        'VERSION': API_VERSION,
+        'SERVERS': [
+            {"url": '{server}/api/{version}',
+             "variables": [
+                 {"server": {"default": "http://localhost:8000"}},
+                 {"version": {"default": API_VERSION}}
+             ]
+             },
+        ]
     }
 
     REST_USE_JWT = True
@@ -174,6 +188,7 @@ class Common(Configuration):
     REST_AUTH_SERIALIZERS = {
         'JWT_SERIALIZER': 'kubeportal.api.serializers.LoginSuccessSerializer'
     }
+
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

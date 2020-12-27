@@ -12,6 +12,8 @@ from kubeportal.admin import admin_site
 from rest_framework import permissions
 from rest_framework_nested import routers
 
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
 
 router = routers.SimpleRouter()
 router.register('users', api_views.UserViewSet, basename='users')
@@ -55,8 +57,10 @@ urlpatterns = [
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/', include(router.urls)),
     path('api/<str:version>/', include(users_router.urls)),
-    path('api/docs/', views.ApiDocsView.as_view(), name='api_docs'),
     path('api/', api_views.BootstrapView.as_view()),
+
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),

@@ -7,7 +7,7 @@ from django.middleware import csrf
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
 from django.contrib.auth import get_user_model
-from kubeportal.api.serializers import UserSerializer, WebApplicationSerializer, PortalGroupSerializer
+from kubeportal.api import serializers
 from django.conf import settings
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
@@ -24,7 +24,7 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
     '''
     API endpoint that allows for users to queried
     '''
-    serializer_class = UserSerializer
+    serializer_class = serializers.UserSerializer
 
     def get_queryset(self):
         query_pk = int(self.kwargs['pk'])
@@ -49,7 +49,7 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
             logger.warning(f"Got empty body in patch request for user {target_user}.")
             return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         else:
-            serializer = UserSerializer(target_user, data=request.data, partial=True)
+            serializer = serializers.UserSerializer(target_user, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return JsonResponse(data=serializer.data, status=200)
@@ -62,7 +62,7 @@ class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
     '''
     API endpoint that allows for web application(s) to queried.
     '''
-    serializer_class = WebApplicationSerializer
+    serializer_class = serializers.WebApplicationSerializer
 
     def get_queryset(self):
         if 'user_pk' in self.kwargs:
@@ -102,7 +102,7 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     '''
     API endpoint that allows for groups to queried
     '''
-    serializer_class = PortalGroupSerializer
+    serializer_class = serializers.PortalGroupSerializer
 
     def get_queryset(self):
         if 'user_pk' in self.kwargs:
@@ -144,6 +144,7 @@ def get_cluster_name():
 
 class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     renderer_classes = [JSONRenderer]
+    serializer_class = serializers.ClusterInfoSerializer
 
     stats = {'k8s_version': api.get_kubernetes_version,
              'k8s_apiserver_url': api.get_apiserver,
@@ -167,7 +168,7 @@ class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
 class K8SResourceViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     """
-    Generic base class for managing a particular Kubernetes resource type for a portal user.
+    Generic base class for managing a particular Kubernetes resource type over the API.
     """
     renderer_classes = [JSONRenderer]
 
@@ -175,11 +176,11 @@ class K8SResourceViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewset
         try:
             query_pk = int(user_pk_str)
         except Exception:
-            logger.exception(f'Request failed. Requested user_pk {user_pk_str} is invalid.')
+            logger.exception(f'Request failed: Requested user_pk {user_pk_str} is invalid.')
             raise Http404
         if query_pk != self.request.user.pk:
             logger.info(
-                f"Permission denied: Current user ID is {self.request.user.pk}, which is different from the requested user ID.")
+                f"Permission denied: Current user ID is {self.request.user.pk}, which is different from the target user ID {user_pk_str}.")
             raise PermissionDenied
         return User.objects.get(pk=query_pk)
 
@@ -199,7 +200,7 @@ class K8SResourceViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewset
             # Create call for a specific user ID
             u = self._get_user(kwargs["user_pk"])
             # Call specialized method from sub-class
-            return self.create_response(u)
+            return self.create_response(u, request.data)
         else:
             # General create call
             # Call specialized method from sub-class
@@ -207,6 +208,8 @@ class K8SResourceViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewset
 
 
 class PodViewSet(K8SResourceViewSet):
+    serializer_class = serializers.PodSerializer
+
     @staticmethod
     def list_response(user=None):
         if user:
@@ -214,8 +217,14 @@ class PodViewSet(K8SResourceViewSet):
         else:
             raise Http404
 
+    @staticmethod
+    def create_response(user, params):
+        raise Http404
+
 
 class DeploymentViewSet(K8SResourceViewSet):
+    serializer_class = serializers.DeploymentSerializer
+
     @staticmethod
     def list_response(user=None):
         if user:
@@ -224,14 +233,18 @@ class DeploymentViewSet(K8SResourceViewSet):
             raise Http404            
 
     @staticmethod
-    def create_response(user=None):
+    def create_response(user, params):
         if user:
+            api.create_k8s_deployment(user.k8s_namespace().name, params["name"], params["replicas"],  params["matchLabels"], params["template"])
             return Response(status=201)
         else:
             raise Http404            
 
 
 class ServiceViewSet(K8SResourceViewSet):
+    serializer_class = serializers.ServiceSerializer
+
+
     @staticmethod
     def list_response(user=None):
         if user:
@@ -239,14 +252,25 @@ class ServiceViewSet(K8SResourceViewSet):
         else:
             raise Http404            
 
+    @staticmethod
+    def create_response(user, params):
+        raise Http404
+
 
 class IngressViewSet(K8SResourceViewSet):
+    serializer_class = serializers.IngressSerializer
+
+
     @staticmethod
     def list_response(user=None):
         if user:
             return Response(user.k8s_ingresses())
         else:
             raise Http404                        
+
+    @staticmethod
+    def create_response(user, params):
+        raise Http404
 
 
 class IngressHostsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -255,6 +279,7 @@ class IngressHostsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     across all namespaces. This is used by the frontend for checking host names
     """
     renderer_classes = [JSONRenderer]
+    serializer_class = serializers.IngressHostsSerializer
 
     def list(self, request, *args, **kwargs):
         return Response(api.get_ingress_hosts())
