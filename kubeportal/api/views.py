@@ -165,19 +165,19 @@ class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
             raise NotFound
 
 
-class K8SResourceViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class K8SResourceViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     '''
-    Generic base class for fetching a particular Kubernetes resource type for a portal user.
+    Generic base class for managing a particular Kubernetes resource type for a portal user.
     '''
     renderer_classes = [JSONRenderer]
 
     def list(self, request, *args, **kwargs):
-        if 'user_pk' in self.kwargs:
+        if 'user_pk' in kwargs:
             # List call for a specific user ID
             try:
-                query_pk = int(self.kwargs['user_pk'])
-            except Exception as e:
-                logger.info(f'Request failed. Requested user_pk {self.kwargs["user_pk"]} is invalid: {e}')
+                query_pk = int(kwargs['user_pk'])
+            except Exception:
+                logger.exception(f'Request failed. Requested user_pk {kwargs["user_pk"]} is invalid.')
                 return JsonResponse(data='invalid user_pk', status=404)
             if query_pk != self.request.user.pk:
                 logger.info(f"Permission denied: Current user ID is {self.request.user.pk}, which is different from the requested user ID.")
@@ -189,6 +189,25 @@ class K8SResourceViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             # General list call
             # Call specialized content fetching method from sub-class
             return self.list_response()
+
+    def create(self, request, *args, **kwargs):
+        if 'user_pk' in kwargs:
+            # Create call for a specific user ID
+            try:
+                query_pk = int(kwargs['user_pk'])
+            except Exception as e:
+                logger.exception(f'Request failed. Requested user_pk {kwargs["user_pk"]} is invalid.')
+                return JsonResponse(data='invalid user_pk', status=404)
+            if query_pk != self.request.user.pk:
+                logger.info(f"Permission denied: Current user ID is {self.request.user.pk}, which is different from the requested user ID.")
+                raise PermissionDenied
+            u = User.objects.get(pk=query_pk)
+            # Call specialized method from sub-class
+            return self.create_response(u)
+        else:
+            # General create call
+            # Call specialized method from sub-class
+            return self.create_response()
 
 class PodViewSet(K8SResourceViewSet):
     def list_response(self, user=None):
@@ -203,6 +222,13 @@ class DeploymentViewSet(K8SResourceViewSet):
             return Response(user.k8s_deployments())
         else:
             raise Http404            
+
+    def create_response(self, user=None):
+        if user:
+            return Response(status=201)
+        else:
+            raise Http404            
+
 
 class ServiceViewSet(K8SResourceViewSet):
     def list_response(self, user=None):

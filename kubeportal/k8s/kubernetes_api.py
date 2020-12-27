@@ -53,6 +53,26 @@ def create_k8s_ns(name):
     return core_v1.read_namespace(name=name)
 
 
+def create_k8s_deployment(name):
+    '''
+    Create the Kubernetes deployment in the cluster in the cluste.
+    '''
+    logger.info(
+        "Creating Kubernetes namespace '{0}'".format(name))
+    try:
+        k8s_ns = client.V1Namespace(
+            api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=name))
+        core_v1.create_namespace(k8s_ns)
+    except client.rest.ApiException as e:
+        # Race condition or earlier sync error - the K8S namespace is already there
+        if e.status == 409:
+            logger.warning("Tried to create already existing Kubernetes namespace {}. "
+                           "Skipping the creation and using the existing one.".format(name))
+        else:
+            raise e
+    return core_v1.read_namespace(name=name)
+
+
 def delete_k8s_ns(name):
     '''
     Delete the given namespace in the cluster, but only when its Minikube.

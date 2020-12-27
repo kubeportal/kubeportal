@@ -157,6 +157,8 @@ paths:
                 $ref: '#/components/schemas/User'
         '403':
           description: The current user is not allowed to patch information for the requested user ID.
+        '422':
+          description: The request body is not formatted correctly.
         '404':
           $ref: '#/components/responses/NotFound'   
         '401':
@@ -242,6 +244,32 @@ paths:
                   $ref: '#/components/schemas/Deployment'
         '403':
           description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+    post:
+      summary: Create new deployment in the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Deployment'
+      responses:
+        '201':
+          description: Ok, created.
+        '403':
+          description: The current user is not allowed to create deployments for the requested user ID.
         '404':
           $ref: '#/components/responses/NotFound'   
         '401':
