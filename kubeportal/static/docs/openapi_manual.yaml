@@ -1,0 +1,593 @@
+openapi: 3.0.0
+
+info:
+  version: v1.5.0
+  title: Kubeportal Backend API
+
+servers:
+  - url: '{server}/api/{version}'
+    variables:
+      server:
+        default: http://localhost:8000  # dev server
+      version:
+        default: v1.5.0
+
+paths:
+  /login/:
+    post:
+      summary: Authorize an user with name and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: 'root'
+                password:
+                  type: string
+                  example: 'rootpw'
+      responses:
+        '200':
+          description: Ok. Authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccess'
+
+  /login_google/:
+    post:
+      summary: Authorize a Google user with OAuth credentials
+      requestBody:
+        required: true
+        content: 
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: 'asfldhgwe847g'
+      responses:
+        '200':
+          description: OK. Authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSuccess'
+        '400':
+          description: Invalid credentials, login denied.
+      
+  /logout/:
+    get:
+      summary: Invalidate API login session.
+      security:
+        - JWT: [ ]
+      responses:
+        '200':
+          description: OK
+
+  /cluster/{slug}/:
+    get:
+      summary: Get information about the cluster.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+            enum:
+              - portal_user_count  # Number of portal users registered
+              - portal_version     # Version of the portal software
+              - k8s_version        # Version of the Kubernetes installation
+              - k8s_node_count     # Number of Kubernetes nodes
+              - k8s_cpu_count      # Number of CPU cores in Kubernetes
+              - k8s_mem_sum        # Amount of main memory in Kubernetes
+              - k8s_pod_count      # Number of Kubernetes pods 
+              - k8s_volume_count   # Number of Kubernetes volumes
+              - k8s_apiserver_url  # URL of the API server
+              - k8s_cluster_name   # Human-readable name of the cluster
+
+      responses:
+        '200':
+          description: A single information value as JSON dictionary with one entry. The key is the slug name.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+
+  /users/{id}/:
+    get:
+      summary: Get details for this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user to get
+      responses:
+        '200':
+          description: Ok.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+    patch:
+      summary: Modify details for this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user to change
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                primary_email:
+                  type: string
+                  example: 'foo@bar.de'
+      responses:
+        '204':
+          description: Update successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '403':
+          description: The current user is not allowed to patch information for the requested user ID.
+        '422':
+          description: The request body is not formatted correctly.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+  /users/{id}/webapps/:
+    get:
+      summary: Get web apps of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebApp'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+
+  /users/{id}/pods/:
+    get:
+      summary: Get pods of the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pod'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+  /users/{id}/deployments/:
+    get:
+      summary: Get deployments of the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deployment'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+    post:
+      summary: Create new deployment in the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Deployment'
+      responses:
+        '201':
+          description: Ok, created.
+        '403':
+          description: The current user is not allowed to create deployments for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+  /users/{id}/services/:
+    get:
+      summary: Get services of the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+  /users/{id}/ingresses/:
+    get:
+      summary: Get ingresses of the primary namespace of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ingress'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+
+  /users/{id}/groups/:
+    get:
+      summary: Get groups of this user.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID of the user
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+        '403':
+          description: The current user is not allowed to get information for the requested user ID.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+                                        
+  /webapps/{id}/:
+    get:
+      summary: Get details about a web application.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the web application.
+      responses:
+        '200':
+          description: Attributes of the web application.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebApp'
+        '403':
+          description: The user is not in a group assigned to this application, or the link is configured to not being shown.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+
+
+  /groups/{id}/:
+    get:
+      summary: Get details about a user group.
+      security:
+        - JWT: [ ]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: The ID of the user group.
+      responses:
+        '200':
+          description: Attributes of the user group.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '403':
+          description: The user is not in this group.
+        '404':
+          $ref: '#/components/responses/NotFound'   
+        '401':
+          $ref: '#/components/responses/Unauthorized'   
+
+  /ingresses/:
+    get:
+      summary: Get the list of host names used by ingresses.
+      security:
+        - JWT: [ ]
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  example: 'demo.example.com'
+      '404':
+        $ref: '#/components/responses/NotFound'   
+      '401':
+        $ref: '#/components/responses/Unauthorized'   
+
+  /:
+    servers:
+      - url: '{server}/api'
+        variables:
+          server:
+            default: http://localhost:8000  # dev server
+    get:
+      summary: Get bootstrap information for talking to the API.
+      responses:
+        '200':
+          description: Information for talking to the API.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BootstrapSuccess'
+
+
+
+components:
+  securitySchemes:
+    JWT:            
+      type: http
+      scheme: bearer
+      bearerFormat: JWT    
+
+  responses:
+    NotFound:
+      description: The specified ID is invalid.
+    Unauthorized:
+      description: This endpoint demands authentication first.
+
+  schemas:
+    StatisticType:
+      type: string
+    LoginSuccess:
+      type: object
+      properties:
+        id: 
+          type: integer
+          example: 1
+        firstname: 
+          type: string
+          example: 'Mandarin'
+        access_token:
+          type: string
+          example: 'urzgfkbrejshrflkjfsdlkfj'
+    BootstrapSuccess:
+      type: object
+      properties:
+        csrf_token: 
+          type: string
+          example: 'OIiIQkMv5xGfrI75GDAfnm1C1BPxxWlyMgUudmaTBaNKmtulGpSCWQje8uWrQjsb'
+        portal_version:
+          type: string
+          example: 'v0.4.0'
+        default_api_version:
+          type: string
+          example: 'v1.4.0'
+    User:
+      type: object
+      properties:
+        firstname: 
+          type: string
+          example: 'Mandarin'
+        name:
+          type: string
+          example: 'Orange'
+        username:
+          type: string
+          example: 's77777'
+        primary_email:
+          type: string
+          example: 'foo@bar.de'
+        all_emails:
+          type: array
+          items:
+            type: string
+          example: ['hello@world.de','stein@beisser.de']
+        admin:
+          type: boolean
+          example: true
+
+        k8s_serviceaccount:
+          type: string
+          example: 'default'
+        k8s_namespace:
+          type: string
+          example: 'default'
+        k8s_token:
+          type: string
+          example: 'default'
+    WebApp:
+      type: object
+      properties:
+        link_name:
+          type: string
+          example: kuchen
+        link_url:
+          type: string
+          example: 'https://mango-saft.com'
+    Group:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Kubernetes users
+    Pod:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'coredns-6955765f44-6dfnm'
+        labels:
+          $ref: '#/components/schemas/Labels'
+        containers:
+          type: array
+          items:
+            type: object
+            properties:
+              image:
+                type: string
+                example: 'k8s.gcr.io/coredns:1.6.5'
+              name:
+                type: string
+                example: 'coredns'
+    Deployment:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'coredns'
+        replicas:
+          type: int
+          example: 1
+        matchLabels:
+          $ref: '#/components/schemas/Labels'
+        template:
+          $ref: '#/components/schemas/Pod'
+
+    Labels:
+      type: object
+      additionalProperties:
+        type: string
+      example:
+        app: webapp
+
+    Ingress:
+      type: object
+      properties:
+        name:
+          type: string
+          example: 'website'
+        hosts:
+          type: array
+          items:
+            type: string
+            example: 'my.site.example.com'
