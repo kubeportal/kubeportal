@@ -57,7 +57,7 @@ urlpatterns = [
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/', include(router.urls)),
     path('api/<str:version>/', include(users_router.urls)),
-    path('api/', api_views.BootstrapView.as_view()),
+    path('api/', api_views.BootstrapInfoView.as_view()),
 
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),

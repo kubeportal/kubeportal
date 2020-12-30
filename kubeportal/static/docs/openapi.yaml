@@ -22,7 +22,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this web application.
         required: true
       tags:
       - api
@@ -435,13 +436,7 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Service'
-          description: ''
+          description: No response body
     post:
       operationId: api_v1.5.0_users_services_create
       description: Generic base class for managing a particular Kubernetes resource
@@ -454,27 +449,11 @@ paths:
         required: true
       tags:
       - api
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Service'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Service'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Service'
-        required: true
       security:
       - jwtAuth: []
       responses:
         '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Service'
-          description: ''
+          description: No response body
   /api/v1.5.0/users/{user_pk}/webapps/:
     get:
       operationId: api_v1.5.0_users_webapps_list
@@ -751,13 +730,6 @@ components:
           readOnly: true
       required:
       - detail
-    Service:
-      type: object
-      properties:
-        name:
-          type: string
-      required:
-      - name
     SocialLogin:
       type: object
       properties:
@@ -826,4 +798,3 @@ servers:
       default: http://localhost:8000
   - version:
       default: v1.5.0
-

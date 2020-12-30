@@ -7,6 +7,7 @@ from kubeportal.models.webapplication import WebApplication
 
 User = get_user_model()
 
+
 class UserSerializer(serializers.ModelSerializer):
     firstname = serializers.CharField(source='first_name')
     name = serializers.CharField(source='last_name')
@@ -42,8 +43,10 @@ class PortalGroupSerializer(serializers.ModelSerializer):
         model = PortalGroup
         fields = ('name', )
 
+
 class ClusterInfoSerializer(serializers.Serializer):
     pass
+
 
 class IngressHostsSerializer(serializers.Serializer):
     pass
@@ -55,9 +58,12 @@ class DeploymentSerializer(serializers.Serializer):
     pass
 
 class ServiceSerializer(serializers.Serializer):
-    name = serializers.CharField()
+    pass
 
 class IngressSerializer(serializers.Serializer):
+    pass
+
+class BootstrapInfoSerializer(serializers.Serializer):
     pass
 
 

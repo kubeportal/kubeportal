@@ -1,4 +1,6 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, mixins, status
+from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
@@ -21,9 +23,9 @@ User = get_user_model()
 
 
 class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    '''
+    """
     API endpoint that allows for users to queried
-    '''
+    """
     serializer_class = serializers.UserSerializer
 
     def get_queryset(self):
@@ -59,9 +61,9 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
 
 
 class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
-    '''
+    """
     API endpoint that allows for web application(s) to queried.
-    '''
+    """
     serializer_class = serializers.WebApplicationSerializer
 
     def get_queryset(self):
@@ -99,9 +101,9 @@ class WebApplicationViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
-    '''
+    """
     API endpoint that allows for groups to queried
-    '''
+    """
     serializer_class = serializers.PortalGroupSerializer
 
     def get_queryset(self):
@@ -145,6 +147,7 @@ def get_cluster_name():
 class ClusterViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     renderer_classes = [JSONRenderer]
     serializer_class = serializers.ClusterInfoSerializer
+    queryset = WebApplication.objects.none()
 
     stats = {'k8s_version': api.get_kubernetes_version,
              'k8s_apiserver_url': api.get_apiserver,
@@ -170,7 +173,9 @@ class K8SResourceViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewset
     """
     Generic base class for managing a particular Kubernetes resource type over the API.
     """
+
     renderer_classes = [JSONRenderer]
+    queryset = WebApplication.objects.none()
 
     def _get_user(self, user_pk_str):
         try:
@@ -230,27 +235,27 @@ class DeploymentViewSet(K8SResourceViewSet):
         if user:
             return Response(user.k8s_deployments())
         else:
-            raise Http404            
+            raise Http404
 
     @staticmethod
     def create_response(user, params):
         if user:
-            api.create_k8s_deployment(user.k8s_namespace().name, params["name"], params["replicas"],  params["matchLabels"], params["template"])
+            api.create_k8s_deployment(user.k8s_namespace().name, params["name"], params["replicas"],
+                                      params["matchLabels"], params["template"])
             return Response(status=201)
         else:
-            raise Http404            
+            raise Http404
 
 
 class ServiceViewSet(K8SResourceViewSet):
     serializer_class = serializers.ServiceSerializer
-
 
     @staticmethod
     def list_response(user=None):
         if user:
             return Response(user.k8s_services())
         else:
-            raise Http404            
+            raise Http404
 
     @staticmethod
     def create_response(user, params):
@@ -260,13 +265,12 @@ class ServiceViewSet(K8SResourceViewSet):
 class IngressViewSet(K8SResourceViewSet):
     serializer_class = serializers.IngressSerializer
 
-
     @staticmethod
     def list_response(user=None):
         if user:
             return Response(user.k8s_ingresses())
         else:
-            raise Http404                        
+            raise Http404
 
     @staticmethod
     def create_response(user, params):
@@ -285,11 +289,13 @@ class IngressHostsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return Response(api.get_ingress_hosts())
 
 
-class BootstrapView(APIView):
+class BootstrapInfoView(GenericAPIView):
     """
     Retreive basic information needed to interact with the API.
     """
     permission_classes = []
+    queryset = WebApplication.objects.none()
+    serializer_class = serializers.BootstrapInfoSerializer
 
     def get(self, request, format=None):
         data = {
