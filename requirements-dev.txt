@@ -5,4 +5,3 @@ sphinx-issues
 coverage
 pytest-django
 django-configurations
-drf-spectacular

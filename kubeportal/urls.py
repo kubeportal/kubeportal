@@ -9,27 +9,19 @@ from kubeportal import views
 from kubeportal.api import views as api_views
 from kubeportal.admin import admin_site
 
-from rest_framework import permissions
-from rest_framework_nested import routers
+from rest_framework import permissions, routers
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 
-router = routers.SimpleRouter()
-router.register('users', api_views.UserViewSet, basename='users')
-router.register('cluster', api_views.ClusterViewSet, basename='cluster')
-router.register('webapps', api_views.WebApplicationViewSet, basename='webapplications')
-router.register('groups', api_views.GroupViewSet, basename='groups')
-router.register('ingresses', api_views.IngressHostsViewSet, basename='ingresses')
-
-users_router = routers.NestedSimpleRouter(router, 'users', lookup='user')
-users_router.register('webapps', api_views.WebApplicationViewSet, basename='user-webapplications')
-users_router.register('groups', api_views.GroupViewSet, basename='user-groups')
-users_router.register('pods', api_views.PodViewSet, basename='user-pods')
-users_router.register('deployments', api_views.DeploymentViewSet, basename='user-deployments')
-users_router.register('services', api_views.ServiceViewSet, basename='user-services')
-users_router.register('ingresses', api_views.IngressViewSet, basename='user-ingresses')
-
+viewsets = routers.SimpleRouter()
+viewsets.register('users', api_views.UserViewSet, basename='users')
+viewsets.register('groups', api_views.GroupViewSet, basename='groups')
+viewsets.register('webapps', api_views.WebApplicationViewSet, basename='webapplications')
+viewsets.register('pods', api_views.PodViewSet, basename='pods')
+viewsets.register('deployments', api_views.DeploymentViewSet, basename='deployments')
+viewsets.register('services', api_views.ServiceViewSet, basename='services')
+viewsets.register('ingresses', api_views.IngressViewSet, basename='ingresses')
 
 urlpatterns = [
     # frontend web views
@@ -52,15 +44,14 @@ urlpatterns = [
     path('.well-known/openid-configuration', ProviderInfoView.as_view(), name='provider_info'),
 
     # frontend API views
+    path('api/', api_views.BootstrapInfoView.as_view()),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/<str:version>/', include(viewsets.urls)),
     path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
-    path('api/<str:version>/', include(router.urls)),
-    path('api/<str:version>/', include(users_router.urls)),
-    path('api/', api_views.BootstrapInfoView.as_view()),
-
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/<str:version>/cluster/<str:info_slug>/', api_views.ClusterInfoView.as_view()),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),

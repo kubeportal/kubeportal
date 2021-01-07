@@ -5,8 +5,8 @@ from kubeportal.secret import get_secret_key
 
 
 class Common(Configuration):
-    VERSION = '0.5.4'
-    API_VERSION = 'v1.5.0'
+    VERSION = '0.6.0'
+    API_VERSION = 'v2.0.0'
 
     SITE_ID = 1
 
@@ -90,14 +90,6 @@ class Common(Configuration):
     SPECTACULAR_SETTINGS = {
         'TITLE': 'Kubeportal Backend API',
         'VERSION': API_VERSION,
-        'SERVERS': [
-            {"url": '{server}/api/{version}',
-             "variables": [
-                 {"server": {"default": "http://localhost:8000"}},
-                 {"version": {"default": API_VERSION}}
-             ]
-             },
-        ]
     }
 
     REST_USE_JWT = True

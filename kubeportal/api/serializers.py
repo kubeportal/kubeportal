@@ -1,11 +1,67 @@
 from dj_rest_auth import serializers as dj_serializers
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_serializer, OpenApiExample, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+from django.middleware import csrf
+from django.conf import settings
 
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 
 User = get_user_model()
+
+def get_kubeportal_version():
+    return settings.VERSION
+
+
+@extend_schema_serializer(
+    examples = [
+         OpenApiExample(
+            name='Response example',
+            value={
+                'csrf_token': 'OIiIQkMv5xGfrI75GDAfnm1C1BPxxWlyMgUudmaTBaNKmtulGpSCWQje8uWrQjsb',
+                'portal_version': 'v1.1.0',
+                'default_api_version': 'v2.0.0'
+            },
+            response_only=True, 
+        ),
+    ]
+)
+class BootstrapInfoSerializer(serializers.Serializer):
+    csrf_token = serializers.CharField()
+    portal_version = serializers.CharField()
+    default_api_version = serializers.CharField()
+
+    @staticmethod
+    def get_response(request):
+        return {
+            'csrf_token': csrf.get_token(request),
+            'portal_version': 'v' + get_kubeportal_version(),
+            'default_api_version': settings.API_VERSION
+        }
+
+
+class ClusterInfoSerializer(serializers.Serializer):
+
+    @staticmethod
+    def get_response(request, info_slug):
+        stats = {'k8s_version': api.get_kubernetes_version,
+                 'k8s_apiserver_url': api.get_apiserver,
+                 'k8s_node_count': api.get_number_of_nodes,
+                 'k8s_cpu_count': api.get_number_of_cpus,
+                 'k8s_mem_sum': api.get_memory_sum,
+                 'k8s_pod_count': api.get_number_of_pods,
+                 'k8s_volume_count': api.get_number_of_volumes,
+                 'portal_user_count': get_user_count,
+                 'portal_version': get_kubeportal_version,
+                 'k8s_cluster_name': get_cluster_name,
+                 }
+
+        if info_slug in stats.keys():
+            return {info_slug: self.stats[info_slug]()}
+        else:
+            raise NotFound
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -44,10 +100,6 @@ class PortalGroupSerializer(serializers.ModelSerializer):
         fields = ('name', )
 
 
-class ClusterInfoSerializer(serializers.Serializer):
-    pass
-
-
 class IngressHostsSerializer(serializers.Serializer):
     pass
 
@@ -61,9 +113,6 @@ class ServiceSerializer(serializers.Serializer):
     pass
 
 class IngressSerializer(serializers.Serializer):
-    pass
-
-class BootstrapInfoSerializer(serializers.Serializer):
     pass
 
 
