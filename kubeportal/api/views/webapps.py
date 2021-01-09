@@ -1,4 +1,5 @@
-from drf_spectacular.utils import extend_schema_view, extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from rest_framework import serializers, viewsets
 
 from kubeportal.models.webapplication import WebApplication
@@ -11,9 +12,8 @@ class WebAppSerializer(serializers.ModelSerializer):
 
 
 @extend_schema_view(
-    retrieve=extend_schema(summary='Get groups of this user.'),
-    update=extend_schema(summary='Overwrite attributes of this user.'),
-    partial_update=extend_schema(summary='Modify single attributes of this user.')
+    retrieve=extend_schema(summary='Get web applications visible for this user.',
+                           parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH), ]),
 )
 class WebAppViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = WebAppSerializer
