@@ -6,3 +6,4 @@ from .groups import *
 from .pods import *
 from .ingresses import *
 from .services import *
+from .webapps import *

@@ -28,5 +28,5 @@ class IngressHostsView(GenericAPIView):
             }
         }
     )
-    def get(self, request):
+    def get(self, request, version):
         return Response(api.get_ingress_hosts())

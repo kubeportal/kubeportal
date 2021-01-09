@@ -7,7 +7,7 @@ from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
-from kubeportal.api.views import ClusterViewSet
+from kubeportal.api.views import ClusterInfoView
 from kubeportal.k8s.kubernetes_api import api_client, get_namespaced_deployments, apps_v1
 from django.conf import settings
 import logging
@@ -134,7 +134,7 @@ class ApiAnonymous(ApiTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_cluster_denied(self):
-        for stat in ClusterViewSet.stats.keys():
+        for stat in ClusterInfoView.stats.keys():
             with self.subTest(stat=stat):
                 response = self.get(f'/api/{API_VERSION}/cluster/{stat}/')
                 self.assertEqual(response.status_code, 401)
@@ -154,7 +154,7 @@ class ApiAnonymous(ApiTestCase):
         app1.save()
         self.admin_group.can_web_applications.add(app1)
 
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/webapps/')
+        response = self.get(f'/api/{API_VERSION}/webapps/')
         self.assertEqual(response.status_code, 401)
 
     def test_group_denied(self):
@@ -173,7 +173,7 @@ class ApiAnonymous(ApiTestCase):
     def test_options_preflight_without_auth(self):
         test_path = [('/api/', 'GET'),
                      (f'/api/{API_VERSION}/users/{self.admin.pk}', 'GET'),
-                     (f'/api/{API_VERSION}/users/{self.admin.pk}/webapps', 'GET'),
+                     (f'/api/{API_VERSION}/webapps', 'GET'),
                      (f'/api/{API_VERSION}/users/{self.admin.pk}', 'PATCH'),
                      (f'/api/{API_VERSION}/groups/{self.admin_group.pk}', 'GET'),
                      (f'/api/{API_VERSION}/cluster/k8s_apiserver', 'GET'),
@@ -231,7 +231,7 @@ class ApiLocalUser(ApiTestCase):
         self.api_login()
 
     def test_cluster(self):
-        for stat in ClusterViewSet.stats.keys():
+        for stat in ClusterInfoView.stats.keys():
             with self.subTest(stat=stat):
                 response = self.get(f'/api/{API_VERSION}/cluster/{stat}/')
                 self.assertEqual(200, response.status_code)
@@ -268,7 +268,7 @@ class ApiLocalUser(ApiTestCase):
         app1.save()
 
         response = self.get(f'/api/{API_VERSION}/webapps/{app1.pk}/')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_webapp_invalid_id(self):
         response = self.get(f'/api/{API_VERSION}/webapps/777/')
@@ -281,7 +281,7 @@ class ApiLocalUser(ApiTestCase):
         self.admin_group.can_web_applications.add(app1)
 
         response = self.get(f'/api/{API_VERSION}/webapps/{app1.pk}/')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_webapp(self):
         app1 = WebApplication(name="app1", link_show=True,
@@ -310,7 +310,7 @@ class ApiLocalUser(ApiTestCase):
             if name != 'app4':
                 self.admin_group.can_web_applications.add(app)
 
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/webapps/')
+        response = self.get(f'/api/{API_VERSION}/webapps/')
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn(
@@ -322,10 +322,6 @@ class ApiLocalUser(ApiTestCase):
         self.assertNotIn(
             {'link_name': 'app4', 'link_url': 'http://www.unrelatedapp.de'}, data)
 
-    def test_user_webapps_invalid_id(self):
-        response = self.get(f'/api/{API_VERSION}/users/777/webapps/')
-        self.assertEqual(response.status_code, 403)
-
     def test_user_groups(self):
         group1 = PortalGroup(name="group1")
         group1.save()
@@ -335,7 +331,7 @@ class ApiLocalUser(ApiTestCase):
         self.admin.portal_groups.add(group1)
         self.admin.portal_groups.add(group2)
 
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/groups/')
+        response = self.get(f'/api/{API_VERSION}/groups/')
         self.assertEqual(response.status_code, 200)
         data = response.json()
         for entry in data:
@@ -358,11 +354,7 @@ class ApiLocalUser(ApiTestCase):
         group1 = PortalGroup(name="group1")
         group1.save()
         response = self.get(f'/api/{API_VERSION}/groups/{group1.pk}/')
-        self.assertEqual(response.status_code, 403)
-
-    def test_group_invalid_id(self):
-        response = self.get(f'/api/{API_VERSION}/users/777/groups/')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_user(self):
         response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/')
@@ -393,29 +385,21 @@ class ApiLocalUser(ApiTestCase):
         u.save()
 
         response = self.patch(f'/api/{API_VERSION}/users/{u.pk}/', {})
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_user_invalid_id(self):
         response = self.get(f'/api/{API_VERSION}/users/777/')
         self.assertEqual(response.status_code, 404)
 
-    def test_user_not_himself(self):
+    def test_get_user_not_himself(self):
         u = User()
         u.save()
 
         response = self.get(f'/api/{API_VERSION}/users/{u.pk}/')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_no_general_user_list(self):
         response = self.get(f'/api/{API_VERSION}/users/')
-        self.assertEqual(response.status_code, 404)
-
-    def test_no_general_webapp_list(self):
-        response = self.get(f'/api/{API_VERSION}/webapps/')
-        self.assertEqual(response.status_code, 404)
-
-    def test_no_general_group_list(self):
-        response = self.get(f'/api/{API_VERSION}/groups/')
         self.assertEqual(response.status_code, 404)
 
     def test_user_pods_list(self):
@@ -423,7 +407,7 @@ class ApiLocalUser(ApiTestCase):
         system_namespace = KubernetesNamespace.objects.get(name="kube-system")
         self.admin.service_account = system_namespace.service_accounts.all()[0]
         self.admin.save()
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/pods/')
+        response = self.get(f'/api/{API_VERSION}/pods/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         names = [record['name'] for record in data]
@@ -434,7 +418,7 @@ class ApiLocalUser(ApiTestCase):
         system_namespace = KubernetesNamespace.objects.get(name="kube-system")
         self.admin.service_account = system_namespace.service_accounts.all()[0]
         self.admin.save()
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/deployments/')
+        response = self.get(f'/api/{API_VERSION}/deployments/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         self.assertIn("coredns", data[0]['name'])
@@ -446,7 +430,7 @@ class ApiLocalUser(ApiTestCase):
         self.admin.save()
         old_count = len(get_namespaced_deployments("kube-system"))
         try:
-            response = self.post(f'/api/{API_VERSION}/users/{self.admin.pk}/deployments/',
+            response = self.post(f'/api/{API_VERSION}/deployments/',
                                  {'name': 'test-deployment',
                                   'replicas': 1,
                                   'matchLabels': {'app': 'webapp'},
@@ -469,7 +453,7 @@ class ApiLocalUser(ApiTestCase):
         system_namespace = KubernetesNamespace.objects.get(name="kube-system")
         self.admin.service_account = system_namespace.service_accounts.all()[0]
         self.admin.save()
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/services/')
+        response = self.get(f'/api/{API_VERSION}/services/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         self.assertIn("kube-dns", data[0]['name'])
@@ -480,21 +464,27 @@ class ApiLocalUser(ApiTestCase):
         self.admin.service_account = default_namespace.service_accounts.all()[0]
         self.admin.save()
 
-        self._apply_yml("kubeportal/tests/fixtures/ingress1.yml")
+        self._apply_yml("fixtures/ingress1.yml")
 
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/ingresses/')
+        response = self.get(f'/api/{API_VERSION}/ingresses/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         self.assertEqual("test-ingress-1", data[0]['name'])
 
     def test_ingress_list(self):
-        self._apply_yml("kubeportal/tests/fixtures/ingress1.yml")
-        self._apply_yml("kubeportal/tests/fixtures/ingress2.yml")
+        self._call_sync()
+        default_namespace = KubernetesNamespace.objects.get(name="default")
+        self.admin.service_account = default_namespace.service_accounts.all()[0]
+        self.admin.save()
+
+        self._apply_yml("fixtures/ingress1.yml")
+        self._apply_yml("fixtures/ingress2.yml")
 
         response = self.get(f'/api/{API_VERSION}/ingresses/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
-        self.assertEqual(["visbert.demo.datexis.com", "tasty.demo.datexis.com"], data)
+        host_names = [el["hosts"][0] for el in data]
+        self.assertEqual(["visbert.demo.datexis.com", "tasty.demo.datexis.com"], host_names)
 
 
 

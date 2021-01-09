@@ -17,7 +17,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 viewsets = routers.SimpleRouter()
 viewsets.register('users', api_views.UserViewSet, basename='users')
 viewsets.register('groups', api_views.GroupViewSet, basename='groups')
-viewsets.register('webapps', api_views.WebApplicationViewSet, basename='webapplications')
+viewsets.register('webapps', api_views.WebAppViewSet, basename='webapplications')
 viewsets.register('pods', api_views.PodViewSet, basename='pods')
 viewsets.register('deployments', api_views.DeploymentViewSet, basename='deployments')
 viewsets.register('services', api_views.ServiceViewSet, basename='services')

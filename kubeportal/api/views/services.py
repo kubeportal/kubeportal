@@ -19,6 +19,6 @@ class ServiceViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     @extend_schema(
         summary="Get services in the primary namespace of this user."
     )
-    def list(self, request):
+    def list(self, request, version):
         return Response(request.user.k8s_services())
 

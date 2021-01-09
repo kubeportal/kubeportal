@@ -19,6 +19,6 @@ class PodViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     @extend_schema(
         summary="Get pods in the primary namespace of this user."
     )
-    def list(self, request):
+    def list(self, request, version):
         return Response(request.user.k8s_pods())
 
