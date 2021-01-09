@@ -52,6 +52,7 @@ urlpatterns = [
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/cluster/<str:info_slug>/', api_views.ClusterInfoView.as_view()),
+    path('api/<str:version>/ingresses/hosts/', api_views.IngressHostsView.as_view()),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),

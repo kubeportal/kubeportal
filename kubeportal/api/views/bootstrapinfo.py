@@ -16,6 +16,7 @@ class BootstrapInfoView(GenericAPIView):
             "operationId": "get_bootstrapinfo",
             "tags": ["api"],
             "summary": "Get bootstrap information for talking to the API.",
+            "security": [{"jwtAuth": []}, {}],
             "responses": {
                 "200": {
                     "content": {

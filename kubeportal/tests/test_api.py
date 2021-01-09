@@ -15,9 +15,9 @@ import json
 
 logger = logging.getLogger('KubePortal')
 
-
 User = get_user_model()
 API_VERSION = settings.API_VERSION
+
 
 class ApiTestCase(AdminLoggedOutTestCase):
     """
@@ -62,7 +62,8 @@ class ApiTestCase(AdminLoggedOutTestCase):
         return self.client.options('http://testserver' + relative_url)
 
     def api_login(self):
-        response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': admin_clear_password})
+        response = self.post(f'/api/{API_VERSION}/login/',
+                             {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn('access_token', data)
@@ -92,18 +93,19 @@ class ApiAnonymous(ApiTestCase):
         self.assertEqual(response.status_code, 405)
 
     def test_api_login(self):
-        response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': admin_clear_password})
+        response = self.post(f'/api/{API_VERSION}/login/',
+                             {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
         # JWT_AUTH_COOKIE not used
         #
-        #self.assertIn('Set-Cookie', response.headers)
-        #self.assertIn('kubeportal-auth=', response.headers['Set-Cookie'])
-        #from http.cookies import SimpleCookie
-        #cookie = SimpleCookie()
-        #cookie.load(response.headers['Set-Cookie'])
-        #self.assertEqual(cookie['kubeportal-auth']['path'], '/')
-        #self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
-        #self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
+        # self.assertIn('Set-Cookie', response.headers)
+        # self.assertIn('kubeportal-auth=', response.headers['Set-Cookie'])
+        # from http.cookies import SimpleCookie
+        # cookie = SimpleCookie()
+        # cookie.load(response.headers['Set-Cookie'])
+        # self.assertEqual(cookie['kubeportal-auth']['path'], '/')
+        # self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
+        # self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
         data = response.json()
         self.assertEqual(3, len(data))
         self.assertIn('firstname', data)
@@ -121,13 +123,14 @@ class ApiAnonymous(ApiTestCase):
         auth with the token returned.
         """
         # Get JWT token
-        response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': admin_clear_password})
+        response = self.post(f'/api/{API_VERSION}/login/',
+                             {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn('access_token', data)
         jwt = data['access_token']
         # Disable auth cookie
-        del(self.client.cookies['kubeportal-auth'])
+        del (self.client.cookies['kubeportal-auth'])
         # Simulate JS code calling, add Bearer token
         headers = {'Origin': 'http://testserver', 'Authorization': f'Bearer {jwt}'}
         response = self.get(f'/api/{API_VERSION}/cluster/portal_version/', headers=headers)
@@ -139,7 +142,7 @@ class ApiAnonymous(ApiTestCase):
                 response = self.get(f'/api/{API_VERSION}/cluster/{stat}/')
                 self.assertEqual(response.status_code, 401)
 
-    def test_webapp_denied(self):
+    def test_single_webapp_denied(self):
         app1 = WebApplication(name="app1", link_show=True,
                               link_name="app1", link_url="http://www.heise.de")
         app1.save()
@@ -148,7 +151,7 @@ class ApiAnonymous(ApiTestCase):
         response = self.get(f'/api/{API_VERSION}/webapps/{app1.pk}/')
         self.assertEqual(response.status_code, 401)
 
-    def test_user_webapps_denied(self):
+    def test_webapps_denied(self):
         app1 = WebApplication(name="app1", link_show=True,
                               link_name="app1", link_url="http://www.heise.de")
         app1.save()
@@ -157,12 +160,32 @@ class ApiAnonymous(ApiTestCase):
         response = self.get(f'/api/{API_VERSION}/webapps/')
         self.assertEqual(response.status_code, 401)
 
-    def test_group_denied(self):
+    def test_single_group_denied(self):
         response = self.get(f'/api/{API_VERSION}/groups/{self.admin_group.pk}/')
         self.assertEqual(response.status_code, 401)
 
-    def test_user_groups_denied(self):
-        response = self.get(f'/api/{API_VERSION}/groups/{self.admin_group.pk}/')
+    def test_groups_denied(self):
+        response = self.get(f'/api/{API_VERSION}/groups/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_pods_denied(self):
+        response = self.get(f'/api/{API_VERSION}/pods/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_ingresses_denied(self):
+        response = self.get(f'/api/{API_VERSION}/ingresses/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_ingresshosts_denied(self):
+        response = self.get(f'/api/{API_VERSION}/ingresses/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_deployments_denied(self):
+        response = self.get(f'/api/{API_VERSION}/deployments/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_services_denied(self):
+        response = self.get(f'/api/{API_VERSION}/services/')
         self.assertEqual(response.status_code, 401)
 
     def test_logout(self):
@@ -178,7 +201,7 @@ class ApiAnonymous(ApiTestCase):
                      (f'/api/{API_VERSION}/groups/{self.admin_group.pk}', 'GET'),
                      (f'/api/{API_VERSION}/cluster/k8s_apiserver', 'GET'),
                      (f'/api/{API_VERSION}/login/', 'POST'),
-        ]
+                     ]
         for path, request_method in test_path:
             with self.subTest(path=path):
                 response = self.options(path)
@@ -221,10 +244,9 @@ class ApiLocalUser(ApiTestCase):
             k8s_utils.create_from_yaml(api_client, path)
         except k8s_utils.FailToCreateError as e:
             if e.api_exceptions[0].reason == "Conflict":
-                pass # test namespace still exists in Minikube from another run
+                pass  # test namespace still exists in Minikube from another run
             else:
                 raise e
-
 
     def setUp(self):
         super().setUp()
@@ -411,7 +433,7 @@ class ApiLocalUser(ApiTestCase):
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         names = [record['name'] for record in data]
-        self.assertTrue(len(names)>0)
+        self.assertTrue(len(names) > 0)
 
     def test_user_deployments_list(self):
         self._call_sync()
@@ -440,11 +462,11 @@ class ApiLocalUser(ApiTestCase):
                                       'containers': [{
                                           'name': 'busybox',
                                           'image': 'busybox'
-                                      },]
+                                      }, ]
                                   }})
             self.assertEqual(201, response.status_code)
             new_count = len(get_namespaced_deployments("kube-system"))
-            self.assertEqual(old_count+1, new_count)
+            self.assertEqual(old_count + 1, new_count)
         finally:
             apps_v1.delete_namespaced_deployment(name="test-deployment", namespace="kube-system")
 
@@ -486,7 +508,19 @@ class ApiLocalUser(ApiTestCase):
         host_names = [el["hosts"][0] for el in data]
         self.assertEqual(["visbert.demo.datexis.com", "tasty.demo.datexis.com"], host_names)
 
+    def test_ingresshosts_list(self):
+        self._call_sync()
+        default_namespace = KubernetesNamespace.objects.get(name="default")
+        self.admin.service_account = default_namespace.service_accounts.all()[0]
+        self.admin.save()
 
+        self._apply_yml("fixtures/ingress1.yml")
+        self._apply_yml("fixtures/ingress2.yml")
+
+        response = self.get(f'/api/{API_VERSION}/ingresses/hosts/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertEqual(["visbert.demo.datexis.com", "tasty.demo.datexis.com"], data)
 
 
 class ApiLogout(ApiTestCase):

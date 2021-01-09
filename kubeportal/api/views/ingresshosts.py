@@ -11,6 +11,7 @@ class IngressHostsView(GenericAPIView):
             "operationId": "get_ingresshosts",
             "tags": ["api"],
             "summary": "Get the list of host names used by ingresses.",
+            "security": [{"jwtAuth": []}],
             "responses": {
                 "200": {
                     "content": {

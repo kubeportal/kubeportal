@@ -5,5 +5,6 @@ from .users import *
 from .groups import *
 from .pods import *
 from .ingresses import *
+from .ingresshosts import *
 from .services import *
 from .webapps import *
