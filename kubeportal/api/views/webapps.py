@@ -12,7 +12,8 @@ class WebAppSerializer(serializers.ModelSerializer):
 
 
 @extend_schema_view(
-    retrieve=extend_schema(summary='Get web applications visible for this user.',
+    list=extend_schema(summary='Get web applications visible for this user.'),
+    retrieve=extend_schema(summary='Get details about a web application for this user.',
                            parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH), ]),
 )
 class WebAppViewSet(viewsets.ReadOnlyModelViewSet):

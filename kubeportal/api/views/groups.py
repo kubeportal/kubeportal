@@ -12,7 +12,8 @@ class GroupSerializer(serializers.ModelSerializer):
 
 
 @extend_schema_view(
-    retrieve=extend_schema(summary='Get groups of this user.',
+    list=extend_schema(summary='Get the groups of this user.'),
+    retrieve=extend_schema(summary='Get information about a group of this user.',
                            parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH), ]),
 )
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
