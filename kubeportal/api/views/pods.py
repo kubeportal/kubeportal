@@ -4,12 +4,6 @@ from rest_framework.response import Response
 
 
 class PodSerializer(serializers.Serializer):
-    def create(self, validated_data):
-        pass
-
-    def update(self, instance, validated_data):
-        pass
-
     name = serializers.CharField()
 
 

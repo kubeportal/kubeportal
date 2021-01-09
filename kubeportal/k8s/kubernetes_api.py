@@ -1,12 +1,15 @@
 '''
     A set of functions wrapping K8S API calls.
 '''
+import enum
 
 from django.conf import settings
 from kubernetes import client, config
 from base64 import b64decode
 
 import logging
+
+from kubernetes.client import V1ServiceSpec, V1Service
 
 logger = logging.getLogger('KubePortal')
 
@@ -25,18 +28,20 @@ rbac_v1 = client.RbacAuthorizationV1Api()
 apps_v1 = client.AppsV1Api()
 net_v1 = client.NetworkingV1beta1Api()
 
+
 def is_minikube():
-    '''
+    """
     Checks if the current context is minikube. This is needed for checks in the test code.
-    '''
+    """
     contexts, active_context = config.list_kube_config_contexts()
     return active_context['context']['cluster'] == 'minikube'
 
-def create_k8s_ns(name):
-    '''
+
+def create_k8s_ns(name: str):
+    """
     Create the Kubernetes namespace with the given name in the cluster.
     An existing namespace with the same name leads to a no-op.
-    '''
+    """
     logger.info(
         "Creating Kubernetes namespace '{0}'".format(name))
     try:
@@ -53,7 +58,7 @@ def create_k8s_ns(name):
     return core_v1.read_namespace(name=name)
 
 
-def create_k8s_deployment(namespace, name, replicas, match_labels, tpl):
+def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, tpl: dict):
     """
     Create a Kubernetes deployment in the cluster.
     """
@@ -72,11 +77,10 @@ def create_k8s_deployment(namespace, name, replicas, match_labels, tpl):
     )
     apps_v1.create_namespaced_deployment(namespace, k8s_deployment)
 
-
 def delete_k8s_ns(name):
-    '''
+    """
     Delete the given namespace in the cluster, but only when its Minikube.
-    '''
+    """
     if is_minikube():
         logger.info("Deleting Kubernetes namespace '{0}'".format(name))
         core_v1.delete_namespace(name)
@@ -85,22 +89,23 @@ def delete_k8s_ns(name):
 
 
 def get_namespaces():
-    '''
+    """
     Returns the list of cluster namespaces, or None on error.
-    '''
+    """
     try:
         return core_v1.list_namespace().items
     except Exception:
         logger.exception("Error while fetching namespaces from Kubernetes")
         return None
 
+
 def get_ingress_hosts():
-    '''
-    Returns the list of host names used in ingresses accross all namespaces, 
+    """
+    Returns the list of host names used in ingresses accross all namespaces,
     or None on error.
-    '''
+    """
     try:
-        ings =  net_v1.list_ingress_for_all_namespaces()
+        ings = net_v1.list_ingress_for_all_namespaces()
         host_list = [rule.host for ing in ings.items for rule in ing.spec.rules]
         return host_list
 
@@ -110,9 +115,9 @@ def get_ingress_hosts():
 
 
 def get_service_accounts():
-    '''
+    """
     Returns the list of service accounts in the cluster, or None on error.
-    '''
+    """
     try:
         return core_v1.list_service_account_for_all_namespaces().items
     except Exception:
@@ -121,9 +126,9 @@ def get_service_accounts():
 
 
 def get_pods():
-    '''
+    """
     Returns the list of pods in the cluster, or None on error.
-    '''
+    """
     try:
         return core_v1.list_pod_for_all_namespaces().items
     except Exception as e:
@@ -132,12 +137,12 @@ def get_pods():
 
 
 def get_namespaced_pods(namespace):
-    '''
+    """
     Get all pods for a specific Kubernetes namespace in the cluster.
 
     Make sure to update the 'Pod' component at static/docs/openapi_manual.yaml
     when touching this code.
-    '''
+    """
     try:
         pods = core_v1.list_namespaced_pod(namespace)
         # logger.debug(f"Got list of pods for namespace {namespace}: {pods.items}")
@@ -157,13 +162,14 @@ def get_namespaced_pods(namespace):
         logger.exception(f"Error while fetching pods of namespace {namespace}")
         return []
 
+
 def get_namespaced_deployments(namespace):
-    '''
+    """
     Get all deployments for a specific Kubernetes namespace in the cluster.
 
     Make sure to update the 'Deployment' component at static/docs/openapi_manual.yaml
     when touching this code.
-    '''
+    """
     try:
         deployments = apps_v1.list_namespaced_deployment(namespace)
         stripped_deployments = []
@@ -177,24 +183,46 @@ def get_namespaced_deployments(namespace):
         logger.exception(f"Error while fetching deployments of namespace {namespace}")
         return []
 
-def get_namespaced_services(namespace):
-    '''
-    Get all services for a specific Kubernetes namespace in the cluster.
 
-    Make sure to update the 'Service' component at static/docs/openapi_manual.yaml
-    when touching this code.
-    '''
+def get_namespaced_services(namespace):
+    """
+    Get all services for a specific Kubernetes namespace in the cluster.
+    """
     try:
         services = core_v1.list_namespaced_service(namespace)
         stripped_services = []
         for svc in services.items:
             stripped_svc = {'name': svc.metadata.name,
-                             'creation_timestamp': svc.metadata.creation_timestamp}
+                            'type': svc.spec.type,
+                            'selector': svc.spec.selector,
+                            'creation_timestamp': svc.metadata.creation_timestamp}
+            ports = []
+            for port in svc.spec.ports:
+                ports.append({"port": port.port, "protocol": port.protocol})
+            stripped_svc["ports"] = ports
             stripped_services.append(stripped_svc)
         return stripped_services
     except Exception as e:
         logger.exception(f"Error while fetching services of namespace {namespace}")
         return []
+
+def create_k8s_service(namespace: str, name: str, svc_type: str, selector: dict, ports: list):
+    """
+    Create a Kubernetes service in the cluster.
+    The 'ports' parameter contains a list of dictionaries, each with the key 'port' and 'protocol'.
+    """
+    logger.info(f"Creating Kubernetes service '{name}'")
+    svc_ports = [client.V1ServicePort(name=str(p["port"]), port=p["port"], protocol=p["protocol"]) for p in ports]
+
+    svc = V1Service(
+        metadata=client.V1ObjectMeta(name=name),
+        spec=V1ServiceSpec(
+            type=svc_type,
+            selector=selector,
+            ports=svc_ports
+        )
+    )
+    core_v1.create_namespaced_service(namespace, svc)
 
 
 def get_namespaced_ingresses(namespace):
@@ -267,6 +295,3 @@ def get_memory_sum():
 
 def get_number_of_volumes():
     return len(core_v1.list_persistent_volume().items)
-
-
-

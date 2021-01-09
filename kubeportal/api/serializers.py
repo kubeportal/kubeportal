@@ -7,12 +7,6 @@ class LoginSuccessSerializer(serializers.Serializer):
     The serializer is referenced in settings.py, accordingly.
     """
 
-    def update(self, instance, validated_data):
-        pass
-
-    def create(self, validated_data):
-        pass
-
     def to_representation(self, instance):
         return {'id': instance['user'].pk,
                 'firstname': instance['user'].first_name,

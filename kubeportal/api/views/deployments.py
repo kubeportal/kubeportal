@@ -5,12 +5,6 @@ from kubeportal.k8s import kubernetes_api as api
 
 
 class DeploymentSerializer(serializers.Serializer):
-    def create(self, validated_data):
-        pass
-
-    def update(self, instance, validated_data):
-        pass
-
     name = serializers.CharField()
     replicas = serializers.IntegerField()
     creation_timestamp = serializers.DateTimeField(read_only=True)

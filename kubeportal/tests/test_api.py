@@ -12,12 +12,14 @@ from kubeportal.k8s.kubernetes_api import api_client, get_namespaced_deployments
 from django.conf import settings
 import logging
 import json
+import os
 
 logger = logging.getLogger('KubePortal')
 
 User = get_user_model()
 API_VERSION = settings.API_VERSION
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/'
 
 class ApiTestCase(AdminLoggedOutTestCase):
     """
@@ -435,6 +437,13 @@ class ApiLocalUser(ApiTestCase):
         names = [record['name'] for record in data]
         self.assertTrue(len(names) > 0)
 
+    def test_user_pods_list_no_k8s(self):
+        response = self.get(f'/api/{API_VERSION}/pods/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        names = [record['name'] for record in data]
+        self.assertEqual(0, len(names))
+
     def test_user_deployments_list(self):
         self._call_sync()
         system_namespace = KubernetesNamespace.objects.get(name="kube-system")
@@ -444,6 +453,13 @@ class ApiLocalUser(ApiTestCase):
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         self.assertIn("coredns", data[0]['name'])
+
+    def test_user_deployments_list_no_k8s(self):
+        response = self.get(f'/api/{API_VERSION}/deployments/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertEqual(0, len(data))
+
 
     def test_user_deployments_create(self):
         self._call_sync()
@@ -480,18 +496,33 @@ class ApiLocalUser(ApiTestCase):
         data = json.loads(response.content)
         self.assertIn("kube-dns", data[0]['name'])
 
+    def test_user_services_list_no_k8s(self):
+        response = self.get(f'/api/{API_VERSION}/services/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertEqual(0, len(data))
+
+
     def test_user_ingresses_list(self):
         self._call_sync()
         default_namespace = KubernetesNamespace.objects.get(name="default")
         self.admin.service_account = default_namespace.service_accounts.all()[0]
         self.admin.save()
 
-        self._apply_yml("fixtures/ingress1.yml")
+        self._apply_yml(BASE_DIR+"fixtures/ingress1.yml")
 
         response = self.get(f'/api/{API_VERSION}/ingresses/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         self.assertEqual("test-ingress-1", data[0]['name'])
+
+    def test_user_ingresses_list_no_k8s(self):
+        self._apply_yml(BASE_DIR+"fixtures/ingress1.yml")
+
+        response = self.get(f'/api/{API_VERSION}/ingresses/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertEqual(0, len(data))
 
     def test_ingress_list(self):
         self._call_sync()
@@ -499,8 +530,8 @@ class ApiLocalUser(ApiTestCase):
         self.admin.service_account = default_namespace.service_accounts.all()[0]
         self.admin.save()
 
-        self._apply_yml("fixtures/ingress1.yml")
-        self._apply_yml("fixtures/ingress2.yml")
+        self._apply_yml(BASE_DIR+"fixtures/ingress1.yml")
+        self._apply_yml(BASE_DIR+"fixtures/ingress2.yml")
 
         response = self.get(f'/api/{API_VERSION}/ingresses/')
         self.assertEqual(200, response.status_code)
@@ -514,8 +545,8 @@ class ApiLocalUser(ApiTestCase):
         self.admin.service_account = default_namespace.service_accounts.all()[0]
         self.admin.save()
 
-        self._apply_yml("fixtures/ingress1.yml")
-        self._apply_yml("fixtures/ingress2.yml")
+        self._apply_yml(BASE_DIR+"fixtures/ingress1.yml")
+        self._apply_yml(BASE_DIR+"fixtures/ingress2.yml")
 
         response = self.get(f'/api/{API_VERSION}/ingresses/hosts/')
         self.assertEqual(200, response.status_code)
