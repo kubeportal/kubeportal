@@ -10,7 +10,8 @@ from base64 import b64decode
 import logging
 
 from kubernetes.client import V1ServiceSpec, V1Service, NetworkingV1beta1Ingress, NetworkingV1beta1IngressSpec, \
-    NetworkingV1beta1IngressTLS, NetworkingV1beta1IngressRule, NetworkingV1beta1HTTPIngressPath
+    NetworkingV1beta1IngressTLS, NetworkingV1beta1IngressRule, NetworkingV1beta1HTTPIngressPath, \
+    NetworkingV1beta1IngressBackend, NetworkingV1beta1HTTPIngressRuleValue
 
 logger = logging.getLogger('KubePortal')
 
@@ -208,6 +209,7 @@ def get_namespaced_services(namespace):
         logger.exception(f"Error while fetching services of namespace {namespace}")
         return []
 
+
 def create_k8s_service(namespace: str, name: str, svc_type: str, selector: dict, ports: list):
     """
     Create a Kubernetes service in the cluster.
@@ -245,11 +247,17 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
     k8s_rules = []
     for host, host_config in rules.items():
         k8s_rule = NetworkingV1beta1IngressRule(host=host)
+        k8s_paths = []
         for path, path_config in host_config.items():
-            k8s_path = NetworkingV1beta1HTTPIngressPath(path=path)
-            k8s_path.backend.service_name = path_config['service_name']
-            k8s_path.backend.service_port = path_config['service_port']
-            k8s_rule.http.paths.append(k8s_path)
+            k8s_backend = NetworkingV1beta1IngressBackend(
+                service_name=path_config['service_name'],
+                service_port=path_config['service_port']
+            )
+            k8s_paths.append(NetworkingV1beta1HTTPIngressPath(path=path, backend=k8s_backend))
+        k8s_http = NetworkingV1beta1HTTPIngressRuleValue(
+            paths=k8s_paths
+        )
+        k8s_rule.http = k8s_http
         k8s_rules.append(k8s_rule)
 
     k8s_spec = NetworkingV1beta1IngressSpec(rules=k8s_rules)
@@ -259,7 +267,7 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
         k8s_spec.tls = [NetworkingV1beta1IngressTLS(hosts=rules.keys(), secret_name=f'{name}_tls')]
 
     k8s_ing.spec = k8s_spec
-    core_v1.create_namespaced_ingress(namespace, k8s_ing)
+    net_v1.create_namespaced_ingress(namespace, k8s_ing)
 
 
 def get_namespaced_ingresses(namespace):
