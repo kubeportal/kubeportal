@@ -84,7 +84,7 @@ class Common(Configuration):
         'ALLOWED_VERSIONS': [
             API_VERSION
             ],
-        'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+        'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
     }
 
     SPECTACULAR_SETTINGS = {
@@ -177,11 +177,6 @@ class Common(Configuration):
     SILKY_AUTHORISATION = True
 
     LAST_LOGIN_MONTHS_AGO = values.Value(12, environ_prefix='KUBEPORTAL')
-
-    # override default response format for /api/login endpoint
-    REST_AUTH_SERIALIZERS = {
-        'JWT_SERIALIZER': 'kubeportal.api.serializers.LoginSuccessSerializer'
-    }
 
 
 class Development(Common):

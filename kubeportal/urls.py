@@ -48,7 +48,7 @@ urlpatterns = [
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/<str:version>/', include(viewsets.urls)),
-    path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
+    path('api/<str:version>/login/', api_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/cluster/<str:info_slug>/', api_views.ClusterInfoView.as_view()),
