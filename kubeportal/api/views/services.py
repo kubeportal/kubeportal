@@ -35,7 +35,6 @@ from kubeportal.k8s import kubernetes_api as api
         ),
     ]
 )
-
 class ServiceSerializer(serializers.Serializer):
     name = serializers.CharField()
     type = serializers.ChoiceField(
@@ -52,7 +51,7 @@ class ServiceSerializer(serializers.Serializer):
     creation_timestamp = serializers.DateTimeField(read_only=True)
 
 
-class ServiceViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class ServiceViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = ServiceSerializer
 
     @extend_schema(

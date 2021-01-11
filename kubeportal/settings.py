@@ -159,6 +159,8 @@ class Common(Configuration):
 
     API_SERVER_EXTERNAL = values.Value(None, environ_prefix='KUBEPORTAL')
 
+    INGRESS_TLS_ISSUER = values.Value("letsencrypt", environ_prefix='KUBEPORTAL')
+
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')

@@ -9,7 +9,8 @@ from base64 import b64decode
 
 import logging
 
-from kubernetes.client import V1ServiceSpec, V1Service
+from kubernetes.client import V1ServiceSpec, V1Service, NetworkingV1beta1Ingress, NetworkingV1beta1IngressSpec, \
+    NetworkingV1beta1IngressTLS, NetworkingV1beta1IngressRule, NetworkingV1beta1HTTPIngressPath
 
 logger = logging.getLogger('KubePortal')
 
@@ -76,6 +77,7 @@ def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels
                                      )
     )
     apps_v1.create_namespaced_deployment(namespace, k8s_deployment)
+
 
 def delete_k8s_ns(name):
     """
@@ -225,20 +227,65 @@ def create_k8s_service(namespace: str, name: str, svc_type: str, selector: dict,
     core_v1.create_namespaced_service(namespace, svc)
 
 
-def get_namespaced_ingresses(namespace):
-    '''
-    Get all ingress for a specific Kubernetes namespace in the cluster.
+def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, rules: dict):
+    """
+    Create a Kubernetes ingress in the cluster.
 
-    Make sure to update the 'Ingress' component at static/docs/openapi_manual.yaml
-    when touching this code.
-    '''
+    The Kubeportal API makes some simplifying assumptions:
+
+    - TLS is a global configuration for an Ingress.
+    - The necessary annotations come from the portal settings, not from the ingress definition.
+    """
+    logger.info(f"Creating Kubernetes ingress '{name}'")
+
+    k8s_ing = NetworkingV1beta1Ingress(
+              metadata=client.V1ObjectMeta(name=name, annotations=annotations)
+    )
+
+    k8s_rules = []
+    for host, host_config in rules.items():
+        k8s_rule = NetworkingV1beta1IngressRule(host=host)
+        for path, path_config in host_config.items():
+            k8s_path = NetworkingV1beta1HTTPIngressPath(path=path)
+            k8s_path.backend.service_name = path_config['service_name']
+            k8s_path.backend.service_port = path_config['service_port']
+            k8s_rule.http.paths.append(k8s_path)
+        k8s_rules.append(k8s_rule)
+
+    k8s_spec = NetworkingV1beta1IngressSpec(rules=k8s_rules)
+
+    if tls:
+        k8s_ing.metadata.annotations['cert-manager.io/cluster-issuer'] = settings.INGRESS_TLS_ISSUER
+        k8s_spec.tls = [NetworkingV1beta1IngressTLS(hosts=rules.keys(), secret_name=f'{name}_tls')]
+
+    k8s_ing.spec = k8s_spec
+    core_v1.create_namespaced_ingress(namespace, k8s_ing)
+
+
+def get_namespaced_ingresses(namespace):
+    """
+    Get all ingress for a specific Kubernetes namespace in the cluster.
+    """
     try:
         ings = net_v1.list_namespaced_ingress(namespace)
         stripped_ings = []
         for ing in ings.items:
             stripped_ing = {'name': ing.metadata.name,
                             'creation_timestamp': ing.metadata.creation_timestamp,
-                            'hosts': [rule.host for rule in ing.spec.rules]}
+                            'annotations': ing.metadata.annotations,
+                            }
+            if len(ing.spec.tls) > 0:
+                stripped_ing['tls'] = True
+            else:
+                stripped_ing['tls'] = True
+            rules = {}
+            for rule in ing.spec.rules:
+                rules[rule.host] = {}
+                for path_setting in rule.http.paths:
+                    rules[rule.host][path_setting.path] = {}
+                    rules[rule.host][path_setting.path]['service_name'] = path_setting.backend.service_name
+                    rules[rule.host][path_setting.path]['service_port'] = path_setting.backend.service_port
+            stripped_ing['rules'] = rules
             stripped_ings.append(stripped_ing)
         return stripped_ings
     except Exception as e:
