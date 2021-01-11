@@ -240,6 +240,9 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
     """
     logger.info(f"Creating Kubernetes ingress '{name}'")
 
+    import pdb
+    pdb.set_trace()
+
     k8s_ing = NetworkingV1beta1Ingress(
               metadata=client.V1ObjectMeta(name=name, annotations=annotations)
     )
@@ -264,9 +267,10 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
 
     if tls:
         k8s_ing.metadata.annotations['cert-manager.io/cluster-issuer'] = settings.INGRESS_TLS_ISSUER
-        k8s_spec.tls = [NetworkingV1beta1IngressTLS(hosts=rules.keys(), secret_name=f'{name}_tls')]
+        k8s_spec.tls = [NetworkingV1beta1IngressTLS(hosts=list(rules.keys()), secret_name=f'{name}_tls')]
 
     k8s_ing.spec = k8s_spec
+    #TODO: networking.k8s.io/v1 Ingress
     net_v1.create_namespaced_ingress(namespace, k8s_ing)
 
 
