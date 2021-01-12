@@ -1,5 +1,5 @@
 from drf_spectacular.utils import extend_schema, OpenApiExample, extend_schema_serializer
-from rest_framework import serializers, mixins, viewsets
+from rest_framework import serializers, mixins, viewsets, generics
 from rest_framework.response import Response
 from kubeportal.k8s import kubernetes_api as api
 
@@ -38,19 +38,19 @@ class IngressSerializer(serializers.Serializer):
     creation_timestamp = serializers.DateTimeField(read_only=True)
 
 
-class IngressViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
+class IngressesView(generics.ListCreateAPIView):
     serializer_class = IngressSerializer
 
     @extend_schema(
         summary="Get ingresses in a namespace."
     )
-    def list(self, request, version):
+    def get(self, request, version, namespace):
         return Response(request.user.k8s_ingresses())
 
     @extend_schema(
         summary="Create an ingress in a namespace."
     )
-    def create(self, request, version):
+    def post(self, request, version, namespace):
         api.create_k8s_ingress(request.user.k8s_namespace().name,
                                request.data["name"],
                                request.data["annotations"],

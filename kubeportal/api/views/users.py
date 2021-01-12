@@ -1,26 +1,26 @@
 from drf_spectacular.utils import extend_schema_view, extend_schema
-from rest_framework import serializers, mixins, viewsets
+from rest_framework import serializers, mixins, viewsets, generics
 
 from kubeportal.api.views.tools import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField()
-    group_ids = serializers.ListField(
+    user_id = serializers.IntegerField(read_only = True)
+    group_ids = serializers.ListField(read_only = True,
         child = serializers.IntegerField()
     )
-    webapp_ids = serializers.ListField(
+    webapp_ids = serializers.ListField(read_only = True,
         child = serializers.IntegerField()
     )
     firstname = serializers.CharField(source='first_name')
     name = serializers.CharField(source='last_name')
-    username = serializers.CharField()
+    username = serializers.CharField(read_only = True)
     primary_email = serializers.EmailField(source='email')
-    admin = serializers.BooleanField(source='is_staff')
-    all_emails = serializers.ListField(source='alt_mails')
-    k8s_serviceaccount = serializers.CharField(source='service_account')
-    k8s_namespace = serializers.CharField()
-    k8s_token = serializers.CharField(source='token')
+    admin = serializers.BooleanField(source='is_staff', read_only = True)
+    all_emails = serializers.ListField(source='alt_mails', read_only = True)
+    k8s_serviceaccount = serializers.CharField(source='service_account', read_only = True)
+    k8s_namespace = serializers.CharField(read_only = True)
+    k8s_token = serializers.CharField(source='token', read_only = True)
 
     class Meta:
         model = User
@@ -43,8 +43,9 @@ class UserSerializer(serializers.ModelSerializer):
     update=extend_schema(summary='Overwrite attributes of this user.'),
     partial_update=extend_schema(summary='Modify single attributes of this user.')
 )
-class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class UserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
+    lookup_url_kwarg = 'user_id'
 
     def get_queryset(self):
         # Clients can only request details of the user that they used for login.

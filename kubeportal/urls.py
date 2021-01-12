@@ -13,16 +13,6 @@ from rest_framework import permissions, routers
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-
-viewsets = routers.SimpleRouter()
-viewsets.register('users', api_views.UserViewSet, basename='users')
-viewsets.register('groups', api_views.GroupViewSet, basename='groups')
-viewsets.register('webapps', api_views.WebAppViewSet, basename='webapplications')
-viewsets.register('pods/<str:namespace>', api_views.PodViewSet, basename='pods')
-viewsets.register('deployments/<str:namespace>', api_views.DeploymentViewSet, basename='deployments')
-viewsets.register('services/<str:namespace>', api_views.ServiceViewSet, basename='services')
-viewsets.register('ingresses/<str:namespace>', api_views.IngressViewSet, basename='ingresses')
-
 urlpatterns = [
     # frontend web views
     path('', RedirectView.as_view(query_string=True, url='/accounts/login/'), name='index'),
@@ -47,7 +37,14 @@ urlpatterns = [
     path('api/', api_views.BootstrapInfoView.as_view()),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/<str:version>/', include(viewsets.urls)),
+
+    path('api/<str:version>/users/<int:user_id>/', api_views.UserView.as_view(), name='user'),
+    path('api/<str:version>/groups/<int:group_id>/', api_views.GroupView.as_view(), name='group'),
+    path('api/<str:version>/webapps/<int:webapp_id>/', api_views.WebAppView.as_view(), name='webapplication'),
+    path('api/<str:version>/pods/<str:namespace>/', api_views.PodsView.as_view(), name='pods'),
+    path('api/<str:version>/deployments/<str:namespace>/', api_views.DeploymentsView.as_view(), name='deployments'),
+    path('api/<str:version>/services/<str:namespace>/', api_views.ServicesView.as_view(), name='services'),
+    path('api/<str:version>/ingresses/<str:namespace>/', api_views.IngressesView.as_view(), name='ingresses'),
     path('api/<str:version>/login/', api_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),

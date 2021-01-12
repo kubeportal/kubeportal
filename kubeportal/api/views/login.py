@@ -14,16 +14,17 @@ class JWTSerializer(OriginalJWTSerializer):   # modify returned data structure f
         child = serializers.IntegerField()
     )
     k8s_namespace = serializers.CharField()
-    jwt = serializers.CharField()
+    access_token = serializers.CharField()
 
     def to_representation(self, instance):
         user = instance['user']
+        k8s_namespace = user.k8s_namespace()        
 
         return {'user_id': user.user_id(),
                 'group_ids': user.group_ids(),
                 'webapp_ids': user.webapp_ids(),
-                'k8s_namespace': user.k8s_namespace().name,
-                'jwt': str(instance['access_token'])
+                'k8s_namespace': k8s_namespace.name if k8s_namespace else "",
+                'access_token': str(instance['access_token'])
                 }
 
 

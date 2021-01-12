@@ -109,11 +109,14 @@ class ApiAnonymous(ApiTestCase):
         # self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
         # self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
         data = response.json()
-        self.assertEqual(3, len(data))
-        self.assertIn('firstname', data)
-        self.assertIn('id', data)
-        self.assertEqual(data['id'], self.admin.pk)
+        self.assertEqual(5, len(data))
+        self.assertIn('group_ids', data)
+        self.assertIn('webapp_ids', data)
+        self.assertIn('user_id', data)
         self.assertIn('access_token', data)
+        self.assertIn('k8s_namespace', data)
+        self.assertEqual(data['user_id'], self.admin.pk)
+
 
     def test_api_wrong_login(self):
         response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': 'blabla'})
@@ -159,7 +162,7 @@ class ApiAnonymous(ApiTestCase):
         app1.save()
         self.admin_group.can_web_applications.add(app1)
 
-        response = self.get(f'/api/{API_VERSION}/webapps/')
+        response = self.get(f'/api/{API_VERSION}/webapps/{app1.pk}/')
         self.assertEqual(response.status_code, 401)
 
     def test_single_group_denied(self):
@@ -167,27 +170,29 @@ class ApiAnonymous(ApiTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_groups_denied(self):
-        response = self.get(f'/api/{API_VERSION}/groups/')
+        group1 = PortalGroup(name="group1")
+        group1.save()
+        response = self.get(f'/api/{API_VERSION}/groups/{group1.pk}/')
         self.assertEqual(response.status_code, 401)
 
     def test_pods_denied(self):
-        response = self.get(f'/api/{API_VERSION}/pods/')
+        response = self.get(f'/api/{API_VERSION}/pods/kube-system/')
         self.assertEqual(response.status_code, 401)
 
     def test_ingresses_denied(self):
-        response = self.get(f'/api/{API_VERSION}/ingresses/')
+        response = self.get(f'/api/{API_VERSION}/ingresses/default/')
         self.assertEqual(response.status_code, 401)
 
     def test_ingresshosts_denied(self):
-        response = self.get(f'/api/{API_VERSION}/ingresses/')
+        response = self.get(f'/api/{API_VERSION}/ingresshosts/')
         self.assertEqual(response.status_code, 401)
 
     def test_deployments_denied(self):
-        response = self.get(f'/api/{API_VERSION}/deployments/')
+        response = self.get(f'/api/{API_VERSION}/deployments/default/')
         self.assertEqual(response.status_code, 401)
 
     def test_services_denied(self):
-        response = self.get(f'/api/{API_VERSION}/services/')
+        response = self.get(f'/api/{API_VERSION}/services/default/')
         self.assertEqual(response.status_code, 401)
 
     def test_logout(self):
@@ -431,7 +436,11 @@ class ApiLocalUser(ApiTestCase):
         system_namespace = KubernetesNamespace.objects.get(name="kube-system")
         self.admin.service_account = system_namespace.service_accounts.all()[0]
         self.admin.save()
-        response = self.get(f'/api/{API_VERSION}/pods/')
+
+        response = self.get(f'/api/{API_VERSION}/pods/foobar/')
+        self.assertEqual(404, response.status_code)
+
+        response = self.get(f'/api/{API_VERSION}/pods/kube-system/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         names = [record['name'] for record in data]
@@ -449,7 +458,11 @@ class ApiLocalUser(ApiTestCase):
         system_namespace = KubernetesNamespace.objects.get(name="kube-system")
         self.admin.service_account = system_namespace.service_accounts.all()[0]
         self.admin.save()
-        response = self.get(f'/api/{API_VERSION}/deployments/')
+
+        response = self.get(f'/api/{API_VERSION}/deployments/foobar/')
+        self.assertEqual(404, response.status_code)
+
+        response = self.get(f'/api/{API_VERSION}/deployments/kube-system/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         self.assertIn("coredns", data[0]['name'])
@@ -491,7 +504,11 @@ class ApiLocalUser(ApiTestCase):
         system_namespace = KubernetesNamespace.objects.get(name="kube-system")
         self.admin.service_account = system_namespace.service_accounts.all()[0]
         self.admin.save()
-        response = self.get(f'/api/{API_VERSION}/services/')
+
+        response = self.get(f'/api/{API_VERSION}/services/foobar/')
+        self.assertEqual(404, response.status_code)
+
+        response = self.get(f'/api/{API_VERSION}/services/kube-system/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         self.assertIn("kube-dns", data[0]['name'])
@@ -533,7 +550,10 @@ class ApiLocalUser(ApiTestCase):
         self._apply_yml(BASE_DIR+"fixtures/ingress1.yml")
         self._apply_yml(BASE_DIR+"fixtures/ingress2.yml")
 
-        response = self.get(f'/api/{API_VERSION}/ingresses/')
+        response = self.get(f'/api/{API_VERSION}/ingresses/foobar/')
+        self.assertEqual(404, response.status_code)
+
+        response = self.get(f'/api/{API_VERSION}/ingresses/default/')
         self.assertEqual(200, response.status_code)
         data = json.loads(response.content)
         host_names = [el["hosts"][0] for el in data]
