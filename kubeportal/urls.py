@@ -18,10 +18,10 @@ viewsets = routers.SimpleRouter()
 viewsets.register('users', api_views.UserViewSet, basename='users')
 viewsets.register('groups', api_views.GroupViewSet, basename='groups')
 viewsets.register('webapps', api_views.WebAppViewSet, basename='webapplications')
-viewsets.register('pods', api_views.PodViewSet, basename='pods')
-viewsets.register('deployments', api_views.DeploymentViewSet, basename='deployments')
-viewsets.register('services', api_views.ServiceViewSet, basename='services')
-viewsets.register('ingresses', api_views.IngressViewSet, basename='ingresses')
+viewsets.register('pods/<str:namespace>', api_views.PodViewSet, basename='pods')
+viewsets.register('deployments/<str:namespace>', api_views.DeploymentViewSet, basename='deployments')
+viewsets.register('services/<str:namespace>', api_views.ServiceViewSet, basename='services')
+viewsets.register('ingresses/<str:namespace>', api_views.IngressViewSet, basename='ingresses')
 
 urlpatterns = [
     # frontend web views
@@ -52,7 +52,7 @@ urlpatterns = [
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/cluster/<str:info_slug>/', api_views.ClusterInfoView.as_view()),
-    path('api/<str:version>/ingresses/hosts/', api_views.IngressHostsView.as_view()),
+    path('api/<str:version>/ingresshosts/', api_views.IngressHostsView.as_view()),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),

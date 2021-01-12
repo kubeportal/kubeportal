@@ -14,13 +14,13 @@ class DeploymentViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets
     serializer_class = DeploymentSerializer
 
     @extend_schema(
-        summary="Get deployments in the primary namespace of this user."
+        summary="Get deployments in a namespace."
     )
     def list(self, request, version):
         return Response(request.user.k8s_deployments())
 
     @extend_schema(
-        summary="Create a deployment in the primary namespace of this user."
+        summary="Create a deployment in a namespace."
     )
     def create(self, request, version):
         api.create_k8s_deployment(request.user.k8s_namespace().name,

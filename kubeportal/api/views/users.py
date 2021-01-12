@@ -5,6 +5,13 @@ from kubeportal.api.views.tools import User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField()
+    group_ids = serializers.ListField(
+        child = serializers.IntegerField()
+    )
+    webapp_ids = serializers.ListField(
+        child = serializers.IntegerField()
+    )
     firstname = serializers.CharField(source='first_name')
     name = serializers.CharField(source='last_name')
     username = serializers.CharField()
@@ -17,7 +24,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('firstname',
+        fields = ('user_id',
+                  'group_ids',
+                  'webapp_ids',
+                  'firstname',
                   'name',
                   'username',
                   'primary_email',

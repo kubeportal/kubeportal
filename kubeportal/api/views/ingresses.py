@@ -42,13 +42,13 @@ class IngressViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Ge
     serializer_class = IngressSerializer
 
     @extend_schema(
-        summary="Get ingresses in the primary namespace of this user."
+        summary="Get ingresses in a namespace."
     )
     def list(self, request, version):
         return Response(request.user.k8s_ingresses())
 
     @extend_schema(
-        summary="Create an ingress in the primary namespace of this user."
+        summary="Create an ingress in a namespace."
     )
     def create(self, request, version):
         api.create_k8s_ingress(request.user.k8s_namespace().name,

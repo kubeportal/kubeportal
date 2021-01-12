@@ -11,7 +11,7 @@ class PodViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = PodSerializer
 
     @extend_schema(
-        summary="Get pods in the primary namespace of this user."
+        summary="Get pods in a namespace."
     )
     def list(self, request, version):
         return Response(request.user.k8s_pods())

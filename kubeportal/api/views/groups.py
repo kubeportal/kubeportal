@@ -1,6 +1,6 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
-from rest_framework import serializers, viewsets
+from rest_framework import serializers, viewsets, mixins
 
 from kubeportal.models.portalgroup import PortalGroup
 
@@ -12,11 +12,10 @@ class GroupSerializer(serializers.ModelSerializer):
 
 
 @extend_schema_view(
-    list=extend_schema(summary='Get the groups of this user.'),
-    retrieve=extend_schema(summary='Get information about a group of this user.',
+    retrieve=extend_schema(summary='Get information about a user group in the portal.',
                            parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH), ]),
 )
-class GroupViewSet(viewsets.ReadOnlyModelViewSet):
+class GroupViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = GroupSerializer
 
     def get_queryset(self):

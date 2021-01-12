@@ -55,13 +55,13 @@ class ServiceViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.Ge
     serializer_class = ServiceSerializer
 
     @extend_schema(
-        summary="Get services in the primary namespace of this user."
+        summary="Get services in a namespace."
     )
     def list(self, request, version):
         return Response(request.user.k8s_services())
 
     @extend_schema(
-        summary="Create a service in the primary namespace of this user."
+        summary="Create service in a namespace."
     )
     def create(self, request, version):
         api.create_k8s_service(request.user.k8s_namespace().name,

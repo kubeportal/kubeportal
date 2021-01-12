@@ -64,10 +64,26 @@ class User(AbstractUser):
         'KubernetesServiceAccount', related_name="portal_users", on_delete=models.SET_NULL, null=True, blank=True,
         verbose_name="Kubernetes account", help_text="Kubernetes namespace + service account of this user.")
 
+    def user_id(self):
+        """
+        Used as property by the API serializer.
+        """
+        return self.pk
+
+    def group_ids(self):
+        """
+        Used as property by the API serializer.
+        """
+        return [group.pk for group in self.portal_groups.all()]        
+
+    def webapp_ids(self):
+        """
+        Used as property by the API serializer.
+        """
+        return [webapp.pk for webapp in self.web_applications(False)]        
+
     def k8s_namespace(self):
         """
-        Returns the primary namespace of this user.
-
         Used as property by the API serializer.
         """
         if self.service_account:

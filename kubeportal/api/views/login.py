@@ -10,16 +10,19 @@ class JWTSerializer(OriginalJWTSerializer):   # modify returned data structure f
     group_ids = serializers.ListField(
         child = serializers.IntegerField()
     )
-    namespace = serializers.CharField()
+    webapp_ids = serializers.ListField(
+        child = serializers.IntegerField()
+    )
+    k8s_namespace = serializers.CharField()
     jwt = serializers.CharField()
 
     def to_representation(self, instance):
         user = instance['user']
-        groups = user.portal_groups.all()
 
-        return {'user_id': user.pk,
-                'group_ids': [group.pk for group in groups],
-                'namespace': user.k8s_namespace().name,
+        return {'user_id': user.user_id(),
+                'group_ids': user.group_ids(),
+                'webapp_ids': user.webapp_ids(),
+                'k8s_namespace': user.k8s_namespace().name,
                 'jwt': str(instance['access_token'])
                 }
 
@@ -37,8 +40,9 @@ class JWTSerializer(OriginalJWTSerializer):   # modify returned data structure f
         OpenApiExample(
             '',
             value={
-                'id': 42,
-                'firstname': 'Deniz',
+                'user_id': 42,
+                'group_ids': [5,7,13],
+                'namespace': 'default',
                 'jwt': '89ew4z7ro9ew47reswu'
             },
             response_only=True

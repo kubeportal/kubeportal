@@ -10,7 +10,7 @@ class IngressHostsView(GenericAPIView):
         operation={
             "operationId": "get_ingresshosts",
             "tags": ["api"],
-            "summary": "Get the list of host names used by ingresses.",
+            "summary": "Get the list of host names used by ingresses in all namespaces.",
             "security": [{"jwtAuth": []}],
             "responses": {
                 "200": {

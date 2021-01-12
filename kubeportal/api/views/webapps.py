@@ -1,6 +1,6 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
-from rest_framework import serializers, viewsets
+from rest_framework import serializers, viewsets, mixins
 
 from kubeportal.models.webapplication import WebApplication
 
@@ -12,11 +12,10 @@ class WebAppSerializer(serializers.ModelSerializer):
 
 
 @extend_schema_view(
-    list=extend_schema(summary='Get web applications visible for this user.'),
-    retrieve=extend_schema(summary='Get details about a web application for this user.',
+    retrieve=extend_schema(summary='Get details about a web application.',
                            parameters=[OpenApiParameter("id", OpenApiTypes.INT, OpenApiParameter.PATH), ]),
 )
-class WebAppViewSet(viewsets.ReadOnlyModelViewSet):
+class WebAppViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = WebAppSerializer
 
     def get_queryset(self):
