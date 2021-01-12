@@ -240,9 +240,6 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
     """
     logger.info(f"Creating Kubernetes ingress '{name}'")
 
-    import pdb
-    pdb.set_trace()
-
     k8s_ing = NetworkingV1beta1Ingress(
               metadata=client.V1ObjectMeta(name=name, annotations=annotations)
     )

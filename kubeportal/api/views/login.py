@@ -6,13 +6,20 @@ from dj_rest_auth.serializers import JWTSerializer as OriginalJWTSerializer
 from dj_rest_auth.views import LoginView as OriginalLoginView
 
 class JWTSerializer(OriginalJWTSerializer):   # modify returned data structure from library
-    id = serializers.IntegerField()
-    firstname = serializers.CharField()
+    user_id = serializers.IntegerField()
+    group_ids = serializers.ListField(
+        child = serializers.IntegerField()
+    )
+    namespace = serializers.CharField()
     jwt = serializers.CharField()
 
     def to_representation(self, instance):
-        return {'id': instance['user'].pk,
-                'firstname': instance['user'].first_name,
+        user = instance['user']
+        groups = user.portal_groups.all()
+
+        return {'user_id': user.pk,
+                'group_ids': [group.pk for group in groups],
+                'namespace': user.k8s_namespace().name,
                 'jwt': str(instance['access_token'])
                 }
 
