@@ -1,4 +1,0 @@
-from kubernetes import config
-
-
-
