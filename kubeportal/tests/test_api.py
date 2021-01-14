@@ -477,7 +477,6 @@ class ApiLocalUser(ApiTestCase):
         })
         self.assertEqual(404, response.status_code)
 
-
     def test_user_ingresses_create(self):
         self._call_sync()
         system_namespace = KubernetesNamespace.objects.get(name="kube-system")
@@ -544,7 +543,6 @@ class ApiLocalUser(ApiTestCase):
                                   }
                               }})
         self.assertEqual(404, response.status_code)
-
 
     def test_user_services_list(self):
         self._call_sync()
