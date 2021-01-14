@@ -19,13 +19,13 @@ jobs:
         run: |
           pip install -r requirements-prod.txt -r requirements-dev.txt
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.0.0
+        uses: manusa/actions-setup-minikube@v2.2.0
         with:
           minikube version: 'v1.6.2'
           kubernetes version: 'v1.16.0'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: run Unittest
-        run: pytest 
+        run: pytest
 
   test-k8s-17:
     runs-on: ubuntu-latest
@@ -40,7 +40,7 @@ jobs:
         run: |
           pip install -r requirements-prod.txt -r requirements-dev.txt
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.0.0
+        uses: manusa/actions-setup-minikube@v2.2.0
         with:
           minikube version: 'v1.6.2'
           kubernetes version: 'v1.17.0'
@@ -64,7 +64,7 @@ jobs:
         run: |
           pip install pytest-cov
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.0.0
+        uses: manusa/actions-setup-minikube@v2.3.0
         with:
           minikube version: 'v1.13.1'
           kubernetes version: 'v1.18.0'
