@@ -1,6 +1,8 @@
 from drf_spectacular.utils import extend_schema, OpenApiExample, extend_schema_serializer
-from rest_framework import serializers, mixins, viewsets, generics
+from rest_framework import serializers, generics
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+
 from kubeportal.k8s import kubernetes_api as api
 
 
@@ -45,16 +47,23 @@ class IngressesView(generics.ListCreateAPIView):
         summary="Get ingresses in a namespace."
     )
     def get(self, request, version, namespace):
-        return Response(request.user.k8s_ingresses())
+        if request.user.has_namespace(namespace):
+            return Response(api.get_namespaced_ingresses(namespace))
+        else:
+            # https://lockmedown.com/when-should-you-return-404-instead-of-403-http-status-code/
+            raise NotFound
 
     @extend_schema(
         summary="Create an ingress in a namespace."
     )
     def post(self, request, version, namespace):
-        api.create_k8s_ingress(request.user.k8s_namespace().name,
-                               request.data["name"],
-                               request.data["annotations"],
-                               request.data["tls"],
-                               request.data["rules"]
-                               )
-        return Response(status=201)
+        if request.user.has_namespace(namespace):
+            api.create_k8s_ingress(namespace,
+                                   request.data["name"],
+                                   request.data["annotations"],
+                                   request.data["tls"],
+                                   request.data["rules"]
+                                   )
+            return Response(status=201)
+        else:
+            raise NotFound

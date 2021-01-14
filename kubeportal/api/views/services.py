@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema, extend_schema_serializer, OpenApiExample
 from rest_framework import serializers, mixins, viewsets, generics
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from kubeportal.k8s import kubernetes_api as api
 
@@ -57,16 +58,22 @@ class ServicesView(generics.ListCreateAPIView):
     @extend_schema(
         summary="Get services in a namespace."
     )
-    def get(self, request):
-        return Response(request.user.k8s_services())
+    def get(self, request, version, namespace):
+        if request.user.has_namespace(namespace):
+            return Response(api.get_namespaced_services(namespace))
+        else:
+            raise NotFound
 
     @extend_schema(
         summary="Create service in a namespace."
     )
-    def post(self, request):
-        api.create_k8s_service(request.user.k8s_namespace().name,
-                               request.data["name"],
-                               request.data["type"],
-                               request.data["selector"],
-                               request.data["ports"])
-        return Response(status=201)
+    def post(self, request, version, namespace):
+        if request.user.has_namespace(namespace):
+            api.create_k8s_service(namespace,
+                                   request.data["name"],
+                                   request.data["type"],
+                                   request.data["selector"],
+                                   request.data["ports"])
+            return Response(status=201)
+        else:
+            raise NotFound

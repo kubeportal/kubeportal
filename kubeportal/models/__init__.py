@@ -91,6 +91,18 @@ class User(AbstractUser):
         else:
             return None
 
+    def has_namespace(self, namespace):
+        """
+        Check if this user has permissions for this Kubernetes namespace.
+        This decision is based on the configuration in the portal,
+        not on the RBAC situation in the cluster.
+        """
+        if self.service_account:
+            return namespace == self.service_account.namespace.name
+        else:
+            return False
+
+
     def web_applications(self, include_invisible):
         """
         Returns a querset for the list of web applications allowed for this

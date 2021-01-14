@@ -274,32 +274,29 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
 def get_namespaced_ingresses(namespace):
     """
     Get all ingress for a specific Kubernetes namespace in the cluster.
+    Error handling is supposed to happen on the caller side.
     """
-    try:
-        ings = net_v1.list_namespaced_ingress(namespace)
-        stripped_ings = []
-        for ing in ings.items:
-            stripped_ing = {'name': ing.metadata.name,
-                            'creation_timestamp': ing.metadata.creation_timestamp,
-                            'annotations': ing.metadata.annotations,
-                            }
-            if len(ing.spec.tls) > 0:
-                stripped_ing['tls'] = True
-            else:
-                stripped_ing['tls'] = True
-            rules = {}
-            for rule in ing.spec.rules:
-                rules[rule.host] = {}
-                for path_setting in rule.http.paths:
-                    rules[rule.host][path_setting.path] = {}
-                    rules[rule.host][path_setting.path]['service_name'] = path_setting.backend.service_name
-                    rules[rule.host][path_setting.path]['service_port'] = path_setting.backend.service_port
-            stripped_ing['rules'] = rules
-            stripped_ings.append(stripped_ing)
-        return stripped_ings
-    except Exception as e:
-        logger.exception(f"Error while fetching ingresses of namespace {namespace}")
-        return []
+    ings = net_v1.list_namespaced_ingress(namespace)
+    stripped_ings = []
+    for ing in ings.items:
+        stripped_ing = {'name': ing.metadata.name,
+                        'creation_timestamp': ing.metadata.creation_timestamp,
+                        'annotations': ing.metadata.annotations,
+                        }
+        if ing.spec.tls:
+            stripped_ing['tls'] = True
+        else:
+            stripped_ing['tls'] = False
+        rules = {}
+        for rule in ing.spec.rules:
+            rules[rule.host] = {}
+            for path_setting in rule.http.paths:
+                rules[rule.host][path_setting.path] = {}
+                rules[rule.host][path_setting.path]['service_name'] = path_setting.backend.service_name
+                rules[rule.host][path_setting.path]['service_port'] = path_setting.backend.service_port
+        stripped_ing['rules'] = rules
+        stripped_ings.append(stripped_ing)
+    return stripped_ings
 
 
 def get_token(kubeportal_service_account):
