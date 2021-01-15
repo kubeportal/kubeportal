@@ -35,7 +35,7 @@ jobs:
         if: ${{ matrix.k8sversion != 'v1.18.15' }}
         run: pytest
       - name: run Unittest, including coverage analysis
-        if: ${{ k8sversion == 'v1.18.15' }}
+        if: ${{ matrix.k8sversion == 'v1.18.15' }}
         run: pytest --cov=./ --cov-report=xml
       - name: Upload coverage to Codecov
         if: ${{ matrix.k8sversion == 'v1.18.15' }}
