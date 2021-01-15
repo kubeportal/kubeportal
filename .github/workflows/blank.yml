@@ -71,6 +71,7 @@ jobs:
           minikube version: 'v1.16.0'
           kubernetes version: 'v1.18.15'
           github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
       - name: run Unittest, including coverage analysis
         run: pytest --cov=./ --cov-report=xml
       - name: Upload coverage to Codecov
@@ -98,6 +99,7 @@ jobs:
           minikube version: 'v1.16.0'
           kubernetes version: 'v1.19.7'
           github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
       - name: run Unittest
         run: pytest
 
@@ -119,5 +121,6 @@ jobs:
           minikube version: 'v1.16.0'
           kubernetes version: 'v1.20.2'
           github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
       - name: run Unittest
         run: pytest
