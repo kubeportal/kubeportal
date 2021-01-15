@@ -21,7 +21,7 @@ jobs:
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.2.0
         with:
-          minikube version: 'v1.6.2'
+          minikube version: 'v1.16.0'
           kubernetes version: 'v1.16.15'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: run Unittest
@@ -42,7 +42,7 @@ jobs:
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.2.0
         with:
-          minikube version: 'v1.6.2'
+          minikube version: 'v1.16.0'
           kubernetes version: 'v1.17.17'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: run Unittest
@@ -66,7 +66,7 @@ jobs:
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.3.0
         with:
-          minikube version: 'v1.13.1'
+          minikube version: 'v1.16.0'
           kubernetes version: 'v1.18.15'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: run Unittest, including coverage analysis
@@ -93,7 +93,7 @@ jobs:
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.2.0
         with:
-          minikube version: 'v1.6.2'
+          minikube version: 'v1.16.0'
           kubernetes version: 'v1.19.7'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: run Unittest
@@ -114,7 +114,7 @@ jobs:
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.2.0
         with:
-          minikube version: 'v1.6.2'
+          minikube version: 'v1.16.0'
           kubernetes version: 'v1.20.2'
           github token: ${{ secrets.GITHUB_TOKEN }}
       - name: run Unittest
