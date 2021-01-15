@@ -21,7 +21,7 @@ jobs:
         run: |
           pip install -r requirements-prod.txt -r requirements-dev.txt
       - name: install coverage tool
-        if: ${{ k8s_version == 'v1.18.15' }}
+        if: ${{ k8sversion == 'v1.18.15' }}
         run: |
           pip install pytest-cov
       - name: Setup Minikube
@@ -32,13 +32,13 @@ jobs:
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
       - name: run Unittest without coverage
-        if: ${{ k8s_version != 'v1.18.15' }}
+        if: ${{ k8sversion != 'v1.18.15' }}
         run: pytest
       - name: run Unittest, including coverage analysis
-        if: ${{ k8s_version == 'v1.18.15' }}
+        if: ${{ k8sversion == 'v1.18.15' }}
         run: pytest --cov=./ --cov-report=xml
       - name: Upload coverage to Codecov
-        if: ${{ k8s_version == 'v1.18.15' }}
+        if: ${{ k8sversion == 'v1.18.15' }}
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
