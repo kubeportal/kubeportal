@@ -1,20 +1,25 @@
-from django.http import JsonResponse
 from django.test import override_settings
+from django.contrib.auth import get_user_model
 from rest_framework.test import RequestsClient
+from kubernetes import utils as k8s_utils
+
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedOutTestCase, admin_data, admin_clear_password
-from kubeportal.api.views import ClusterViewSet
+from kubeportal.api.views import ClusterInfoView
+from kubeportal.k8s import kubernetes_api as api
 from django.conf import settings
 import logging
 import json
+import os
 
 logger = logging.getLogger('KubePortal')
 
-from django.contrib.auth import get_user_model
-
 User = get_user_model()
 API_VERSION = settings.API_VERSION
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/'
 
 
 class ApiTestCase(AdminLoggedOutTestCase):
@@ -60,7 +65,8 @@ class ApiTestCase(AdminLoggedOutTestCase):
         return self.client.options('http://testserver' + relative_url)
 
     def api_login(self):
-        response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': admin_clear_password})
+        response = self.post(f'/api/{API_VERSION}/login/',
+                             {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn('access_token', data)
@@ -90,24 +96,27 @@ class ApiAnonymous(ApiTestCase):
         self.assertEqual(response.status_code, 405)
 
     def test_api_login(self):
-        response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': admin_clear_password})
+        response = self.post(f'/api/{API_VERSION}/login/',
+                             {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
         # JWT_AUTH_COOKIE not used
         #
-        #self.assertIn('Set-Cookie', response.headers)
-        #self.assertIn('kubeportal-auth=', response.headers['Set-Cookie'])
-        #from http.cookies import SimpleCookie
-        #cookie = SimpleCookie()
-        #cookie.load(response.headers['Set-Cookie'])
-        #self.assertEqual(cookie['kubeportal-auth']['path'], '/')
-        #self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
-        #self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
+        # self.assertIn('Set-Cookie', response.headers)
+        # self.assertIn('kubeportal-auth=', response.headers['Set-Cookie'])
+        # from http.cookies import SimpleCookie
+        # cookie = SimpleCookie()
+        # cookie.load(response.headers['Set-Cookie'])
+        # self.assertEqual(cookie['kubeportal-auth']['path'], '/')
+        # self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
+        # self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
         data = response.json()
-        self.assertEqual(3, len(data))
-        self.assertIn('firstname', data)
-        self.assertIn('id', data)
-        self.assertEqual(data['id'], self.admin.pk)
+        self.assertEqual(5, len(data))
+        self.assertIn('group_ids', data)
+        self.assertIn('webapp_ids', data)
+        self.assertIn('user_id', data)
         self.assertIn('access_token', data)
+        self.assertIn('k8s_namespace', data)
+        self.assertEqual(data['user_id'], self.admin.pk)
 
     def test_api_wrong_login(self):
         response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': 'blabla'})
@@ -119,25 +128,26 @@ class ApiAnonymous(ApiTestCase):
         auth with the token returned.
         """
         # Get JWT token
-        response = self.post(f'/api/{API_VERSION}/login/', {'username': admin_data['username'], 'password': admin_clear_password})
+        response = self.post(f'/api/{API_VERSION}/login/',
+                             {'username': admin_data['username'], 'password': admin_clear_password})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn('access_token', data)
         jwt = data['access_token']
         # Disable auth cookie
-        del(self.client.cookies['kubeportal-auth'])
+        del (self.client.cookies['kubeportal-auth'])
         # Simulate JS code calling, add Bearer token
         headers = {'Origin': 'http://testserver', 'Authorization': f'Bearer {jwt}'}
         response = self.get(f'/api/{API_VERSION}/cluster/portal_version/', headers=headers)
         self.assertEqual(response.status_code, 200)
 
     def test_cluster_denied(self):
-        for stat in ClusterViewSet.stats.keys():
+        for stat in ClusterInfoView.stats.keys():
             with self.subTest(stat=stat):
                 response = self.get(f'/api/{API_VERSION}/cluster/{stat}/')
                 self.assertEqual(response.status_code, 401)
 
-    def test_webapp_denied(self):
+    def test_single_webapp_denied(self):
         app1 = WebApplication(name="app1", link_show=True,
                               link_name="app1", link_url="http://www.heise.de")
         app1.save()
@@ -146,21 +156,43 @@ class ApiAnonymous(ApiTestCase):
         response = self.get(f'/api/{API_VERSION}/webapps/{app1.pk}/')
         self.assertEqual(response.status_code, 401)
 
-    def test_user_webapps_denied(self):
+    def test_webapps_denied(self):
         app1 = WebApplication(name="app1", link_show=True,
                               link_name="app1", link_url="http://www.heise.de")
         app1.save()
         self.admin_group.can_web_applications.add(app1)
 
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/webapps/')
+        response = self.get(f'/api/{API_VERSION}/webapps/{app1.pk}/')
         self.assertEqual(response.status_code, 401)
 
-    def test_group_denied(self):
+    def test_single_group_denied(self):
         response = self.get(f'/api/{API_VERSION}/groups/{self.admin_group.pk}/')
         self.assertEqual(response.status_code, 401)
 
-    def test_user_groups_denied(self):
-        response = self.get(f'/api/{API_VERSION}/groups/{self.admin_group.pk}/')
+    def test_groups_denied(self):
+        group1 = PortalGroup(name="group1")
+        group1.save()
+        response = self.get(f'/api/{API_VERSION}/groups/{group1.pk}/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_pods_denied(self):
+        response = self.get(f'/api/{API_VERSION}/pods/kube-system/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_ingresses_denied(self):
+        response = self.get(f'/api/{API_VERSION}/ingresses/default/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_ingresshosts_denied(self):
+        response = self.get(f'/api/{API_VERSION}/ingresshosts/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_deployments_denied(self):
+        response = self.get(f'/api/{API_VERSION}/deployments/default/')
+        self.assertEqual(response.status_code, 401)
+
+    def test_services_denied(self):
+        response = self.get(f'/api/{API_VERSION}/services/default/')
         self.assertEqual(response.status_code, 401)
 
     def test_logout(self):
@@ -171,16 +203,15 @@ class ApiAnonymous(ApiTestCase):
     def test_options_preflight_without_auth(self):
         test_path = [('/api/', 'GET'),
                      (f'/api/{API_VERSION}/users/{self.admin.pk}', 'GET'),
-                     (f'/api/{API_VERSION}/users/{self.admin.pk}/webapps', 'GET'),
                      (f'/api/{API_VERSION}/users/{self.admin.pk}', 'PATCH'),
                      (f'/api/{API_VERSION}/groups/{self.admin_group.pk}', 'GET'),
                      (f'/api/{API_VERSION}/cluster/k8s_apiserver', 'GET'),
                      (f'/api/{API_VERSION}/login/', 'POST'),
-        ]
+                     ]
         for path, request_method in test_path:
             with self.subTest(path=path):
                 response = self.options(path)
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(200, response.status_code)
 
     @override_settings(SOCIALACCOUNT_PROVIDERS={'google': {
         'APP': {
@@ -190,10 +221,10 @@ class ApiAnonymous(ApiTestCase):
         'SCOPE': ['profile', 'email'],
     }})
     def test_invalid_google_login(self):
-        '''
+        """
         We have no valid OAuth credentials when running the test suite, but at least
         we can check that no crash happens when using this API call with fake data.
-        '''
+        """
         response = self.post(f'/api/{API_VERSION}/login_google/', {'access_token': 'foo', 'code': 'bar'})
         self.assertEqual(response.status_code, 400)
 
@@ -214,12 +245,21 @@ class ApiLocalUser(ApiTestCase):
         'k8s_token',
     ]
 
+    def _apply_yml(self, path):
+        try:
+            k8s_utils.create_from_yaml(api.api_client, path)
+        except k8s_utils.FailToCreateError as e:
+            if e.api_exceptions[0].reason == "Conflict":
+                pass  # test namespace still exists in Minikube from another run
+            else:
+                raise e
+
     def setUp(self):
         super().setUp()
         self.api_login()
 
     def test_cluster(self):
-        for stat in ClusterViewSet.stats.keys():
+        for stat in ClusterInfoView.stats.keys():
             with self.subTest(stat=stat):
                 response = self.get(f'/api/{API_VERSION}/cluster/{stat}/')
                 self.assertEqual(200, response.status_code)
@@ -256,7 +296,7 @@ class ApiLocalUser(ApiTestCase):
         app1.save()
 
         response = self.get(f'/api/{API_VERSION}/webapps/{app1.pk}/')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_webapp_invalid_id(self):
         response = self.get(f'/api/{API_VERSION}/webapps/777/')
@@ -269,7 +309,7 @@ class ApiLocalUser(ApiTestCase):
         self.admin_group.can_web_applications.add(app1)
 
         response = self.get(f'/api/{API_VERSION}/webapps/{app1.pk}/')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_webapp(self):
         app1 = WebApplication(name="app1", link_show=True,
@@ -283,53 +323,6 @@ class ApiLocalUser(ApiTestCase):
         data = response.json()
         self.assertEqual(data['link_name'], 'app1')
         self.assertEqual(data['link_url'], 'http://www.heise.de')
-
-    def test_user_webapps(self):
-        test_values = [('app1', True, "http://www.heise.de"),
-                       ("app2", True, "http://www.spiegel.de"),
-                       ("app3", False, "http://www.crappydemo.de"),
-                       ("app4", True, "http://www.unrelatedapp.de"),
-                       ]
-
-        for name, link_show, link_url in test_values:
-            app = WebApplication(name=name, link_show=link_show,
-                                 link_name=name, link_url=link_url)
-            app.save()
-            if name != 'app4':
-                self.admin_group.can_web_applications.add(app)
-
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/webapps/')
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertIn(
-            {'link_name': 'app1', 'link_url': 'http://www.heise.de'}, data)
-        self.assertIn(
-            {'link_name': 'app2', 'link_url': 'http://www.spiegel.de'}, data)
-        self.assertNotIn(
-            {'link_name': 'app3', 'link_url': 'http://www.crappydemo.de'}, data)
-        self.assertNotIn(
-            {'link_name': 'app4', 'link_url': 'http://www.unrelatedapp.de'}, data)
-
-    def test_user_webapps_invalid_id(self):
-        response = self.get(f'/api/{API_VERSION}/users/777/webapps/')
-        self.assertEqual(response.status_code, 403)
-
-    def test_user_groups(self):
-        group1 = PortalGroup(name="group1")
-        group1.save()
-        group2 = PortalGroup(name="group2")
-        group2.save()
-
-        self.admin.portal_groups.add(group1)
-        self.admin.portal_groups.add(group2)
-
-        response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/groups/')
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        for entry in data:
-            self.assertIn('name', entry.keys())
-        # Auto group "all users", Test case group "Admins", plus 2 extra
-        self.assertEqual(4, len(data))
 
     def test_group(self):
         response = self.get(f'/api/{API_VERSION}/groups/{self.admin_group.pk}/')
@@ -346,11 +339,7 @@ class ApiLocalUser(ApiTestCase):
         group1 = PortalGroup(name="group1")
         group1.save()
         response = self.get(f'/api/{API_VERSION}/groups/{group1.pk}/')
-        self.assertEqual(response.status_code, 403)
-
-    def test_user_group_invalid_id(self):
-        response = self.get(f'/api/{API_VERSION}/users/777/groups/')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_user(self):
         response = self.get(f'/api/{API_VERSION}/users/{self.admin.pk}/')
@@ -372,11 +361,6 @@ class ApiLocalUser(ApiTestCase):
         self.assertEqual(updated_primary_email, data_mock['primary_email'])
         self.assertEqual(response.status_code, 200)
 
-    def test_patch_user_invalid_body(self):
-        response = self.patch(f'/api/{API_VERSION}/users/{self.admin.pk}/', {})
-        self.assertEqual(response.status_code, 422)
-
-
     def test_patch_user_invalid_id(self):
         response = self.patch(f'/api/{API_VERSION}/users/777/', {})
         self.assertEqual(response.status_code, 404)
@@ -386,44 +370,264 @@ class ApiLocalUser(ApiTestCase):
         u.save()
 
         response = self.patch(f'/api/{API_VERSION}/users/{u.pk}/', {})
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_user_invalid_id(self):
         response = self.get(f'/api/{API_VERSION}/users/777/')
         self.assertEqual(response.status_code, 404)
 
-    def test_user_not_himself(self):
+    def test_get_user_not_himself(self):
         u = User()
         u.save()
 
         response = self.get(f'/api/{API_VERSION}/users/{u.pk}/')
-        self.assertEqual(response.status_code, 403)
-
-    def test_user_not_himself_webapps(self):
-        u = User()
-        u.save()
-
-        response = self.get(f'/api/{API_VERSION}/users/{u.pk}/webapps/')
-        self.assertEqual(response.status_code, 403)
-
+        self.assertEqual(response.status_code, 404)
 
     def test_no_general_user_list(self):
         response = self.get(f'/api/{API_VERSION}/users/')
         self.assertEqual(response.status_code, 404)
 
-    def test_no_general_webapp_list(self):
-        response = self.get(f'/api/{API_VERSION}/webapps/')
-        self.assertEqual(response.status_code, 404)
+    def test_user_pods_list(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
 
-    def test_no_general_group_list(self):
-        response = self.get(f'/api/{API_VERSION}/groups/')
-        self.assertEqual(response.status_code, 404)
+        response = self.get(f'/api/{API_VERSION}/pods/foobar/')
+        self.assertEqual(404, response.status_code)
+
+        response = self.get(f'/api/{API_VERSION}/pods/kube-system/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        names = [record['name'] for record in data]
+        self.assertTrue(len(names) > 0)
+
+    def test_user_pods_list_no_k8s(self):
+        response = self.get(f'/api/{API_VERSION}/pods/default/')
+        self.assertEqual(404, response.status_code)
+
+    def test_user_deployments_list(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
+
+        response = self.get(f'/api/{API_VERSION}/deployments/foobar/')
+        self.assertEqual(404, response.status_code)
+
+        response = self.get(f'/api/{API_VERSION}/deployments/kube-system/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertIn("coredns", data[0]['name'])
+
+    def test_user_deployments_list_no_k8s(self):
+        response = self.get(f'/api/{API_VERSION}/deployments/default/')
+        self.assertEqual(404, response.status_code)
+
+    def test_user_deployments_create(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
+        old_count = len(api.get_namespaced_deployments("kube-system"))
+        try:
+            response = self.post(f'/api/{API_VERSION}/deployments/kube-system/',
+                                 {'name': 'test-deployment',
+                                  'replicas': 1,
+                                  'matchLabels': {'app': 'webapp'},
+                                  'template': {
+                                      'name': 'webapp',
+                                      'labels': {'app': 'webapp'},
+                                      'containers': [{
+                                          'name': 'busybox',
+                                          'image': 'busybox'
+                                      }, ]
+                                  }})
+            self.assertEqual(201, response.status_code)
+            new_count = len(api.get_namespaced_deployments("kube-system"))
+            self.assertEqual(old_count + 1, new_count)
+        finally:
+            api.apps_v1.delete_namespaced_deployment(name="test-deployment", namespace="kube-system")
+
+    def test_user_services_create(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
+        old_count = len(api.get_namespaced_services("kube-system"))
+        try:
+            response = self.post(f'/api/{API_VERSION}/services/kube-system/', {
+                'name': 'my-service',
+                'type': 'NodePort',
+                'selector': {'app': 'kubeportal'},
+                'ports': [{'port': 8000, 'protocol': 'TCP'}]
+            })
+            self.assertEqual(201, response.status_code)
+            new_count = len(api.get_namespaced_services("kube-system"))
+            self.assertEqual(old_count + 1, new_count)
+        finally:
+            api.core_v1.delete_namespaced_service(name="my-service", namespace="kube-system")
+
+    def test_user_services_create_wrong_ns(self):
+        response = self.post(f'/api/{API_VERSION}/services/xyz/', {
+            'name': 'my-service',
+            'type': 'NodePort',
+            'selector': {'app': 'kubeportal'},
+            'ports': [{'port': 8000, 'protocol': 'TCP'}]
+        })
+        self.assertEqual(404, response.status_code)
+
+    def test_user_ingresses_create(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
+        old_count = len(api.get_namespaced_ingresses("kube-system"))
+        try:
+            response = self.post(f'/api/{API_VERSION}/ingresses/kube-system/',
+                                 {'name': 'test-ingress',
+                                  'annotations': {
+                                      'nginx.ingress.kubernetes.io/rewrite-target': '/',
+                                  },
+                                  'tls': True,
+                                  'rules': {
+                                      'www.example.com': {
+                                          '/svc': {
+                                              'service_name': 'my-svc',
+                                              'service_port': 8000
+                                          },
+                                          '/docs': {
+                                              'service_name': 'my-docs-svc',
+                                              'service_port': 5000
+                                          }
+                                      }
+                                  }})
+            self.assertEqual(201, response.status_code)
+            new_count = len(api.get_namespaced_ingresses("kube-system"))
+            self.assertEqual(old_count + 1, new_count)
+        finally:
+            api.net_v1.delete_namespaced_ingress(name="test-ingress", namespace="kube-system")
+
+    def test_user_deployments_create_wrong_ns(self):
+        response = self.post(f'/api/{API_VERSION}/deployments/xyz/',
+                             {'name': 'test-deployment',
+                              'replicas': 1,
+                              'matchLabels': {'app': 'webapp'},
+                              'template': {
+                                  'name': 'webapp',
+                                  'labels': {'app': 'webapp'},
+                                  'containers': [{
+                                      'name': 'busybox',
+                                      'image': 'busybox'
+                                  }, ]
+                              }})
+        self.assertEqual(404, response.status_code)
+
+    def test_user_ingresses_create_wrong_ns(self):
+        response = self.post(f'/api/{API_VERSION}/ingresses/xyz/',
+                             {'name': 'test-ingress',
+                              'annotations': {
+                                  'nginx.ingress.kubernetes.io/rewrite-target': '/',
+                              },
+                              'tls': True,
+                              'rules': {
+                                  'www.example.com': {
+                                      '/svc': {
+                                          'service_name': 'my-svc',
+                                          'service_port': 8000
+                                      },
+                                      '/docs': {
+                                          'service_name': 'my-docs-svc',
+                                          'service_port': 5000
+                                      }
+                                  }
+                              }})
+        self.assertEqual(404, response.status_code)
+
+    def test_user_services_list(self):
+        self._call_sync()
+        system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+        self.admin.service_account = system_namespace.service_accounts.all()[0]
+        self.admin.save()
+
+        response = self.get(f'/api/{API_VERSION}/services/foobar/')
+        self.assertEqual(404, response.status_code)
+
+        response = self.get(f'/api/{API_VERSION}/services/kube-system/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertIn("kube-dns", data[0]['name'])
+
+    def test_user_services_list_no_k8s(self):
+        response = self.get(f'/api/{API_VERSION}/services/default/')
+        self.assertEqual(404, response.status_code)
+
+    def test_user_ingresses_list(self):
+        self._call_sync()
+        default_namespace = KubernetesNamespace.objects.get(name="default")
+        self.admin.service_account = default_namespace.service_accounts.all()[0]
+        self.admin.save()
+
+        self._apply_yml(BASE_DIR + "fixtures/ingress1.yml")
+
+        response = self.get(f'/api/{API_VERSION}/ingresses/default/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        self.assertEqual("test-ingress-1", data[0]['name'])
+
+    def test_user_ingresses_list_no_k8s(self):
+        self._apply_yml(BASE_DIR + "fixtures/ingress1.yml")
+
+        response = self.get(f'/api/{API_VERSION}/ingresses/default/')
+        self.assertEqual(404, response.status_code)
+
+    def test_ingress_list(self):
+        self._call_sync()
+        default_namespace = KubernetesNamespace.objects.get(name="default")
+        self.admin.service_account = default_namespace.service_accounts.all()[0]
+        self.admin.save()
+
+        self._apply_yml(BASE_DIR + "fixtures/ingress1.yml")
+        self._apply_yml(BASE_DIR + "fixtures/ingress2.yml")
+
+        response = self.get(f'/api/{API_VERSION}/ingresses/default/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        host_names = [list(el["rules"].keys()) for el in data]
+        self.assertEqual([["visbert.demo.datexis.com"], ["tasty.demo.datexis.com"]], host_names)
+
+    def test_ingress_list_illegal_ns(self):
+        self._call_sync()
+        default_namespace = KubernetesNamespace.objects.get(name="default")
+        self.admin.service_account = default_namespace.service_accounts.all()[0]
+        self.admin.save()
+
+        self._apply_yml(BASE_DIR + "fixtures/ingress1.yml")
+        self._apply_yml(BASE_DIR + "fixtures/ingress2.yml")
+
+        response = self.get(f'/api/{API_VERSION}/ingresses/foobar/')
+        self.assertEqual(404, response.status_code)
+
+    def test_ingresshosts_list(self):
+        self._call_sync()
+        default_namespace = KubernetesNamespace.objects.get(name="default")
+        self.admin.service_account = default_namespace.service_accounts.all()[0]
+        self.admin.save()
+
+        self._apply_yml(BASE_DIR + "fixtures/ingress1.yml")
+        self._apply_yml(BASE_DIR + "fixtures/ingress2.yml")
+
+        response = self.get(f'/api/{API_VERSION}/ingresshosts/')
+        self.assertEqual(200, response.status_code)
+        data = json.loads(response.content)
+        for check_host in ["visbert.demo.datexis.com", "tasty.demo.datexis.com"]:
+            self.assertIn(check_host, data)
 
 
 class ApiLogout(ApiTestCase):
-    '''
+    """
     Tests for API logout functionality when a local Django user is logged in.
-    '''
+    """
 
     def setUp(self):
         super().setUp()

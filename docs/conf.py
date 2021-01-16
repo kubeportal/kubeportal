@@ -4,8 +4,7 @@ author = 'Peter Tröger'
 release = 'v0.5.4'
 extensions = [
 	'sphinx_issues',
-    'sphinx.ext.autosectionlabel',
-    'sphinxcontrib.openapi',
+    'sphinx.ext.autosectionlabel'
 ]
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

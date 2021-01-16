@@ -2,9 +2,14 @@ import logging
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from django.test import TestCase
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.contrib.sessions.middleware import SessionMiddleware
+from django.test import TestCase, RequestFactory
 from django.test import client
-from kubeportal.k8s.utils import is_minikube
+from django.urls import reverse
+
+from kubeportal.k8s import k8s_sync
+from kubeportal.k8s.kubernetes_api import is_minikube
 from kubeportal.models.portalgroup import PortalGroup
 
 logging.getLogger('KubePortal').setLevel(logging.DEBUG)
@@ -33,8 +38,38 @@ class BaseTestCase(TestCase):
 
     def setUp(self):
         super().setUp()
+        self.factory = RequestFactory()
         self.client = client.Client()
-        assert(is_minikube())
+        assert(is_minikube())   # prevent polluting production clusters with test data
+
+    def _build_full_request_mock(self, short_url):
+        url = reverse(short_url)
+        request = self.factory.get(url)
+        request.user = self.admin
+        middleware = SessionMiddleware()
+        middleware.process_request(request)
+        request.session.save()
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        return request
+
+    def _build_full_post_request_mock(self, short_url, data):
+        url = reverse(short_url)
+        request = self.factory.post(url, data)
+        request.user = self.admin
+        middleware = SessionMiddleware()
+        middleware.process_request(request)
+        request.session.save()
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+        return request
+
+    def _call_sync(self, expect_success=True):
+        # We are calling the sync method directly here, and not through the view,
+        # so that the result of sync is directly analyzed
+        request = self._build_full_request_mock('admin:index')
+        sync_success = k8s_sync.sync(request)
+        self.assertEqual(sync_success, expect_success)
 
 
 class AnonymousTestCase(BaseTestCase):

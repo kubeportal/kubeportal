@@ -26,6 +26,7 @@ clean:
 
 # Build the HTML documentation from the sources.
 docs: venv
+	./venv/bin/python manage.py spectacular --file ./kubeportal/static/docs/openapi.yaml --configuration=Development
 	pushd docs; make html; popd
 
 # Runs the test suite

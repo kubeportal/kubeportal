@@ -1,31 +1,49 @@
 '''
-    Synchronization between Kubernetes API server and portal database.
-
-    The API server is the master data source, the portal just mirrors it.
-    The only exception are newly created records in the portal, which should
-    lead to according resource creation in in API server.
-
-    Kubeportal will never delete resources in Kubernetes, so there is no code
-    and no UI for that. Admins should perform deletion operation directly
-    in Kubernetes, e.g. through kubectl, and sync KubePortal afterwards.
+    A set of functions wrapping K8S API calls.
 '''
+import enum
 
 from django.conf import settings
-from kubernetes import client
-from kubeportal.k8s.utils import load_config, is_minikube
+from kubernetes import client, config
 from base64 import b64decode
 
 import logging
+
+from kubernetes.client import V1ServiceSpec, V1Service, NetworkingV1beta1Ingress, NetworkingV1beta1IngressSpec, \
+    NetworkingV1beta1IngressTLS, NetworkingV1beta1IngressRule, NetworkingV1beta1HTTPIngressPath, \
+    NetworkingV1beta1IngressBackend, NetworkingV1beta1HTTPIngressRuleValue
 
 logger = logging.getLogger('KubePortal')
 
 HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 
+try:
+    # Production mode
+    config.load_incluster_config()
+except Exception:
+    # Dev mode
+    config.load_kube_config()
 
-core_v1, rbac_v1 = load_config()
+api_client = client.ApiClient()
+core_v1 = client.CoreV1Api()
+rbac_v1 = client.RbacAuthorizationV1Api()
+apps_v1 = client.AppsV1Api()
+net_v1 = client.NetworkingV1beta1Api()
 
 
-def create_k8s_ns(name):
+def is_minikube():
+    """
+    Checks if the current context is minikube. This is needed for checks in the test code.
+    """
+    contexts, active_context = config.list_kube_config_contexts()
+    return active_context['context']['cluster'] == 'minikube'
+
+
+def create_k8s_ns(name: str):
+    """
+    Create the Kubernetes namespace with the given name in the cluster.
+    An existing namespace with the same name leads to a no-op.
+    """
     logger.info(
         "Creating Kubernetes namespace '{0}'".format(name))
     try:
@@ -42,7 +60,30 @@ def create_k8s_ns(name):
     return core_v1.read_namespace(name=name)
 
 
+def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, tpl: dict):
+    """
+    Create a Kubernetes deployment in the cluster.
+    """
+    logger.info(f"Creating Kubernetes deployment '{name}'")
+    k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in tpl["containers"]]
+    k8s_pod_tpl = client.V1PodTemplateSpec(
+        metadata=client.V1ObjectMeta(name=tpl['name'], labels=tpl['labels']),
+        spec=client.V1PodSpec(containers=k8s_containers)
+    )
+    k8s_deployment = client.V1Deployment(
+        metadata=client.V1ObjectMeta(name=name),
+        spec=client.V1DeploymentSpec(replicas=replicas,
+                                     selector=client.V1LabelSelector(match_labels=match_labels),
+                                     template=k8s_pod_tpl
+                                     )
+    )
+    apps_v1.create_namespaced_deployment(namespace, k8s_deployment)
+
+
 def delete_k8s_ns(name):
+    """
+    Delete the given namespace in the cluster, but only when its Minikube.
+    """
     if is_minikube():
         logger.info("Deleting Kubernetes namespace '{0}'".format(name))
         core_v1.delete_namespace(name)
@@ -51,9 +92,9 @@ def delete_k8s_ns(name):
 
 
 def get_namespaces():
-    '''
-    Returns the list of cluster namespaces.
-    '''
+    """
+    Returns the list of cluster namespaces, or None on error.
+    """
     try:
         return core_v1.list_namespace().items
     except Exception:
@@ -61,10 +102,25 @@ def get_namespaces():
         return None
 
 
+def get_ingress_hosts():
+    """
+    Returns the list of host names used in ingresses accross all namespaces,
+    or None on error.
+    """
+    try:
+        ings = net_v1.list_ingress_for_all_namespaces()
+        host_list = [rule.host for ing in ings.items for rule in ing.spec.rules]
+        return host_list
+
+    except Exception:
+        logger.exception("Error while fetching all ingresses from Kubernetes")
+        return None
+
+
 def get_service_accounts():
-    '''
-    Returns the list of service accounts.
-    '''
+    """
+    Returns the list of service accounts in the cluster, or None on error.
+    """
     try:
         return core_v1.list_service_account_for_all_namespaces().items
     except Exception:
@@ -73,11 +129,174 @@ def get_service_accounts():
 
 
 def get_pods():
+    """
+    Returns the list of pods in the cluster, or None on error.
+    """
     try:
         return core_v1.list_pod_for_all_namespaces().items
     except Exception as e:
-        logger.error("Exception: {0}".format(e))
+        logger.exception("Error while fetching list of all pods from Kubernetes")
         return None
+
+
+def get_namespaced_pods(namespace):
+    """
+    Get all pods for a specific Kubernetes namespace in the cluster.
+
+    Make sure to update the 'Pod' component at static/docs/openapi_manual.yaml
+    when touching this code.
+    """
+    try:
+        pods = core_v1.list_namespaced_pod(namespace)
+        # logger.debug(f"Got list of pods for namespace {namespace}: {pods.items}")
+        stripped_pods = []
+        for pod in pods.items:
+            stripped_pod = {'name': pod.metadata.name,
+                            'creation_timestamp': pod.metadata.creation_timestamp}
+            stripped_containers = []
+            for container in pod.spec.containers:
+                c = {'image': container.image,
+                     'name': container.name}
+                stripped_containers.append(c)
+            stripped_pod['containers'] = stripped_containers
+            stripped_pods.append(stripped_pod)
+        return stripped_pods
+    except Exception as e:
+        logger.exception(f"Error while fetching pods of namespace {namespace}")
+        return []
+
+
+def get_namespaced_deployments(namespace):
+    """
+    Get all deployments for a specific Kubernetes namespace in the cluster.
+
+    Make sure to update the 'Deployment' component at static/docs/openapi_manual.yaml
+    when touching this code.
+    """
+    try:
+        deployments = apps_v1.list_namespaced_deployment(namespace)
+        stripped_deployments = []
+        for deployment in deployments.items:
+            stripped_depl = {'name': deployment.metadata.name,
+                             'creation_timestamp': deployment.metadata.creation_timestamp,
+                             'replicas': deployment.spec.replicas}
+            stripped_deployments.append(stripped_depl)
+        return stripped_deployments
+    except Exception as e:
+        logger.exception(f"Error while fetching deployments of namespace {namespace}")
+        return []
+
+
+def get_namespaced_services(namespace):
+    """
+    Get all services for a specific Kubernetes namespace in the cluster.
+    """
+    try:
+        services = core_v1.list_namespaced_service(namespace)
+        stripped_services = []
+        for svc in services.items:
+            stripped_svc = {'name': svc.metadata.name,
+                            'type': svc.spec.type,
+                            'selector': svc.spec.selector,
+                            'creation_timestamp': svc.metadata.creation_timestamp}
+            ports = []
+            for port in svc.spec.ports:
+                ports.append({"port": port.port, "protocol": port.protocol})
+            stripped_svc["ports"] = ports
+            stripped_services.append(stripped_svc)
+        return stripped_services
+    except Exception as e:
+        logger.exception(f"Error while fetching services of namespace {namespace}")
+        return []
+
+
+def create_k8s_service(namespace: str, name: str, svc_type: str, selector: dict, ports: list):
+    """
+    Create a Kubernetes service in the cluster.
+    The 'ports' parameter contains a list of dictionaries, each with the key 'port' and 'protocol'.
+    """
+    logger.info(f"Creating Kubernetes service '{name}'")
+    svc_ports = [client.V1ServicePort(name=str(p["port"]), port=p["port"], protocol=p["protocol"]) for p in ports]
+
+    svc = V1Service(
+        metadata=client.V1ObjectMeta(name=name),
+        spec=V1ServiceSpec(
+            type=svc_type,
+            selector=selector,
+            ports=svc_ports
+        )
+    )
+    core_v1.create_namespaced_service(namespace, svc)
+
+
+def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, rules: dict):
+    """
+    Create a Kubernetes ingress in the cluster.
+
+    The Kubeportal API makes some simplifying assumptions:
+
+    - TLS is a global configuration for an Ingress.
+    - The necessary annotations come from the portal settings, not from the ingress definition.
+    """
+    logger.info(f"Creating Kubernetes ingress '{name}'")
+
+    k8s_ing = NetworkingV1beta1Ingress(
+              metadata=client.V1ObjectMeta(name=name, annotations=annotations)
+    )
+
+    k8s_rules = []
+    for host, host_config in rules.items():
+        k8s_rule = NetworkingV1beta1IngressRule(host=host)
+        k8s_paths = []
+        for path, path_config in host_config.items():
+            k8s_backend = NetworkingV1beta1IngressBackend(
+                service_name=path_config['service_name'],
+                service_port=path_config['service_port']
+            )
+            k8s_paths.append(NetworkingV1beta1HTTPIngressPath(path=path, backend=k8s_backend))
+        k8s_http = NetworkingV1beta1HTTPIngressRuleValue(
+            paths=k8s_paths
+        )
+        k8s_rule.http = k8s_http
+        k8s_rules.append(k8s_rule)
+
+    k8s_spec = NetworkingV1beta1IngressSpec(rules=k8s_rules)
+
+    if tls:
+        k8s_ing.metadata.annotations['cert-manager.io/cluster-issuer'] = settings.INGRESS_TLS_ISSUER
+        k8s_spec.tls = [NetworkingV1beta1IngressTLS(hosts=list(rules.keys()), secret_name=f'{name}_tls')]
+
+    k8s_ing.spec = k8s_spec
+    #TODO: networking.k8s.io/v1 Ingress
+    net_v1.create_namespaced_ingress(namespace, k8s_ing)
+
+
+def get_namespaced_ingresses(namespace):
+    """
+    Get all ingress for a specific Kubernetes namespace in the cluster.
+    Error handling is supposed to happen on the caller side.
+    """
+    ings = net_v1.list_namespaced_ingress(namespace)
+    stripped_ings = []
+    for ing in ings.items:
+        stripped_ing = {'name': ing.metadata.name,
+                        'creation_timestamp': ing.metadata.creation_timestamp,
+                        'annotations': ing.metadata.annotations,
+                        }
+        if ing.spec.tls:
+            stripped_ing['tls'] = True
+        else:
+            stripped_ing['tls'] = False
+        rules = {}
+        for rule in ing.spec.rules:
+            rules[rule.host] = {}
+            for path_setting in rule.http.paths:
+                rules[rule.host][path_setting.path] = {}
+                rules[rule.host][path_setting.path]['service_name'] = path_setting.backend.service_name
+                rules[rule.host][path_setting.path]['service_port'] = path_setting.backend.service_port
+        stripped_ing['rules'] = rules
+        stripped_ings.append(stripped_ing)
+    return stripped_ings
 
 
 def get_token(kubeportal_service_account):
@@ -129,6 +348,3 @@ def get_memory_sum():
 
 def get_number_of_volumes():
     return len(core_v1.list_persistent_volume().items)
-
-
-

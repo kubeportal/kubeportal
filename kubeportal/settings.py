@@ -5,8 +5,8 @@ from kubeportal.secret import get_secret_key
 
 
 class Common(Configuration):
-    VERSION = '0.5.4'
-    API_VERSION = 'v1.4.0'
+    VERSION = '0.6.0'
+    API_VERSION = 'v2.0.0'
 
     SITE_ID = 1
 
@@ -35,6 +35,7 @@ class Common(Configuration):
         'allauth.socialaccount.providers.oauth2',
         'silk',
         'django_extensions',
+        'drf_spectacular', # do late to enable correct config loading
     ]
 
     MIDDLEWARE = [
@@ -69,19 +70,27 @@ class Common(Configuration):
     ]
 
     REST_FRAMEWORK = {
-            'DEFAULT_VERSIONING_CLASS':
-            'rest_framework.versioning.URLPathVersioning',
-            'DEFAULT_AUTHENTICATION_CLASSES': [
-                'rest_framework_simplejwt.authentication.JWTAuthentication',
-                ],
-            'DEFAULT_PERMISSION_CLASSES': [
-                'kubeportal.middleware.AllowOptionsAuthentication',
-                ],
-            'DEFAULT_VERSION': API_VERSION,
-            'ALLOWED_VERSIONS': [
-                API_VERSION
-                ]
-            }
+        'DEFAULT_RENDERER_CLASSES': (
+            'rest_framework.renderers.JSONRenderer',
+        ),
+        'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework_simplejwt.authentication.JWTAuthentication',
+            ],
+        'DEFAULT_PERMISSION_CLASSES': [
+            'kubeportal.middleware.AllowOptionsAuthentication',
+            ],
+        'DEFAULT_VERSION': API_VERSION,
+        'ALLOWED_VERSIONS': [
+            API_VERSION
+            ],
+        'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
+    }
+
+    SPECTACULAR_SETTINGS = {
+        'TITLE': 'Kubeportal Backend API',
+        'VERSION': API_VERSION,
+    }
 
     REST_USE_JWT = True
 
@@ -150,6 +159,8 @@ class Common(Configuration):
 
     API_SERVER_EXTERNAL = values.Value(None, environ_prefix='KUBEPORTAL')
 
+    INGRESS_TLS_ISSUER = values.Value("letsencrypt", environ_prefix='KUBEPORTAL')
+
     BRANDING = values.Value('KubePortal', environ_prefix='KUBEPORTAL')
     LANGUAGE_CODE = values.Value('en-us', environ_prefix='KUBEPORTAL')
     TIME_ZONE = values.Value('UTC', environ_prefix='KUBEPORTAL')
@@ -166,11 +177,6 @@ class Common(Configuration):
     SILKY_AUTHORISATION = True
 
     LAST_LOGIN_MONTHS_AGO = values.Value(12, environ_prefix='KUBEPORTAL')
-
-    # override default response format for /api/login endpoint
-    REST_AUTH_SERIALIZERS = {
-        'JWT_SERIALIZER': 'kubeportal.api.serializers.LoginSuccessSerializer'
-    }
 
 
 class Development(Common):

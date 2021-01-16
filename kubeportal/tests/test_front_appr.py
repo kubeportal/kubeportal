@@ -39,11 +39,6 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         response = self.client.get('/stats/')
         self.assertEqual(response.status_code, 200)
 
-    def test_stats_with_broken_k8s_view(self):
-        with patch('kubeportal.k8s.utils.load_config'):
-            response = self.client.get('/stats/')
-            self.assertEqual(response.status_code, 200)
-
     def _prepare_subauth_test(self, user_in_group1, user_in_group2, app_in_group1, app_in_group2, app_enabled):
         group1 = PortalGroup()
         group1.save()

@@ -1,5 +1,6 @@
 from django.conf.urls import include
 from django.urls import path
+from django.conf import settings
 from django.views.generic.base import RedirectView
 from oidc_provider.views import ProviderInfoView
 from dj_rest_auth import views as dj_rest_views
@@ -8,18 +9,9 @@ from kubeportal import views
 from kubeportal.api import views as api_views
 from kubeportal.admin import admin_site
 
-from rest_framework_nested import routers
+from rest_framework import permissions, routers
 
-
-router = routers.SimpleRouter()
-router.register('users', api_views.UserViewSet, basename='users')
-router.register('cluster', api_views.ClusterViewSet, basename='cluster')
-router.register('webapps', api_views.WebApplicationViewSet, basename='webapplications')
-router.register('groups', api_views.GroupViewSet, basename='groups')
-
-users_router = routers.NestedSimpleRouter(router, 'users', lookup='user')
-users_router.register('webapps', api_views.WebApplicationViewSet, basename='user-webapplications')
-users_router.register('groups', api_views.GroupViewSet, basename='user-groups')
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
     # frontend web views
@@ -42,12 +34,22 @@ urlpatterns = [
     path('.well-known/openid-configuration', ProviderInfoView.as_view(), name='provider_info'),
 
     # frontend API views
-    path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
+    path('api/', api_views.BootstrapInfoView.as_view()),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+
+    path('api/<str:version>/users/<int:user_id>/', api_views.UserView.as_view(), name='user'),
+    path('api/<str:version>/groups/<int:group_id>/', api_views.GroupView.as_view(), name='group'),
+    path('api/<str:version>/webapps/<int:webapp_id>/', api_views.WebAppView.as_view(), name='webapplication'),
+    path('api/<str:version>/pods/<str:namespace>/', api_views.PodsView.as_view(), name='pods'),
+    path('api/<str:version>/deployments/<str:namespace>/', api_views.DeploymentsView.as_view(), name='deployments'),
+    path('api/<str:version>/services/<str:namespace>/', api_views.ServicesView.as_view(), name='services'),
+    path('api/<str:version>/ingresses/<str:namespace>/', api_views.IngressesView.as_view(), name='ingresses'),
+    path('api/<str:version>/login/', api_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
-    path('api/<str:version>/', include(router.urls)),
-    path('api/<str:version>/', include(users_router.urls)),
-    path('api/', api_views.BootstrapView.as_view()),
+    path('api/<str:version>/cluster/<str:info_slug>/', api_views.ClusterInfoView.as_view()),
+    path('api/<str:version>/ingresshosts/', api_views.IngressHostsView.as_view()),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),

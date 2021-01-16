@@ -6,51 +6,11 @@ on:
   pull_request:
 
 jobs:
-  test-k8s-16:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-      - name: install dependencies
-        run: |
-          pip install -r requirements-prod.txt -r requirements-dev.txt
-      - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.2.0
-        with:
-          minikube version: 'v1.6.2'
-          kubernetes version: 'v1.16.0'
-          github token: ${{ secrets.GITHUB_TOKEN }}
-      - name: run Unittest
-        run: pytest
-
-  test-k8s-17:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-      - name: install dependencies
-        run: |
-          pip install -r requirements-prod.txt -r requirements-dev.txt
-      - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.2.0
-        with:
-          minikube version: 'v1.6.2'
-          kubernetes version: 'v1.17.0'
-          github token: ${{ secrets.GITHUB_TOKEN }}
-      - name: run Unittest
-        run: pytest
-
-  test-plus-coverage-k8s-18:
-    runs-on: ubuntu-latest
-
+  test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        k8sversion: ['v1.16.15', 'v1.17.17', 'v1.18.15', 'v1.19.7', 'v1.20.2']
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
@@ -61,17 +21,24 @@ jobs:
         run: |
           pip install -r requirements-prod.txt -r requirements-dev.txt
       - name: install coverage tool
+        if: ${{ matrix.k8sversion == 'v1.18.15' }}
         run: |
           pip install pytest-cov
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.3.0
         with:
-          minikube version: 'v1.13.1'
-          kubernetes version: 'v1.18.0'
+          minikube version: 'v1.16.0'
+          kubernetes version: ${{ matrix.k8sversion }}
           github token: ${{ secrets.GITHUB_TOKEN }}
+          driver: docker
+      - name: run Unittest without coverage
+        if: ${{ matrix.k8sversion != 'v1.18.15' }}
+        run: pytest
       - name: run Unittest, including coverage analysis
+        if: ${{ matrix.k8sversion == 'v1.18.15' }}
         run: pytest --cov=./ --cov-report=xml
       - name: Upload coverage to Codecov
+        if: ${{ matrix.k8sversion == 'v1.18.15' }}
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
