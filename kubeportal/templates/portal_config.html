@@ -12,12 +12,12 @@
 
     <div class="card mb-3">
       <div class="card-body">
-        {% if user.has_access_approved %}
+        {% if user.k8s_namespace %}
           <p>Kubernetes Service Account: {{user.service_account.name}}</p>
           <p>Kubernetes Namespace: {{user.service_account.namespace}}</p>
         {% else %}
           <p class="text-danger">
-            {% if user.has_access_requested %}
+            {% if user.is_requesting %}
               Still waiting for approval.
             {% else %}
               Sorry, you have no access to the cluster.
@@ -25,7 +25,7 @@
           </p>
           {% if portal_administrators %}
             <p>
-              {% if user.has_access_requested %}
+              {% if user.is_requesting %}
                 Your request for cluster access was already sent to the administrators. <br>
                 If needed, you can re-send an access request to an administrator of your choice:
                 {% else %}
@@ -60,7 +60,7 @@
 
 
 
-{% if user.has_access_approved %}
+{% if user.is_approved %}
 
 <div class="row">
   <div class="col-sm-6">

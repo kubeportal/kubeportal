@@ -96,7 +96,7 @@ class AccessRequestView(LoginRequiredMixin, RedirectView):
                     "Access request to unknown administrator username ({admin_username}).")
 
             # if administrator exists and access request was successfull...
-            if admin and request.user.send_access_request(request, administrator=admin):
+            if admin and request.user.send_approval_request(request, administrator=admin):
                 request.user.save()
                 messages.add_message(request, messages.INFO,
                                      'Your request was sent.')

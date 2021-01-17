@@ -28,11 +28,11 @@ def handle_user_change(sender, instance, created, **kwargs):
         logger.info("Putting user {0} into special group for all users".format(instance))
         all_group.members.add(instance)
 
-    if instance.has_access_approved() and not instance.portal_groups.filter(pk=k8s_group.pk).exists():
+    if instance.k8s_namespace() != None and not instance.portal_groups.filter(pk=k8s_group.pk).exists():
         logger.info("Putting user {0} into special group for Kubernetes users".format(instance))
         k8s_group.members.add(instance)
 
-    if not instance.has_access_approved() and instance.portal_groups.filter(pk=k8s_group.pk).exists():
+    if instance.k8s_namespace() == None and instance.portal_groups.filter(pk=k8s_group.pk).exists():
         logger.info("Removing user {0} from special group for Kubernetes users".format(instance))
         k8s_group.members.remove(instance)
 

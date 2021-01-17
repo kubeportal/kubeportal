@@ -490,7 +490,8 @@ class PortalUserAdmin(UserAdmin):
                     KubernetesNamespace, name=request.POST['approve_choose_name'])
                 new_svc = get_object_or_404(
                     KubernetesServiceAccount, namespace=new_ns, name="default")
-                if user.approve(request, new_svc):
+                if user.approve(request):
+                    user.service_account = new_svc
                     user.save()
             if request.POST['choice'] == "approve_create":
                 new_ns = KubernetesNamespace(
@@ -500,7 +501,8 @@ class PortalUserAdmin(UserAdmin):
                 if k8s_sync.sync(request):
                     new_svc = get_object_or_404(
                         KubernetesServiceAccount, namespace=new_ns, name="default")
-                    if user.approve(request, new_svc):
+                    if user.approve(request):
+                        user.service_account = new_svc
                         user.save()
                     else:
                         new_ns.delete()
@@ -509,7 +511,7 @@ class PortalUserAdmin(UserAdmin):
                     user.save()
             return redirect('admin:kubeportal_user_changelist')
         else:
-            if user.has_access_approved or user.has_access_rejected:
+            if user.is_approved or user.is_rejected:
                 context['answered_decision'] = user.state
                 context['answered_by'] = user.answered_by
             return TemplateResponse(request, "admin/approve.html", context)

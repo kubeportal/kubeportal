@@ -107,7 +107,7 @@ class Backend(AdminLoggedInTestCase):
         # walk through approval workflow
         url = reverse('welcome')
         request = self.factory.get(url)
-        u.send_access_request(request)
+        u.send_approval_request(request)
         u.save()
         # Just sending an approval request should not change to member list
         self.assertEqual(group.members.count(), 0)
@@ -119,7 +119,8 @@ class Backend(AdminLoggedInTestCase):
         new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
         new_svc.save()
         # Perform approval
-        assert(u.approve(request, new_svc))
+        assert(u.approve(request))
+        u.service_account = new_svc
         u.save()
         # Should lead to addition of user to the add_approved group
         self.assertEqual(group.members.count(), 1)
@@ -150,13 +151,13 @@ class Backend(AdminLoggedInTestCase):
         # walk through rejection workflow
         url = reverse('welcome')
         request = self.factory.get(url)
-        u.send_access_request(request)
+        u.send_approval_request(request)
         u.save()
         # Build full-fledged request object for logged-in admin
         request = self._build_full_request_mock('admin:index')
         assert(u.reject(request))
         u.save()
-        assert(u.has_access_rejected())
+        assert(u.is_rejected())
 
     def test_user_rejection(self):
         self._test_user_rejection()
@@ -169,7 +170,7 @@ class Backend(AdminLoggedInTestCase):
         # walk through approval workflow
         url = reverse('welcome')
         request = self.factory.get(url)
-        u.send_access_request(request, self.admin.username)
+        u.send_approval_request(request, self.admin.username)
         u.save()
         # Build full-fledged request object for logged-in admin
         request = self._build_full_request_mock('admin:index')
@@ -215,7 +216,9 @@ class Backend(AdminLoggedInTestCase):
         # Build full-fledged request object for logged-in admin
         request = self._build_full_request_mock('admin:index')
         # approve secondary for cluster access
-        secondary.approve(request, new_svc)
+        secondary.approve(request)
+        secondary.service_account = new_svc
+        secondary.save()
 
         # the merge method only accepts a queryset of users since that's what
         # the admin interface creates
@@ -233,7 +236,7 @@ class Backend(AdminLoggedInTestCase):
         self.assertEqual(primary.comments, "secondary user comment")
         assert(primary.portal_groups.filter(name=group1.name))
         assert(primary.portal_groups.filter(name=group2.name))
-        assert(primary.has_access_approved)
+        assert(primary.is_approved)
 
     '''
     Create two users with the secondary (the later created) one having rejected cluster access,
@@ -285,7 +288,7 @@ class Backend(AdminLoggedInTestCase):
         # we need to query for the updated user again
         primary = User.objects.get(pk=primary.id)
 
-        assert primary.has_access_rejected
+        assert primary.is_rejected
 
     @override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend', EMAIL_HOST_PASSWORD='sdsds')
     def test_user_rejection_mail_broken(self):
