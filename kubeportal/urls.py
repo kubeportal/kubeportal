@@ -1,6 +1,7 @@
 from django.conf.urls import include
 from django.urls import path
 from django.conf import settings
+from django.views.decorators.cache import cache_page
 from django.views.generic.base import RedirectView
 from oidc_provider.views import ProviderInfoView
 from dj_rest_auth import views as dj_rest_views
@@ -29,7 +30,7 @@ urlpatterns = [
 
     # frontend auth provider views
     # Note: The OpenID Connect URL is /oidc/authorize
-    path('subauthreq/<int:webapp_pk>/', views.SubAuthRequestView.as_view(), name='subauthreq'),
+    path('subauthreq/<int:webapp_pk>/', cache_page(60 * 5)(views.SubAuthRequestView.as_view()), name='subauthreq'),
     path('oidc/', include('oidc_provider.urls', namespace='oidc_provider')),
     path('.well-known/openid-configuration', ProviderInfoView.as_view(), name='provider_info'),
 

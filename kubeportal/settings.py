@@ -12,6 +12,12 @@ class Common(Configuration):
 
     SECRET_KEY = get_secret_key()
 
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'
+        }
+    }
+
     INSTALLED_APPS = [
         'django.contrib.sites',
         'django.contrib.admin',
