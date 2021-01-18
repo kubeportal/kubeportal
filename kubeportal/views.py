@@ -140,11 +140,13 @@ class SubAuthRequestView(View):
             self._dump_request_info(request)
             return HttpResponse(status=401)
         else:
-            logger.debug("Allowing authorization for {0} through sub-request (user {1}, service account '{2}:{3}').".format(
-                webapp,
-                request.user,
-                request.user.service_account.namespace.name,
-                request.user.service_account.name))
+            # This produces an event storm on applications such as K8S dashboard, and should only be
+            # enabled as last resort
+            #logger.debug("Allowing authorization for {0} through sub-request (user {1}, service account '{2}:{3}').".format(
+            #    webapp,
+            #    request.user,
+            #    request.user.service_account.namespace.name,
+            #    request.user.service_account.name))
             response = HttpResponse()
             token = request.user.token
             if token:
