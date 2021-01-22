@@ -1,18 +1,19 @@
 import os
+
+from django.test import override_settings
 from django.urls import reverse
 
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests import AdminLoggedInTestCase
-from unittest.mock import patch
 
 
 class FrontendLoggedInApproved(AdminLoggedInTestCase):
-    '''
+    """
     Tests for frontend functionality when admin is logged in,
     and she is approved for cluster access.
-    '''
+    """
 
     def setUp(self):
         super().setUp()
@@ -39,25 +40,30 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         response = self.client.get('/stats/')
         self.assertEqual(response.status_code, 200)
 
+    @override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}})
     def _prepare_subauth_test(self, user_in_group1, user_in_group2, app_in_group1, app_in_group2, app_enabled):
         group1 = PortalGroup()
         group1.save()
         if user_in_group1:
             self.admin.portal_groups.add(group1)
+            self.admin.save()
 
         group2 = PortalGroup()
         group2.save()
         if user_in_group2:
             self.admin.portal_groups.add(group2)
+            self.admin.save()
 
         app1 = WebApplication(name="app1", can_subauth=app_enabled)
         app1.save()
 
         if app_in_group1:
             group1.can_web_applications.add(app1)
+            group1.save()
 
         if app_in_group2:
             group2.can_web_applications.add(app1)
+            group2.save()
 
         return self.client.get('/subauthreq/{}/'.format(app1.pk))
 
@@ -84,54 +90,11 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         for case, expected in cases:
             with self.subTest(case=case, expected=expected):
                 response = self._prepare_subauth_test(*case, True)
-                self.assertEqual(response.status_code, expected)
+                self.assertEqual(expected, response.status_code)
 
         # When the app is disabled, sub-auth should never succeed
         for case, expected in cases:
             with self.subTest(case=case):
                 response = self._prepare_subauth_test(*case, False)
-                self.assertEqual(response.status_code, 401)
+                self.assertEqual(401, response.status_code)
 
-    def test_subauth_caching(self):
-        from django.core.cache.backends import locmem
-
-        group1 = PortalGroup()
-        group1.save()
-        self.admin.portal_groups.add(group1)
-
-        app1 = WebApplication(name="app1", can_subauth=True)
-        app1.save()
-        webapp_pk = app1.pk
-
-        group1.can_web_applications.add(app1)
-
-        self.assertEqual(0, len(locmem._caches['']))
-        response = self.client.get('/subauthreq/{}/'.format(webapp_pk))
-        self.assertEqual(200, response.status_code)
-        # check that cache is filled
-        self.assertNotEqual(0, len(locmem._caches['']))
-
-        # remove user from group, cached response still allows access
-        self.admin.portal_groups.remove(group1)
-        group1.delete()
-        response = self.client.get('/subauthreq/{}/'.format(webapp_pk))
-        self.assertEqual(200, response.status_code)
-        self.assertNotEqual(0, len(locmem._caches['']))
-
-        # Remove web app, makes cached URL invalid
-        app1.delete()
-        response = self.client.get('/subauthreq/{}/'.format(webapp_pk))
-        self.assertEqual(404, response.status_code)
-
-
-
-    def test_subauth_k8s_broken(self):
-        from kubeportal.k8s import kubernetes_api as api
-        core_v1_temp, rbac_v1_temp = api.core_v1, api.rbac_v1
-        api.core_v1 = None
-        api.rbac_v1 = None
-        self.admin_group.can_subauth = True
-        self.admin_group.save()
-        response = self._prepare_subauth_test(True, True, True, True, True)
-        self.assertEqual(response.status_code, 401)
-        api.core_v1, api.rbac_v1 = core_v1_temp, rbac_v1_temp

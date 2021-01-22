@@ -1,6 +1,8 @@
-'''
+"""
     A set of functions wrapping K8S API calls.
-'''
+
+    Read-only methods put exceptions into the log file and return empty results on problems.
+"""
 import enum
 
 from django.conf import settings
@@ -35,14 +37,19 @@ def is_minikube():
     """
     Checks if the current context is minikube. This is needed for checks in the test code.
     """
-    contexts, active_context = config.list_kube_config_contexts()
-    return active_context['context']['cluster'] == 'minikube'
+    try:
+        contexts, active_context = config.list_kube_config_contexts()
+        return active_context['context']['cluster'] == 'minikube'
+    except Exception:
+        return False
 
 
 def create_k8s_ns(name: str):
     """
     Create the Kubernetes namespace with the given name in the cluster.
     An existing namespace with the same name leads to a no-op.
+
+    Returns the new namespace.
     """
     logger.info(
         "Creating Kubernetes namespace '{0}'".format(name))
@@ -63,6 +70,8 @@ def create_k8s_ns(name: str):
 def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, tpl: dict):
     """
     Create a Kubernetes deployment in the cluster.
+
+    Returns the new deployment.
     """
     logger.info(f"Creating Kubernetes deployment '{name}'")
     k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in tpl["containers"]]
@@ -169,9 +178,6 @@ def get_namespaced_pods(namespace):
 def get_namespaced_deployments(namespace):
     """
     Get all deployments for a specific Kubernetes namespace in the cluster.
-
-    Make sure to update the 'Deployment' component at static/docs/openapi_manual.yaml
-    when touching this code.
     """
     try:
         deployments = apps_v1.list_namespaced_deployment(namespace)

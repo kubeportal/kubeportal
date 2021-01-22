@@ -12,9 +12,9 @@ from kubeportal.k8s import k8s_sync
 from kubeportal.k8s.kubernetes_api import is_minikube
 from kubeportal.models.portalgroup import PortalGroup
 
-logging.getLogger('KubePortal').setLevel(logging.DEBUG)
-logging.getLogger('django.request').setLevel(logging.WARNING)
-logging.getLogger('django').setLevel(logging.WARNING)
+logging.getLogger('KubePortal').setLevel(logging.ERROR)
+logging.getLogger('django.request').setLevel(logging.ERROR)
+logging.getLogger('django').setLevel(logging.ERROR)
 
 admin_clear_password = 'adminäö&%/1`'
 

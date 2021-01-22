@@ -129,11 +129,6 @@ class SubAuthRequestView(View):
                 "Rejecting authorization for {0} through sub-request for user {1}, subauth is not enabled for this app.".format(webapp, request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
-        elif not request.user.service_account:
-            logger.debug(
-                "Rejecting authorization for {0} through sub-request, user {1} has no service account.".format(webapp, request.user))
-            self._dump_request_info(request)
-            return HttpResponse(status=401)
         elif not request.user.can_subauth(webapp):
             logger.debug(
                 "Rejecting authorization for {0} through sub-request, forbidden for user {1} through group membership constellation.".format(webapp, request.user))

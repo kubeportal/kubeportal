@@ -41,18 +41,6 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
         response = self.client.get('/?next=/config')
         self.assertEqual(response.status_code, 302)
 
-    def test_subauth_view(self):
-        group1 = PortalGroup()
-        group1.save()
-        self.admin.portal_groups.add(group1)
-
-        app1 = WebApplication(name="app1", can_subauth=True)
-        app1.save()
-
-        response = self.client.get('/subauthreq/{}/'.format(app1.pk))
-
-        self.assertEqual(response.status_code, 401)
-
     def test_acess_request_view(self):
         response = self.client.post('/access/request/', {'selected-administrator' : self.admin.username })
         self.assertRedirects(response, '/config/')
