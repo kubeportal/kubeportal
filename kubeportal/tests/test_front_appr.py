@@ -92,6 +92,39 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
                 response = self._prepare_subauth_test(*case, False)
                 self.assertEqual(response.status_code, 401)
 
+    def test_subauth_caching(self):
+        from django.core.cache.backends import locmem
+
+        group1 = PortalGroup()
+        group1.save()
+        self.admin.portal_groups.add(group1)
+
+        app1 = WebApplication(name="app1", can_subauth=True)
+        app1.save()
+        webapp_pk = app1.pk
+
+        group1.can_web_applications.add(app1)
+
+        self.assertEqual(0, len(locmem._caches['']))
+        response = self.client.get('/subauthreq/{}/'.format(webapp_pk))
+        self.assertEqual(200, response.status_code)
+        # check that cache is filled
+        self.assertNotEqual(0, len(locmem._caches['']))
+
+        # remove user from group, cached response still allows access
+        self.admin.portal_groups.remove(group1)
+        group1.delete()
+        response = self.client.get('/subauthreq/{}/'.format(webapp_pk))
+        self.assertEqual(200, response.status_code)
+        self.assertNotEqual(0, len(locmem._caches['']))
+
+        # Remove web app, makes cached URL invalid
+        app1.delete()
+        response = self.client.get('/subauthreq/{}/'.format(webapp_pk))
+        self.assertEqual(404, response.status_code)
+
+
+
     def test_subauth_k8s_broken(self):
         from kubeportal.k8s import kubernetes_api as api
         core_v1_temp, rbac_v1_temp = api.core_v1, api.rbac_v1
