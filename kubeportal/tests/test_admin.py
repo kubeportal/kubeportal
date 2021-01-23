@@ -105,13 +105,12 @@ def test_admin_index_view(admin_client):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_special_k8s_approved(rf, admin_index_request):
+def test_special_k8s_approved(rf, admin_index_request, django_user_model):
     # Creating an auto_add_approved group should not change its member list.
     group = PortalGroup.objects.get(special_k8s_accounts=True)
     assert group.members.count() == 0
     # Create a new user should not change the member list
-    User = get_user_model()
-    u = User(username="Hugo", email="a@b.de")
+    u = django_user_model(username="Hugo", email="a@b.de")
     u.save()
     assert group.members.count() == 0
     # walk through approval workflow
@@ -135,15 +134,14 @@ def test_special_k8s_approved(rf, admin_index_request):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_special_k8s_unapproved():
+def test_special_k8s_unapproved(django_user_model):
     group = PortalGroup.objects.get(special_k8s_accounts=True)
     ns = KubernetesNamespace(name="default")
     ns.save()
     new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
     new_svc.save()
-    User = get_user_model()
     # create approved user
-    u = User(username="Hugo",
+    u = django_user_model(username="Hugo",
              email="a@b.de",
              state=UserState.ACCESS_APPROVED,
              service_account=new_svc)
@@ -157,9 +155,8 @@ def test_special_k8s_unapproved():
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_user_rejection(rf, admin_index_request):
-    User = get_user_model()
-    u = User(username="Hugo", email="a@b.de")
+def test_user_rejection(rf, admin_index_request, django_user_model):
+    u = django_user_model(username="Hugo", email="a@b.de")
     u.save()
     # walk through rejection workflow
     url = reverse('welcome')
@@ -172,21 +169,10 @@ def test_user_rejection(rf, admin_index_request):
     assert(u.has_access_rejected())
 
 
-
-'''
-Create two users with the secondary (the later created) one having cluster access,
-an assigned comment and two assigned groups
-Merge both users.
-The primary user should be assigned the cluster access, user comment and all the
-portal groups of the secondary user.
-The secondary user should be deleted.
-'''
-
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_user_merge_access_approved(admin_index_request):
-    User = get_user_model()
-    primary = User(
+def test_user_merge_access_approved(admin_index_request, django_user_model):
+    primary = django_user_model(
         username="HUGO",
         email="a@b.de")
     primary.save()
@@ -195,7 +181,7 @@ def test_user_merge_access_approved(admin_index_request):
     ns.save()
     new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
     new_svc.save()
-    secondary = User(
+    secondary = django_user_model(
         username="hugo",
         state=UserState.ACCESS_APPROVED,
         email="a@b.de",
@@ -218,7 +204,7 @@ def test_user_merge_access_approved(admin_index_request):
 
     # the merge method only accepts a queryset of users since that's what
     # the admin interface creates
-    queryset_of_users = User.objects.filter(
+    queryset_of_users = django_user_model.objects.filter(
         pk__in=[primary.id, secondary.id])
 
     # merge both users. shouldn't return anything
@@ -226,7 +212,7 @@ def test_user_merge_access_approved(admin_index_request):
 
     # the primary user has been altered but the old object is still in memory
     # we need to query for the updated user again
-    primary = User.objects.get(pk=primary.id)
+    primary = django_user_model.objects.get(pk=primary.id)
 
     # Does primary have all the values of secondary user?
     assert primary.comments == "secondary user comment"
@@ -234,18 +220,11 @@ def test_user_merge_access_approved(admin_index_request):
     assert primary.portal_groups.filter(name=group2.name)
     assert primary.has_access_approved
 
-'''
-Create two users with the secondary (the later created) one having rejected cluster access,
-Merge both users.
-The primary user should be assigned the rejected cluster access.
-The secondary user should be deleted.
-'''
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_user_merge_access_rejected(admin_index_request):
-    User = get_user_model()
-    primary = User(
+def test_user_merge_access_rejected(admin_index_request, django_user_model):
+    primary = django_user_model(
         username="HUGO",
         email="a@b.de")
     primary.save()
@@ -259,7 +238,7 @@ def test_user_merge_access_rejected(admin_index_request):
     assert(primary.approve(admin_index_request, new_svc))
     primary.save()
 
-    secondary = User(
+    secondary = django_user_model(
         username="hugo",
         state=UserState.ACCESS_APPROVED,
         email="a@b.de",
@@ -272,7 +251,7 @@ def test_user_merge_access_rejected(admin_index_request):
 
     # the merge method only accepts a queryset of users since that's what
     # the admin interface creates
-    queryset_of_users = User.objects.filter(
+    queryset_of_users = django_user_model.objects.filter(
         pk__in=[primary.id, secondary.id])
 
     # merge both users. shouldn't return anything
@@ -280,7 +259,7 @@ def test_user_merge_access_rejected(admin_index_request):
 
     # the primary user has been altered but the old object is still in memory
     # we need to query for the updated user again
-    primary = User.objects.get(pk=primary.id)
+    primary = django_user_model.objects.get(pk=primary.id)
 
     assert primary.has_access_rejected
 
@@ -330,7 +309,7 @@ def test_user_merge_access_rejected(admin_index_request):
 #            User.objects.get(username=u.username))
 #     assert(KubernetesNamespace.without_pods()[0] == ns)
 #     assert(KubernetesNamespace.without_service_accounts()[0] == ns)
-
+#
 # @skip("Function disabled")
 # @pytest.mark.django_db
 # @pytest.mark.usefixtures("minikube_sync")

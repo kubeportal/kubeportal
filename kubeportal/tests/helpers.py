@@ -8,6 +8,9 @@ from django.test import RequestFactory
 
 
 def run_minikube_sync():
+    """
+    Perform synchronization between Minikube and the portal database.
+    """
     os.system("(minikube status | grep Running) || minikube start")
 
     assert k8s_api.is_minikube()
@@ -21,10 +24,13 @@ def run_minikube_sync():
     messages = FallbackStorage(request)
     setattr(request, '_messages', messages)
 
-    assert k8s_sync.sync(request)
+    k8s_sync.sync(request)
 
 
 def admin_request(rf, admin_user, rel_url):
+    """
+    Returns a valid HttpRequest object for the Django admin backend.
+    """
     url = reverse(rel_url)
     request = rf.get(url)
     request.user = admin_user
