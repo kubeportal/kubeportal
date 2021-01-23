@@ -16,6 +16,7 @@ from oidc_provider.views import AuthorizeView
 from oidc_provider.views import userinfo
 from unittest.mock import patch
 from urllib.parse import urlencode
+import pytest
 
 
 class FrontendOidc(AdminLoggedOutTestCase):
@@ -101,10 +102,9 @@ class FrontendOidc(AdminLoggedOutTestCase):
         client = self.client[0]
         with patch('kubeportal.security.oidc_login_hook') as mocked_oidc_login_hook:
             response = self._authenticate(client)
-            self.assertTrue(
-                response['Location'].startswith(client.default_redirect_uri),
-                msg='Different redirect_uri returned')
-            self.assertTrue(response.status_code, 302)
+            assert response['Location'].startswith(client.default_redirect_uri), \
+                'Different redirect_uri returned'
+            assert response.status_code, 302
             mocked_oidc_login_hook.assert_called()
 
     def test_multiple_groups_one_allowed(self):
@@ -113,8 +113,8 @@ class FrontendOidc(AdminLoggedOutTestCase):
         self._create_group(
             name="Users for chat only", member=self.admin, app=None)
         response = self._authenticate(self.client[0])
-        self.assertTrue(response.status_code, 302)
-        with self.assertRaises(PermissionDenied):
+        assert response.status_code, 302
+        with pytest.raises(PermissionDenied):
             self._authenticate(self.client[1])
 
     def test_multiple_groups_multiple_allowed(self):
@@ -123,18 +123,18 @@ class FrontendOidc(AdminLoggedOutTestCase):
         self._create_group(
             name="Users for chat only", member=self.admin, app=self.app[1])
         response = self._authenticate(self.client[0])
-        self.assertTrue(response.status_code, 302)
+        assert response.status_code, 302
         response = self._authenticate(self.client[1])
-        self.assertTrue(response.status_code, 302)
+        assert response.status_code, 302
 
     def test_multiple_groups_none_allowed(self):
         self._create_group(
             name="Users for chat only", member=self.admin, app=None)
         self._create_group(
             name="Users for chat only", member=self.admin, app=None)
-        with self.assertRaises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self._authenticate(self.client[0])
-        with self.assertRaises(PermissionDenied):
+        with pytest.raises(PermissionDenied):
             self._authenticate(self.client[1])
 
     def test_token_auth(self):
@@ -145,4 +145,4 @@ class FrontendOidc(AdminLoggedOutTestCase):
         request.META['HTTP_AUTHORIZATION'] = 'Bearer {0}'.format(
             token.access_token)
         response = userinfo(request)
-        self.assertTrue(response.status_code, 200)
+        assert response.status_code, 200

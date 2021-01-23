@@ -15,31 +15,31 @@ class FrontendLoggedInNotApproved(AdminLoggedInTestCase):
     def test_index_view(self):
         # User is already logged in, expecting welcome redirect
         response = self.client.get('/')
-        self.assertEqual(response.status_code, 302)
+        assert response.status_code == 302
 
     def test_welcome_view(self):
         response = self.client.get('/welcome/')
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_config_view(self):
         response = self.client.get(reverse('config'))
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_config_download_view(self):
         response = self.client.get(reverse('config_download'))
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_stats_view(self):
         response = self.client.get('/stats/')
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_root_redirect_with_next_param(self):
         response = self.client.get('/?next=/config')
-        self.assertEqual(response.status_code, 302)
+        assert response.status_code == 302
 
     def test_root_redirect_with_rd_param(self):
         response = self.client.get('/?next=/config')
-        self.assertEqual(response.status_code, 302)
+        assert response.status_code == 302
 
     def test_acess_request_view(self):
         response = self.client.post('/access/request/', {'selected-administrator' : self.admin.username })

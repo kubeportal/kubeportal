@@ -26,19 +26,19 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
 
     def test_welcome_view(self):
         response = self.client.get('/welcome/')
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_config_view(self):
         response = self.client.get(reverse('config'))
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_config_download_view(self):
         response = self.client.get(reverse('config_download'))
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     def test_stats_view(self):
         response = self.client.get('/stats/')
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
 
     @override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}})
     def _prepare_subauth_test(self, user_in_group1, user_in_group2, app_in_group1, app_in_group2, app_enabled):
@@ -90,11 +90,11 @@ class FrontendLoggedInApproved(AdminLoggedInTestCase):
         for case, expected in cases:
             with self.subTest(case=case, expected=expected):
                 response = self._prepare_subauth_test(*case, True)
-                self.assertEqual(expected, response.status_code)
+                assert expected == response.status_code
 
         # When the app is disabled, sub-auth should never succeed
         for case, expected in cases:
             with self.subTest(case=case):
                 response = self._prepare_subauth_test(*case, False)
-                self.assertEqual(401, response.status_code)
+                assert 401 == response.status_code
 

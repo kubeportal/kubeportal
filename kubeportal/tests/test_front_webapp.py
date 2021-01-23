@@ -35,7 +35,7 @@ class FrontendLoggedInWebApp(AdminLoggedInTestCase):
         response = self.client.get('/welcome/')
         # User is now in a group that has this web app enabled
         self.assertContains(response, "http://www.heise.de")
-        self.assertEqual(1, str(response.content).count("http://www.heise.de"))
+        assert 1 == str(response.content).count("http://www.heise.de")
 
         app1.link_show = False
         app1.save()
@@ -57,4 +57,4 @@ class FrontendLoggedInWebApp(AdminLoggedInTestCase):
         self.admin.portal_groups.add(group2)
         response = self.client.get('/welcome/')
         self.assertContains(response, "http://www.heise.de")
-        self.assertEqual(1, str(response.content).count("http://www.heise.de"))
+        assert 1 == str(response.content).count("http://www.heise.de")

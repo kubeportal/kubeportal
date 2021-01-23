@@ -15,28 +15,28 @@ class PortalGroups(AnonymousTestCase):
         User = get_user_model()
         self.second_user = User(username="Fred")
         self.second_user.save()
-        self.assertEqual(self.second_user.is_staff, False)
+        assert self.second_user.is_staff == False
 
     def test_model_methods(self):
         admin_group = PortalGroup(name="Admins", can_admin=True)
         admin_group.save()
         admin_group.members.add(self.second_user)
-        self.assertEqual(admin_group.has_member(self.second_user), True)
+        assert admin_group.has_member(self.second_user) == True
 
     def test_admin_attrib_modification_with_members(self):
         future_admin_group = PortalGroup(name="Admins", can_admin=False)
         future_admin_group.save()
         future_admin_group.members.add(self.second_user)
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_staff, False)
+        assert self.second_user.is_staff == False
         future_admin_group.can_admin = True
         future_admin_group.save()
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_staff, True)
+        assert self.second_user.is_staff == True
         future_admin_group.can_admin = False
         future_admin_group.save()
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_staff, False)
+        assert self.second_user.is_staff == False
 
     def test_admin_attrib_add_remove_user(self):
         # Create admin group
@@ -44,17 +44,17 @@ class PortalGroups(AnonymousTestCase):
         admin_group.save()
         # Non-member should not become admin
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_staff, False)
+        assert self.second_user.is_staff == False
         # make member, should become admin
         admin_group.members.add(self.second_user)
         admin_group.save()
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_staff, True)
+        assert self.second_user.is_staff == True
         # remove again from group, shopuld lose admin status
         admin_group.members.remove(self.second_user)
         admin_group.save()
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_staff, False)
+        assert self.second_user.is_staff == False
 
     def test_admin_attrib_multiple(self):
         # create two admin groups
@@ -69,19 +69,19 @@ class PortalGroups(AnonymousTestCase):
         admin_group2.save()
         # person should be admin now
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_staff, True)
+        assert self.second_user.is_staff == True
         # remove from first group, should still be admin
         admin_group1.members.remove(self.second_user)
         admin_group1.save()
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_staff, True)
+        assert self.second_user.is_staff == True
         # remove from second group, should lose admin status
         admin_group2.members.remove(self.second_user)
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_staff, False)
+        assert self.second_user.is_staff == False
 
     def test_permission_adjustment(self):
-        self.assertEqual(self.second_user.user_permissions.all().count(), 0)
+        assert self.second_user.user_permissions.all().count() == 0
         # Create admin group
         admin_group = PortalGroup(name="Admins", can_admin=True)
         admin_group.save()
@@ -90,7 +90,7 @@ class PortalGroups(AnonymousTestCase):
         admin_group.save()
         self.second_user.refresh_from_db()  # catch changes from signal handlers
         perm_count = Permission.objects.count()
-        self.assertEqual(self.second_user.user_permissions.all().count(), perm_count)
+        assert self.second_user.user_permissions.all().count() == perm_count
 
     def test_forward_relation_change(self):
         """
@@ -98,12 +98,12 @@ class PortalGroups(AnonymousTestCase):
         """
         admin_group = PortalGroup(name="Admins", can_admin=True)
         admin_group.save()
-        self.assertEqual(admin_group.members.count(), 0)
-        self.assertEqual(self.second_user.is_staff, False)
+        assert admin_group.members.count() == 0
+        assert self.second_user.is_staff == False
         self.second_user.portal_groups.add(admin_group)
         self.second_user.save()
-        self.assertEqual(admin_group.members.count(), 1)
-        self.assertEqual(self.second_user.is_staff, True)
+        assert admin_group.members.count() == 1
+        assert self.second_user.is_staff == True
 
     def test_dont_touch_superuser(self):
         """
@@ -115,21 +115,21 @@ class PortalGroups(AnonymousTestCase):
         self.second_user.is_staff = True
         self.second_user.username = "NewNameToTriggerSignalHandler"
         self.second_user.save()
-        self.assertEqual(self.second_user.is_superuser, True)
-        self.assertEqual(self.second_user.is_staff, True)
+        assert self.second_user.is_superuser == True
+        assert self.second_user.is_staff == True
         non_admin_group = PortalGroup(
             name="NonAdmins", can_admin=False)
         non_admin_group.save()
         self.second_user.portal_groups.add(non_admin_group)
         self.second_user.refresh_from_db()  # catch changes from signal handlers
-        self.assertEqual(self.second_user.is_superuser, True)
-        self.assertEqual(self.second_user.is_staff, True)
+        assert self.second_user.is_superuser == True
+        assert self.second_user.is_staff == True
 
     def test_special_groups(self):
         """
         WIth a fresh database, only the two special groups exist.
         """
         groups = PortalGroup.objects.all()
-        self.assertEqual(2, len(groups))
+        assert 2 == len(groups)
         for group in groups:
-            self.assertEqual(True, group.is_special_group())
+            assert True == group.is_special_group()
