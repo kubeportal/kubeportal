@@ -1,11 +1,14 @@
+"""
+Custom PyTest fixtures for this project.
+"""
+
 import pytest
-from django.contrib.messages.storage.fallback import FallbackStorage
-from django.contrib.sessions.middleware import SessionMiddleware
-from django.http import HttpResponse
-from django.urls import reverse
+from django.conf import settings
+from rest_framework.test import RequestsClient
 
 from .helpers import run_minikube_sync, admin_request
 from ..models.kubernetesnamespace import KubernetesNamespace
+from ..models.portalgroup import PortalGroup
 
 
 @pytest.mark.usefixtures("db")
@@ -55,3 +58,70 @@ def second_user(django_user_model):
     second_user.save()
     return second_user
 
+
+@pytest.fixture
+def admin_group(admin_user):
+    """
+    A PyTest fixture returning a portal group that has the admin user as member.
+    """
+    admin_group = PortalGroup(name="Admins", can_admin=True)
+    admin_group.save()
+    admin_group.members.add(admin_user)
+    admin_group.save()
+    return admin_group
+
+
+class ApiClient:
+    def __init__(self):
+        self.client = RequestsClient()
+        self.jwt = None
+        self.csrf = None
+
+    def get(self, relative_url, headers={}):
+        if self.jwt:
+            headers["Authorization"] = "Bearer " + self.jwt
+        return self.client.get('http://testserver' + relative_url, headers=headers)
+
+    def patch(self, relative_url, data, headers={}):
+        if self.jwt:
+            headers["Authorization"] = "Bearer " + self.jwt
+        if self.csrf:
+            headers['X-CSRFToken'] = self.csrf
+        return self.client.patch('http://testserver' + relative_url,
+                                 json=data, headers=headers)
+
+    def post(self, relative_url, data=None, headers={}):
+        if self.jwt:
+            headers["Authorization"] = "Bearer " + self.jwt
+        if self.csrf:
+            headers['X-CSRFToken'] = self.csrf
+        return self.client.post('http://testserver' + relative_url,
+                                json=data, headers=headers)
+
+    def options(self, relative_url, headers={}):
+        return self.client.options('http://testserver' + relative_url)
+
+    def api_login(self, user):
+        user.set_password("passwort")
+        user.save()
+
+        response = self.post(f'/api/{settings.API_VERSION}/login/',
+                             {'username': user.username, 'password': 'passwort'})
+        assert response.status_code == 200
+        data = response.json()
+        assert 'access_token' in data
+        self.jwt = data['access_token']
+        return response
+
+
+@pytest.fixture
+def api_client(admin_user):
+    c = ApiClient()
+    c.api_login(admin_user)
+    return c
+
+
+@pytest.fixture
+def api_client_anon(admin_user):
+    c = ApiClient()
+    return c

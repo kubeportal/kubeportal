@@ -8,7 +8,7 @@ def test_model_methods(second_user):
     admin_group = PortalGroup(name="Admins", can_admin=True)
     admin_group.save()
     admin_group.members.add(second_user)
-    assert admin_group.has_member(second_user) == True
+    assert admin_group.has_member(second_user) is True
 
 
 def test_admin_attrib_modification_with_members(second_user):
@@ -16,15 +16,15 @@ def test_admin_attrib_modification_with_members(second_user):
     future_admin_group.save()
     future_admin_group.members.add(second_user)
     second_user.refresh_from_db()  # catch changes from signal handlers
-    assert second_user.is_staff == False
+    assert second_user.is_staff is False
     future_admin_group.can_admin = True
     future_admin_group.save()
     second_user.refresh_from_db()  # catch changes from signal handlers
-    assert second_user.is_staff == True
+    assert second_user.is_staff is True
     future_admin_group.can_admin = False
     future_admin_group.save()
     second_user.refresh_from_db()  # catch changes from signal handlers
-    assert second_user.is_staff == False
+    assert second_user.is_staff is False
 
 
 def test_admin_attrib_add_remove_user(second_user):
@@ -91,11 +91,11 @@ def test_forward_relation_change(second_user):
     admin_group = PortalGroup(name="Admins", can_admin=True)
     admin_group.save()
     assert admin_group.members.count() == 0
-    assert second_user.is_staff == False
+    assert second_user.is_staff is False
     second_user.portal_groups.add(admin_group)
     second_user.save()
     assert admin_group.members.count() == 1
-    assert second_user.is_staff == True
+    assert second_user.is_staff is True
 
 
 def test_dont_touch_superuser(second_user):
@@ -108,15 +108,15 @@ def test_dont_touch_superuser(second_user):
     second_user.is_staff = True
     second_user.username = "NewNameToTriggerSignalHandler"
     second_user.save()
-    assert second_user.is_superuser == True
-    assert second_user.is_staff == True
+    assert second_user.is_superuser is True
+    assert second_user.is_staff is True
     non_admin_group = PortalGroup(
         name="NonAdmins", can_admin=False)
     non_admin_group.save()
     second_user.portal_groups.add(non_admin_group)
     second_user.refresh_from_db()  # catch changes from signal handlers
-    assert second_user.is_superuser == True
-    assert second_user.is_staff == True
+    assert second_user.is_superuser is True
+    assert second_user.is_staff is True
 
 @pytest.mark.django_db
 def test_special_groups():
