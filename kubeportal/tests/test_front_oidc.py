@@ -56,4 +56,3 @@ def test_token_auth(admin_user, rf):
         token.access_token)
     response = userinfo(request)
     assert response.status_code == 200
-

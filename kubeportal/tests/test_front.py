@@ -3,11 +3,12 @@ from django.urls import reverse
 
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
-from .helpers import create_oidc_token, create_group
+from .helpers import create_oidc_token, create_group, create_oidc_client, oidc_authenticate
 from oidc_provider.views import userinfo as oidc_userinfo
 from django.core.exceptions import PermissionDenied
 
 from pytest_django.asserts import assertRedirects
+
 
 @pytest.mark.django_db
 def test_index_view(client):
@@ -40,42 +41,51 @@ def test_welcome_view(admin_client):
     response = admin_client.get('/welcome/')
     assert response.status_code == 200
 
+
 def test_index_view(admin_client):
     # User is already logged in, expecting welcome redirect
     response = admin_client.get('/')
     assert response.status_code == 302
 
+
 def test_welcome_view(admin_client):
     response = admin_client.get('/welcome/')
     assert response.status_code == 200
+
 
 def test_config_view(admin_client):
     response = admin_client.get(reverse('config'))
     assert response.status_code == 200
 
+
 def test_config_download_view(admin_client):
     response = admin_client.get(reverse('config_download'))
     assert response.status_code == 200
+
 
 def test_stats_view(admin_client):
     response = admin_client.get('/stats/')
     assert response.status_code == 200
 
+
 def test_root_redirect_with_next_param(admin_client):
     response = admin_client.get('/?next=/config')
     assert response.status_code == 302
+
 
 def test_root_redirect_with_rd_param(admin_client):
     response = admin_client.get('/?next=/config')
     assert response.status_code == 302
 
+
 def test_acess_request_view(admin_client, admin_user):
-    response = admin_client.post('/access/request/', {'selected-administrator' : admin_user.username })
+    response = admin_client.post('/access/request/', {'selected-administrator': admin_user.username})
     assertRedirects(response, '/config/')
+
 
 def test_acess_request_view_mail_broken(admin_client, admin_user, mocker):
     mocker.patch('kubeportal.models.User.send_access_request', return_value=False)
-    response = admin_client.post('/access/request/', {'selected-administrator' : admin_user.username })
+    response = admin_client.post('/access/request/', {'selected-administrator': admin_user.username})
     assertRedirects(response, '/config/')
 
 
@@ -121,23 +131,23 @@ def _prepare_subauth_test(user_in_group1, user_in_group2, app_in_group1, app_in_
     return app1.pk
 
 
-@pytest.mark.parametrize("case, expected",[
-                         # Constellations for group membership of user and app
-                         # The expected result value assumes that the app is enabled
-                         ((True, True, False, False), 401),
-                         ((True, True, True, False), 200),
-                         ((True, True, False, True), 200),
-                         ((True, True, True, True), 200),
-                         # User is in one of the) groups
-                         ((True, False, False, False), 401),
-                         ((True, False, True, False), 200),
-                         ((True, False, False, True), 401),
-                         ((True, False, True, True), 200),
-                         # User is in none of the) groups
-                         ((False, False, False, False), 401),
-                         ((False, False, True, False), 401),
-                         ((False, False, False, True), 401),
-                         ((False, False, True, True), 401)])
+@pytest.mark.parametrize("case, expected", [
+    # Constellations for group membership of user and app
+    # The expected result value assumes that the app is enabled
+    ((True, True, False, False), 401),
+    ((True, True, True, False), 200),
+    ((True, True, False, True), 200),
+    ((True, True, True, True), 200),
+    # User is in one of the) groups
+    ((True, False, False, False), 401),
+    ((True, False, True, False), 200),
+    ((True, False, False, True), 401),
+    ((True, False, True, True), 200),
+    # User is in none of the) groups
+    ((False, False, False, False), 401),
+    ((False, False, True, False), 401),
+    ((False, False, False, True), 401),
+    ((False, False, True, True), 401)])
 def test_subauth_cases(case, expected, settings, admin_user_with_k8s, admin_client):
     settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}}
 
@@ -149,6 +159,7 @@ def test_subauth_cases(case, expected, settings, admin_user_with_k8s, admin_clie
     app_pk = _prepare_subauth_test(*case, False, admin_user_with_k8s)
     response = admin_client.get('/subauthreq/{}/'.format(app_pk))
     assert 401 == response.status_code
+
 
 def contains(response, text):
     return text in str(response.content)
@@ -203,17 +214,4 @@ def test_webapp_user_in_multiple_groups(admin_client, admin_user):
     assert contains(response, "http://www.heise.de")
     assert 1 == str(response.content).count("http://www.heise.de")
 
-def test_oidc_token_auth(rf, admin_user, admin_client, oidc_client):
-    url = reverse('oidc_provider:userinfo')
-    request = rf.post(url, data={}, content_type='multipart/form-data')
 
-    token = create_oidc_token(admin_user, request, oidc_client)
-    request.META['HTTP_AUTHORIZATION'] = 'Bearer {0}'.format(token.access_token)
-    response = oidc_userinfo(request)
-    assert response.status_code ==  200
-
-def test_multiple_groups_none_allowed(admin_user, oidc_client):
-    create_group(name="Users for chat only", member=admin_user, app=None)
-    create_group(name="Users for chat only", member=admin_user, app=None)
-    with pytest.raises(PermissionDenied):
-        self._authenticate(oidc_client)

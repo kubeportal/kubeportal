@@ -71,16 +71,16 @@ def test_api_wrong_login(api_client_anon):
     assert response.status_code == 400
 
 
-def test_js_api_bearer_auth(api_client_anon):
+def test_js_api_bearer_auth(api_client):
     """
     Disable the cookie-based authentication and test the bearer
     auth with the token returned.
     """
     # Disable auth cookie
-    del (api_client_anon.client.cookies['kubeportal-auth'])
+    del (api_client.client.cookies['kubeportal-auth'])
     # Simulate JS code calling, add Bearer token
-    headers = {'Origin': 'http://testserver', 'Authorization': f'Bearer {api_client_anon.jwt}'}
-    response = api_client_anon.get(f'/api/{settings.API_VERSION}/cluster/portal_version/', headers=headers)
+    headers = {'Origin': 'http://testserver', 'Authorization': f'Bearer {api_client.jwt}'}
+    response = api_client.get(f'/api/{settings.API_VERSION}/cluster/portal_version/', headers=headers)
     assert response.status_code == 200
 
 
