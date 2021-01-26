@@ -22,6 +22,7 @@ def test_login_hook(rf, admin_user, mocker):
 
 def test_multiple_groups_one_allowed(rf, admin_user):
     client = create_oidc_client()
+
     with pytest.raises(PermissionDenied):
         oidc_authenticate(client, rf, admin_user)
 
