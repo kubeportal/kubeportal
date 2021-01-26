@@ -5,10 +5,20 @@ Custom PyTest fixtures for this project.
 import pytest
 from django.conf import settings
 from rest_framework.test import RequestsClient
+from django.core.cache import cache
 
 from .helpers import run_minikube_sync, admin_request
 from ..models.kubernetesnamespace import KubernetesNamespace
 from ..models.portalgroup import PortalGroup
+
+
+@pytest.fixture(autouse=True)
+def run_around_tests():
+    """
+    A PyTest fixture with activities to happen before and after each test run.
+    """
+    cache.clear()   # using the settings fixture to change to dummy cache did not work
+    yield
 
 
 @pytest.mark.usefixtures("db")
