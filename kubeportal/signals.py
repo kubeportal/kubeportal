@@ -58,7 +58,7 @@ def handle_user_change(sender, instance, created, **kwargs):
 
         if not instance.has_access_approved() and instance.portal_groups.filter(pk=group.pk).exists():
             logger.info(f"Removing user {instance} from group {group} for Kubernetes users")
-            k8s_group.members.remove(instance)
+            group.members.remove(instance)
 
 
 @receiver(m2m_changed, sender=User.portal_groups.through)
