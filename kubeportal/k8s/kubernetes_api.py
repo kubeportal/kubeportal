@@ -306,6 +306,9 @@ def get_namespaced_ingresses(namespace):
 
 
 def get_token(kubeportal_service_account):
+    """
+    Returns the secret K8S login token as base64-encoded string.
+    """
     service_account = core_v1.read_namespaced_service_account(
         name=kubeportal_service_account.name,
         namespace=kubeportal_service_account.namespace.name)

@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
-from .helpers import create_oidc_token, create_group, create_oidc_client, oidc_authenticate
+from .helpers import create_oidc_token, create_group, create_oidc_client, oidc_authenticate, create_webapp
 from oidc_provider.views import userinfo as oidc_userinfo
 from django.core.exceptions import PermissionDenied
 
@@ -104,31 +104,13 @@ def test_stats_view(admin_client):
     assert response.status_code == 200
 
 
-def _prepare_subauth_test(user_in_group1, user_in_group2, app_in_group1, app_in_group2, app_enabled, admin_user):
-    group1 = PortalGroup()
-    group1.save()
-    if user_in_group1:
-        admin_user.portal_groups.add(group1)
-        admin_user.save()
+def _prepare_subauth_test(user_in_group1, user_in_group2, app_in_group1, app_in_group2, app_enabled, user):
+    app = create_webapp(None)
 
-    group2 = PortalGroup()
-    group2.save()
-    if user_in_group2:
-        admin_user.portal_groups.add(group2)
-        admin_user.save()
+    create_group(user if user_in_group1 else None, app if app_in_group1 else None)
+    create_group(user if user_in_group2 else None, app if app_in_group2 else None)
 
-    app1 = WebApplication(name="app1", can_subauth=app_enabled)
-    app1.save()
-
-    if app_in_group1:
-        group1.can_web_applications.add(app1)
-        group1.save()
-
-    if app_in_group2:
-        group2.can_web_applications.add(app1)
-        group2.save()
-
-    return app1.pk
+    return app
 
 
 @pytest.mark.parametrize("case, expected", [
@@ -151,13 +133,13 @@ def _prepare_subauth_test(user_in_group1, user_in_group2, app_in_group1, app_in_
 def test_subauth_cases(case, expected, settings, admin_user_with_k8s, admin_client):
     settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}}
 
-    app_pk = _prepare_subauth_test(*case, True, admin_user_with_k8s)
-    response = admin_client.get('/subauthreq/{}/'.format(app_pk))
+    app = _prepare_subauth_test(*case, True, admin_user_with_k8s)
+    response = admin_client.get(f'/subauthreq/{app.pk}/')
     assert expected == response.status_code
 
     # When the app is disabled, sub-auth should never succeed
-    app_pk = _prepare_subauth_test(*case, False, admin_user_with_k8s)
-    response = admin_client.get('/subauthreq/{}/'.format(app_pk))
+    app = _prepare_subauth_test(*case, False, admin_user_with_k8s)
+    response = admin_client.get(f'/subauthreq/{app.pk}/')
     assert 401 == response.status_code
 
 
