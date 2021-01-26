@@ -5,7 +5,8 @@ from django.urls import reverse
 from oidc_provider.views import userinfo
 
 from kubeportal import security
-from kubeportal.tests.helpers import oidc_authenticate, create_oidc_client, create_webapp, create_group, \
+from kubeportal.models.webapplication import WebApplication
+from kubeportal.tests.helpers import oidc_authenticate, create_oidc_client, create_group, \
     create_oidc_token
 
 
@@ -26,7 +27,8 @@ def test_multiple_groups_one_allowed(rf, admin_user):
     with pytest.raises(PermissionDenied):
         oidc_authenticate(client, rf, admin_user)
 
-    app = create_webapp(client)
+    app = WebApplication(name="Test Web App", oidc_client=client)
+    app.save()
     create_group(member=admin_user, app=app)
     create_group(member=admin_user, app=None)
 

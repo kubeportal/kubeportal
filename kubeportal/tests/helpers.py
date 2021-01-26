@@ -84,12 +84,6 @@ def create_oidc_client():
     return client
 
 
-def create_webapp(oidc_client):
-    app = WebApplication(name="Test Web App", oidc_client=oidc_client)
-    app.save()
-    return app
-
-
 def oidc_authenticate(oidc_client, rf, admin_user):
     data = {
         'client_id': oidc_client.client_id,

@@ -1,13 +1,10 @@
 import pytest
 from django.urls import reverse
+from pytest_django.asserts import assertRedirects
 
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
-from .helpers import create_oidc_token, create_group, create_oidc_client, oidc_authenticate, create_webapp
-from oidc_provider.views import userinfo as oidc_userinfo
-from django.core.exceptions import PermissionDenied
-
-from pytest_django.asserts import assertRedirects
+from .helpers import create_group
 
 
 @pytest.mark.django_db
@@ -104,43 +101,48 @@ def test_stats_view(admin_client):
     assert response.status_code == 200
 
 
-def _prepare_subauth_test(user_in_group1, user_in_group2, app_in_group1, app_in_group2, app_enabled, user):
-    app = create_webapp(None)
-
-    create_group(user if user_in_group1 else None, app if app_in_group1 else None)
-    create_group(user if user_in_group2 else None, app if app_in_group2 else None)
-
-    return app
-
-
 @pytest.mark.parametrize("case, expected", [
     # Constellations for group membership of user and app
-    # The expected result value assumes that the app is enabled
-    ((True, True, False, False), 401),
-    ((True, True, True, False), 200),
-    ((True, True, False, True), 200),
-    ((True, True, True, True), 200),
-    # User is in one of the) groups
-    ((True, False, False, False), 401),
-    ((True, False, True, False), 200),
-    ((True, False, False, True), 401),
-    ((True, False, True, True), 200),
-    # User is in none of the) groups
-    ((False, False, False, False), 401),
-    ((False, False, True, False), 401),
-    ((False, False, False, True), 401),
-    ((False, False, True, True), 401)])
-def test_subauth_cases(case, expected, settings, admin_user_with_k8s, admin_client):
+    ((True, True, False, False, True), 401),
+    ((True, True, True, False, True), 200),
+    ((True, True, False, True, True), 200),
+    ((True, True, True, True, True), 200),
+    ((True, False, False, False, True), 401),
+    ((True, False, True, False, True), 200),
+    ((True, False, False, True, True), 401),
+    ((True, False, True, True, True), 200),
+    ((False, False, False, False, True), 401),
+    ((False, False, True, False, True), 401),
+    ((False, False, False, True, True), 401),
+    ((False, False, True, True, True), 401),
+    # disabled sub-auth for web app should always lead to 401
+    ((True, True, False, False, False), 401),
+    ((True, True, True, False, False), 401),
+    ((True, True, False, True, False), 401),
+    ((True, True, True, True, False), 401),
+    ((True, False, False, False, False), 401),
+    ((True, False, True, False, False), 401),
+    ((True, False, False, True, False), 401),
+    ((True, False, True, True, False), 401),
+    ((False, False, False, False, False), 401),
+    ((False, False, True, False, False), 401),
+    ((False, False, False, True, False), 401),
+    ((False, False, True, True, False), 401)])
+@pytest.mark.django_db(transaction=True)
+def test_subauth_k8s_user(case, expected, settings, admin_user_with_k8s, admin_client):
     settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}}
 
-    app = _prepare_subauth_test(*case, True, admin_user_with_k8s)
-    response = admin_client.get(f'/subauthreq/{app.pk}/')
-    assert expected == response.status_code
+    user_in_group1, user_in_group2, app_in_group1, app_in_group2, app_can_subauth = case
 
-    # When the app is disabled, sub-auth should never succeed
-    app = _prepare_subauth_test(*case, False, admin_user_with_k8s)
-    response = admin_client.get(f'/subauthreq/{app.pk}/')
-    assert 401 == response.status_code
+    webapp = WebApplication(name="Test Web App", can_subauth=app_can_subauth)
+    webapp.save()
+    create_group(admin_user_with_k8s if user_in_group1 else None, 
+                 webapp if app_in_group1 else None)
+    create_group(admin_user_with_k8s if user_in_group2 else None, 
+                 webapp if app_in_group2 else None)
+
+    response = admin_client.get(f'/subauthreq/{webapp.pk}/')
+    assert response.status_code == expected
 
 
 def contains(response, text):
@@ -195,5 +197,3 @@ def test_webapp_user_in_multiple_groups(admin_client, admin_user):
     response = admin_client.get('/welcome/')
     assert contains(response, "http://www.heise.de")
     assert 1 == str(response.content).count("http://www.heise.de")
-
-
