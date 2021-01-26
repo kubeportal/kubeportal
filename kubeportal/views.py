@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateView, View, RedirectView
 from django.http.response import HttpResponse
 from django.conf import settings
@@ -127,11 +129,6 @@ class SubAuthRequestView(View):
         elif not webapp.can_subauth:
             logger.debug(
                 "Rejecting authorization for {0} through sub-request for user {1}, subauth is not enabled for this app.".format(webapp, request.user))
-            self._dump_request_info(request)
-            return HttpResponse(status=401)
-        elif not request.user.service_account:
-            logger.debug(
-                "Rejecting authorization for {0} through sub-request, user {1} has no service account.".format(webapp, request.user))
             self._dump_request_info(request)
             return HttpResponse(status=401)
         elif not request.user.can_subauth(webapp):
