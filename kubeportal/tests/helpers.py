@@ -2,8 +2,15 @@
 Internal helper functions.
 """
 
-
 import os
+import uuid
+import random
+
+from django.utils.http import urlencode
+from oidc_provider.lib.utils.token import create_token, create_id_token
+from oidc_provider.models import Client, ResponseType
+from oidc_provider.views import AuthorizeView
+
 import kubeportal.k8s.kubernetes_api as k8s_api
 from kubeportal.k8s import k8s_sync
 from django.urls import reverse
@@ -12,6 +19,9 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import RequestFactory
 from kubernetes import utils as k8s_utils
 from kubeportal.k8s import kubernetes_api
+from kubeportal.models.portalgroup import PortalGroup
+from kubeportal.models.webapplication import WebApplication
+
 
 def run_minikube_sync():
     """
@@ -60,6 +70,7 @@ def apply_k8s_yml(path):
         else:
             raise e
 
+
 def create_oidc_client():
     factory = RequestFactory()
     client = Client()
@@ -72,9 +83,11 @@ def create_oidc_client():
     client.response_types.add(ResponseType.objects.get(value='code'))
     return client
 
+
 def create_webapp(oidc_client):
-    app = WebApplication(name=name, oidc_client=oidc_client)
+    app = WebApplication(name="Test Web App", oidc_client=oidc_client)
     app.save()
+
 
 def oidc_authenticate(oidc_client, rf, admin_user):
     data = {
@@ -92,18 +105,19 @@ def oidc_authenticate(oidc_client, rf, admin_user):
     request.user = admin_user
     return AuthorizeView.as_view()(request)
 
+
 def create_oidc_token(oidc_client, admin_user, request):
     scope = ['openid', 'email']
 
     token = create_token(
-        user=user,
-        client=client,
+        user=admin_user,
+        client=oidc_client,
         scope=scope)
 
     id_token_dic = create_id_token(
         token=token,
-        user=user,
-        aud=client.client_id,
+        user=admin_user,
+        aud=oidc_client.client_id,
         nonce='abcdefghijk',
         scope=scope,
         request=request
@@ -114,8 +128,9 @@ def create_oidc_token(oidc_client, admin_user, request):
 
     return token
 
-def create_group(self, name, member=None, app=None):
-    group = PortalGroup(name=name)
+
+def create_group(member=None, app=None):
+    group = PortalGroup(name="Test Group")
     group.save()
     if member:
         group.members.add(member)
