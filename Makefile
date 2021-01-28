@@ -37,7 +37,7 @@ test: venv minikube-start
 
 # Run all tests and obtain coverage information.
 coverage: venv 
-	./venv/bin/coverage run --omit 'venv/*' ./manage.py test --configuration=Development; ./venv/bin/coverage html; open htmlcov/index.html 
+	./venv/bin/pytest --cov=kubeportal --cov-report=html 
 
 # Update version numbers, commit and tag
 release-bumpversion:

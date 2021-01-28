@@ -37,8 +37,20 @@ def admin_user_with_k8s(admin_user):
     A PyTest fixture returning a valid admin user with K8S access.
     """
     run_minikube_sync()
-    default_ns = KubernetesNamespace.objects.get(name='default')
-    admin_user.service_account = default_ns.service_accounts.get(name='default')
+    ns = KubernetesNamespace.objects.get(name='default')
+    admin_user.service_account = ns.service_accounts.get(name='default')
+    admin_user.save()
+    return admin_user
+
+
+@pytest.fixture
+def admin_user_with_k8s_system(admin_user):
+    """
+    A PyTest fixture returning a valid admin user with K8S access.
+    """
+    run_minikube_sync()
+    ns = KubernetesNamespace.objects.get(name='kube-system')
+    admin_user.service_account = ns.service_accounts.get(name='default')
     admin_user.save()
     return admin_user
 

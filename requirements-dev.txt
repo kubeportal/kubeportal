@@ -2,7 +2,7 @@ bumpversion
 sphinx_rtd_theme
 sphinx
 sphinx-issues
-coverage
 pytest-django
 pytest-mock
+pytest-cov
 django-configurations
