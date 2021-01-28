@@ -116,7 +116,7 @@ def test_special_k8s_approved(rf, admin_index_request, django_user_model):
     # walk through approval workflow
     url = reverse('welcome')
     request = rf.get(url)
-    u.send_access_request(request)
+    u.send_approval_request(request)
     u.save()
     # Just sending an approval request should not change to member list
     assert group.members.count() == 0
@@ -161,12 +161,12 @@ def test_user_rejection(rf, admin_index_request, django_user_model):
     # walk through rejection workflow
     url = reverse('welcome')
     request = rf.get(url)
-    u.send_access_request(request)
+    u.send_approval_request(request)
     u.save()
     # Build full-fledged request object for logged-in admin
     assert(u.reject(admin_index_request))
     u.save()
-    assert(u.has_access_rejected())
+    assert(u.is_rejected())
 
 
 @pytest.mark.django_db

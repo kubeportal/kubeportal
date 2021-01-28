@@ -79,11 +79,11 @@ def handle_user_change(sender, instance, created, **kwargs):
             group.members.add(instance)
 
     for group in PortalGroup.objects.filter(special_k8s_accounts=True):
-        if instance.has_access_approved() and not instance.portal_groups.filter(pk=group.pk).exists():
+        if instance.is_approved() and not instance.portal_groups.filter(pk=group.pk).exists():
             logger.info(f"Putting user {instance} into group {group} for Kubernetes users")
             group.members.add(instance)
 
-        if not instance.has_access_approved() and instance.portal_groups.filter(pk=group.pk).exists():
+        if not instance.is_approved() and instance.portal_groups.filter(pk=group.pk).exists():
             logger.info(f"Removing user {instance} from group {group} for Kubernetes users")
             group.members.remove(instance)
 

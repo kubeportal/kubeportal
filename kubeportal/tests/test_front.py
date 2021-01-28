@@ -67,7 +67,7 @@ def test_acess_request_view(admin_client, admin_user):
 
 
 def test_acess_request_view_mail_broken(admin_client, admin_user, mocker):
-    mocker.patch('kubeportal.models.User.send_access_request', return_value=False)
+    mocker.patch('kubeportal.models.User.send_approval_request', return_value=False)
     response = admin_client.post('/access/request/', {'selected-administrator': admin_user.username})
     assertRedirects(response, '/config/')
 
