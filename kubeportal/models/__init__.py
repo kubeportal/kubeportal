@@ -159,7 +159,8 @@ class User(AbstractUser):
         user_groups_with_this_app = self.portal_groups.filter(can_web_applications__in=[webapp.pk])
         allowed = user_groups_with_this_app.count() > 0
         if allowed:
-            logger.debug("Subauth allowed for app {} with user {} due to membership in groups".format(webapp, self))
+            # Prevent event storm
+            # logger.debug("Subauth allowed for app {} with user {} due to membership in groups".format(webapp, self))
             return True
         else:
             logger.debug(
