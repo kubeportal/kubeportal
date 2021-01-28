@@ -189,7 +189,8 @@ class User(AbstractUser):
         """
         # 30 days (1 month times the amount of months we look behind)
         x_months_ago = timezone.now() - timezone.timedelta(days=30 * settings.LAST_LOGIN_MONTHS_AGO)
-        return list(cls.objects.filter(last_login__lte=x_months_ago))
+        result = list(cls.objects.filter(last_login__lte=x_months_ago))
+        return result
 
     @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED,
                                      UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)

@@ -3,6 +3,7 @@ from unittest import skip
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from dateutil.parser import parse
 
 from kubeportal.admin import merge_users, UserAdmin
 from kubeportal.k8s import kubernetes_api as api
@@ -10,7 +11,7 @@ from kubeportal.models import UserState
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 from kubeportal.models.portalgroup import PortalGroup
-from .helpers import run_minikube_sync
+from .helpers import run_minikube_sync, admin_request
 
 
 @pytest.mark.django_db
@@ -18,6 +19,19 @@ from .helpers import run_minikube_sync
 def test_kube_ns_changelist(admin_client):
     response = admin_client.get(
         reverse('admin:kubeportal_kubernetesnamespace_changelist'))
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_webapp_changelist(admin_client):
+    response = admin_client.get(
+        reverse('admin:kubeportal_webapplication_changelist'))
+    assert response.status_code == 200
+
+@pytest.mark.django_db
+def test_portalgroup_changelist(admin_client):
+    response = admin_client.get(
+        reverse('admin:kubeportal_portalgroup_changelist'))
     assert response.status_code == 200
 
 
@@ -263,123 +277,114 @@ def test_user_merge_access_rejected(admin_index_request, django_user_model):
 
     assert primary.has_access_rejected
 
-# @skip("Function disabled")
-# @pytest.mark.django_db
-# @pytest.mark.usefixtures("minikube_sync")
-# def test_backend_cleanup_view(admin_cleanup_request):
-#     User = get_user_model()
-#     u = User(
-#         username="HUGO",
-#         email="a@b.de")
-#     u.save()
-#
-#     # we need an inactive user for the the filter to work
-#     from dateutil.parser import parse
-#     u.last_login = parse("2017-09-23 11:21:52.909020")
-#     u.save()
-#
-#     ns = KubernetesNamespace(name="aaasdfadfasdfasdf", visible=True)
-#     ns.save()
-#
-#     new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
-#     new_svc.save()
-#     new_svc.delete()
-#
-#     assert(admin_cleanup_request)
-#
-# @skip("Function disabled")
-# @pytest.mark.django_db
-# @pytest.mark.usefixtures("minikube_sync")
-# def test_backend_cleanup_entitity_getters():
-#     User = get_user_model()
-#     from django.utils import dateparse
-#     # we need an inactive user for the the filter to work
-#     u = User(
-#         username="HUGO",
-#         email="a@b.de",
-#         last_login=dateparse.parse_datetime(
-#             "2017-09-23 11:21:52.909020 +02.00")
-#     )
-#     u.save()
-#
-#     ns = KubernetesNamespace(name="asdfadfasdfasdf", visible=True)
-#     ns.save()
-#
-#     assert(User.inactive_users()[0] ==
-#            User.objects.get(username=u.username))
-#     assert(KubernetesNamespace.without_pods()[0] == ns)
-#     assert(KubernetesNamespace.without_service_accounts()[0] == ns)
-#
-# @skip("Function disabled")
-# @pytest.mark.django_db
-# @pytest.mark.usefixtures("minikube_sync")
-# def test_backend_prune_view():
-#     User = get_user_model()
-#     from django.utils import dateparse
-#     # we need an inactive user for the the filter to work
-#     user_list = [
-#         User.objects.create_user(
-#             username="HUGO1",
-#             email="a@b.de",
-#             last_login=dateparse.parse_datetime(
-#                 "2017-09-23 11:21:52.909020 +02:00")
-#         ),
-#
-#         User.objects.create_user(
-#             username="HUGO2",
-#             email="b@b.de",
-#             last_login=dateparse.parse_datetime(
-#                 "2017-09-23 11:21:52.909020 +02:00")
-#         ),
-#
-#         User.objects.create_user(
-#             username="HUGO3",
-#             email="c@b.de",
-#             last_login=dateparse.parse_datetime(
-#                 "2017-09-23 11:21:52.909020 +02:00")
-#         )
-#     ]
-#
-#     ns_list = [
-#         KubernetesNamespace.objects.create(name="test-namespace1"),
-#         KubernetesNamespace.objects.create(name="test-namespace2"),
-#         KubernetesNamespace.objects.create(name="test-namespace3")
-#     ]
-#
-#     # prune visible namespaces without an assigned service account
-#     request = create_backend_request("admin:prune", {
-#         'prune': "namespaces-no-service-acc",
-#         "namespaces": [ns.name for ns in ns_list]
-#     })
-#     prune(request)
-#
-#     assert(not KubernetesNamespace.objects.filter(
-#         name__in=[ns.name for ns in ns_list]))
-#
-#     ns_list = [
-#         KubernetesNamespace.objects.create(name="test-namespace1"),
-#         KubernetesNamespace.objects.create(name="test-namespace2"),
-#         KubernetesNamespace.objects.create(name="test-namespace3")
-#     ]
-#
-#     # prune visible namespaces without pods
-#     request = create_backend_request("admin:prune", {
-#         'prune': "namespaces-no-pods",
-#         "namespaces": [ns.name for ns in ns_list]
-#     })
-#     prune(request)
-#
-#     # have all been pruned?
-#     assert(not KubernetesNamespace.objects.filter(
-#         name__in=[ns.name for ns in ns_list]))
-#
-#     # prune service accounts that haven't logged in for a long time
-#     request = create_backend_request("admin:prune", {
-#         'prune': "inactive-users",
-#         "users": [u.username for u in user_list]
-#     })
-#     prune(request)
-#
-#     # have all been pruned?
-#     assert(not KubernetesServiceAccount.objects.filter(
-#         name__in=[u.username for u in user_list]))
+@pytest.mark.django_db
+@pytest.mark.usefixtures("minikube_sync")
+def test_backend_cleanup_view(rf, admin_user):
+    User = get_user_model()
+    u = User(
+        username="HUGO",
+        email="a@b.de")
+    u.save()
+
+    # we need an inactive user for the the filter to work
+    u.last_login = parse("2017-09-23 11:21:52.909020 +02:00")
+    u.save()
+
+    ns = KubernetesNamespace(name="aaasdfadfasdfasdf", visible=True)
+    ns.save()
+
+    new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
+    new_svc.save()
+    new_svc.delete()
+
+    assert admin_request(rf, admin_user, 'admin:cleanup')
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("minikube_sync")
+def test_backend_cleanup_entitity_getters(django_user_model, admin_user):
+    admin_user.last_login = parse("2017-09-23 11:21:52.909020 +02:00")
+    admin_user.save()
+
+    ns = KubernetesNamespace(name="asdfadfasdfasdf", visible=True)
+    ns.save()
+
+    assert admin_user in django_user_model.inactive_users()
+    assert ns in KubernetesNamespace.without_pods()
+    assert ns in KubernetesNamespace.without_service_accounts()
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("minikube_sync")
+def test_backend_prune_view(django_user_model, admin_client):
+    from django.utils import dateparse
+    # we need an inactive user for the the filter to work
+    user_list = [
+        django_user_model.objects.create_user(
+            username="HUGO1",
+            email="a@b.de",
+            last_login=dateparse.parse_datetime(
+                "2017-09-23 11:21:52.909020 +02:00")
+        ),
+
+        django_user_model.objects.create_user(
+            username="HUGO2",
+            email="b@b.de",
+            last_login=dateparse.parse_datetime(
+                "2017-09-23 11:21:52.909020 +02:00")
+        ),
+
+        django_user_model.objects.create_user(
+            username="HUGO3",
+            email="c@b.de",
+            last_login=dateparse.parse_datetime(
+                "2017-09-23 11:21:52.909020 +02:00")
+        )
+    ]
+
+    ns_list = [
+        KubernetesNamespace.objects.create(name="test-namespace1"),
+        KubernetesNamespace.objects.create(name="test-namespace2"),
+        KubernetesNamespace.objects.create(name="test-namespace3")
+    ]
+
+    # prune visible namespaces without an assigned service account
+    response = admin_client.post(
+        reverse('admin:prune'),
+        {'prune': "namespaces-no-service-acc",
+         'namespaces': [ns.name for ns in ns_list]})
+    assert response.status_code == 302
+
+    assert(not KubernetesNamespace.objects.filter(
+        name__in=[ns.name for ns in ns_list]))
+
+    ns_list = [
+        KubernetesNamespace.objects.create(name="test-namespace1"),
+        KubernetesNamespace.objects.create(name="test-namespace2"),
+        KubernetesNamespace.objects.create(name="test-namespace3")
+    ]
+
+    # prune visible namespaces without pods
+    response = admin_client.post(
+        reverse('admin:prune'),
+        {'prune': "namespaces-no-pods",
+         'namespaces': [ns.name for ns in ns_list]})
+    assert response.status_code == 302
+
+    response = admin_client.get(
+        reverse('admin:kubeportal_webapplication_changelist'))
+    assert response.status_code == 200
+
+    # have all been pruned?
+    assert(not KubernetesNamespace.objects.filter(
+        name__in=[ns.name for ns in ns_list]))
+
+    # prune service accounts that haven't logged in for a long time
+    response = admin_client.post(
+        reverse('admin:prune'),
+        {'prune': "inactive-users",
+         "users": [u.username for u in user_list]})
+    assert response.status_code == 302
+
+    # have all been pruned?
+    assert(not KubernetesServiceAccount.objects.filter(
+        name__in=[u.username for u in user_list]))

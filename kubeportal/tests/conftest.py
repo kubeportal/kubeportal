@@ -64,14 +64,6 @@ def admin_index_request(rf, admin_user):
 
 
 @pytest.fixture
-def admin_cleanup_request(rf, admin_user):
-    """
-    A PyTest fixture returning a HttpRequest object for the Django backend cleanup page.
-    """
-    return admin_request(rf, admin_user, 'admin:cleanup')
-
-
-@pytest.fixture
 def second_user(django_user_model):
     """
     A PyTest fixture returning a second user.
