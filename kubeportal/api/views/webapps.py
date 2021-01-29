@@ -19,6 +19,11 @@ class WebAppView(generics.RetrieveAPIView):
     serializer_class = WebAppSerializer
     lookup_url_kwarg = 'webapp_id'
 
+    def retrieve(self, request, *args, **kwargs):
+        result = super().retrieve(request, *args, **kwargs)
+        import pdb; pdb.set_trace()
+
+
     def get_queryset(self):
         # Users can only request details of their own web applications..
-        return self.request.user.web_applications(include_invisible=False)
+        webapps = self.request.user.web_applications(include_invisible=False)
