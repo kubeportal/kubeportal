@@ -284,7 +284,7 @@ def test_group_non_member(api_client):
     assert response.status_code == 404
 
 
-def test_user(api_client, admin_user):
+def test_user(api_client, admin_user_with_k8s_system):
     user_attr_expected = [
         'firstname',
         'name',
@@ -292,12 +292,11 @@ def test_user(api_client, admin_user):
         'primary_email',
         'all_emails',
         'admin',
-        'k8s_serviceaccount',
-        'k8s_namespace',
+        'k8s_accounts',
         'k8s_token',
     ]
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/users/{admin_user.pk}/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/users/{admin_user_with_k8s_system.pk}/')
     assert response.status_code == 200
     data = response.json()
 
@@ -305,6 +304,12 @@ def test_user(api_client, admin_user):
 
     for key in user_attr_expected:
         assert key in data
+
+    assert data["user_id"] == 1
+    assert data["group_ids"] == [1]
+    assert data['all_emails'] == ['admin@example.com']
+    assert data['k8s_accounts'] == [{'namespace': 'kube-system', 'service_account': 'default'},]
+
 
 
 def test_patch_user(api_client, admin_user):

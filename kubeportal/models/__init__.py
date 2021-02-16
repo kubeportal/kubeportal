@@ -89,6 +89,18 @@ class User(AbstractUser):
         """
         return [webapp.pk for webapp in self.web_applications(False)]        
 
+
+    def k8s_accounts(self):
+        """
+        Used as property by the API serializer.
+        """
+        if self.service_account:
+            return [{'namespace': self.service_account.namespace.name, 
+                     'service_account': self.service_account.name},]
+        else:
+            return []
+
+
     def k8s_namespace(self):
         """
         Used as property by the API serializer.

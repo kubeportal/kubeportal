@@ -18,8 +18,9 @@ class UserSerializer(serializers.ModelSerializer):
     primary_email = serializers.EmailField(source='email')
     admin = serializers.BooleanField(source='is_staff', read_only = True)
     all_emails = serializers.ListField(read_only = True)
-    k8s_serviceaccount = serializers.CharField(source='service_account', read_only = True)
-    k8s_namespace = serializers.CharField(read_only = True)
+    k8s_accounts = serializers.ListField(read_only = True,
+        child = serializers.DictField(read_only = True,
+          child = serializers.CharField(read_only = True)))
     k8s_token = serializers.CharField(source='token', read_only = True)
 
     class Meta:
@@ -33,8 +34,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'primary_email',
                   'admin',
                   'all_emails',
-                  'k8s_serviceaccount',
-                  'k8s_namespace',
+                  'k8s_accounts',
                   'k8s_token')
 
 
