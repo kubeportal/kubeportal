@@ -70,6 +70,13 @@ class User(AbstractUser):
         """
         return self.pk
 
+    def all_emails(self):
+        """
+        Used as property by the API serializer.
+        """
+        return [self.email, *self.alt_mails]
+
+
     def group_ids(self):
         """
         Used as property by the API serializer.

@@ -316,6 +316,27 @@ def test_patch_user(api_client, admin_user):
     assert updated_primary_email == data_mock['primary_email']
     assert response.status_code == 200
 
+def test_user_all_email_adrs(api_client, admin_user):
+    admin_user.email ="a@b.de"
+    admin_user.alt_mails = ["c@d.de", "e@f.de"]
+    admin_user.save()
+
+    response = api_client.get(f'/api/{settings.API_VERSION}/users/{admin_user.pk}/')
+
+    all_emails = json.loads(response.text)['all_emails']
+    assert all_emails == ["a@b.de", "c@d.de", "e@f.de"]
+    assert response.status_code == 200
+
+def test_user_all_email_adrs_empty_alt(api_client, admin_user):
+    admin_user.alt_mails = None
+    admin_user.save()
+
+    response = api_client.get(f'/api/{settings.API_VERSION}/users/{admin_user.pk}/')
+
+    all_emails = json.loads(response.text)['all_emails']
+    assert all_emails == ["admin@example.com"]
+    assert response.status_code == 200
+
 
 def test_patch_user_invalid_id(api_client):
     response = api_client.patch(f'/api/{settings.API_VERSION}/users/777/', {})

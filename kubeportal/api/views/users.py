@@ -17,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(read_only = True)
     primary_email = serializers.EmailField(source='email')
     admin = serializers.BooleanField(source='is_staff', read_only = True)
-    all_emails = serializers.ListField(source='alt_mails', read_only = True)
+    all_emails = serializers.ListField(read_only = True)
     k8s_serviceaccount = serializers.CharField(source='service_account', read_only = True)
     k8s_namespace = serializers.CharField(read_only = True)
     k8s_token = serializers.CharField(source='token', read_only = True)
