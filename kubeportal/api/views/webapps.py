@@ -8,7 +8,20 @@ from kubeportal.models.webapplication import WebApplication
 class WebAppSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebApplication
-        fields = ('link_name', 'link_url')
+        fields = ['link_name', 'link_url']
+
+    def to_representation(self, data):
+        data = super(WebAppSerializer, self).to_representation(data)
+        link = data["link_url"]
+        try:
+            ns  = self.context["request"].user.service_account.namespace.name
+            svc = self.context["request"].user.service_account.name
+        except:
+            ns  = ""
+            svc = ""
+        link = link.replace("{{{{namespace}}}}", ns).replace("{{{{serviceaccount}}}}", svc)
+        data["link_url"] = link
+        return data
 
 
 @extend_schema_view(
@@ -19,11 +32,7 @@ class WebAppView(generics.RetrieveAPIView):
     serializer_class = WebAppSerializer
     lookup_url_kwarg = 'webapp_id'
 
-    def retrieve(self, request, *args, **kwargs):
-        result = super().retrieve(request, *args, **kwargs)
-        import pdb; pdb.set_trace()
-
-
     def get_queryset(self):
         # Users can only request details of their own web applications..
         webapps = self.request.user.web_applications(include_invisible=False)
+        return webapps
