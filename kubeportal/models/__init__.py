@@ -213,14 +213,13 @@ class User(AbstractUser):
         """
         self.approval_id = uuid.uuid4()
 
+        approve_url = request.build_absolute_uri(reverse('admin:access_approve', kwargs={'approval_id': self.approval_id}))
+        reject_url  = request.build_absolute_uri(reverse('admin:access_reject',  kwargs={'approval_id': self.approval_id}))
+
         html_mail = render_to_string('mail_access_request.html', {'branding': settings.BRANDING,
                                                                   'user': str(self),
-                                                                  'approve_url': request.build_absolute_uri(
-                                                                      reverse('admin:access_approve', kwargs={
-                                                                          'approval_id': self.approval_id})),
-                                                                  'reject_url': request.build_absolute_uri(
-                                                                      reverse('admin:access_reject',
-                                                                              kwargs={'approval_id': self.approval_id}))
+                                                                  'approve_url': approve_url,
+                                                                  'reject_url': reject_url
                                                                   })
 
         text_mail = strip_tags(html_mail)
@@ -231,6 +230,7 @@ class User(AbstractUser):
         if administrator:
             cluster_admins.append(User.objects.get(username=administrator))
             logger.info(F"Sending access request from '{self.username}' to '{administrator}'")
+            logger.debug(F"Approval URL: {approve_url}")
         else:
             for admin in User.objects.filter(is_superuser=True):
                 cluster_admins.append(admin)

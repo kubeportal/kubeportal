@@ -479,7 +479,6 @@ class PortalUserAdmin(UserAdmin):
 
         context = dict(
             self.admin_site.each_context(request),
-            user=user,
             all_namespaces=KubernetesNamespace.objects.all(),
             current_ns=current_ns
         )
