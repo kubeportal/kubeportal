@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f525e2b-06cc-4b3e-bd05-de80d9c4b9c7" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/requirements-prod.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements-prod.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -10,6 +10,11 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="ProjectId" id="1njjZTToCqutNnrTDvetrWmrUXk" />
+  <component name="ProjectStartupLocalConfiguration">
+    <configurations>
+      <configuration id="Makefile.Prepare tests" name="Prepare tests" />
+    </configurations>
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -17,8 +22,16 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/Makefile" />
+    <property name="settings.editor.selected.configurable" value="preferences.startup.tasks" />
   </component>
-  <component name="RunManager" selected="Python tests.pytest for kubeportal.tests.test_api.test_webapp_placeholders">
+  <component name="RunManager" selected="Python tests.pytest in tests">
+    <configuration name="Prepare tests" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile">
+      <makefile filename="$PROJECT_DIR$/Makefile" target="minikube-start" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
     <configuration name="pytest for kubeportal.tests.test_api.test_webapp" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="kubeportal" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -83,6 +96,14 @@
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Makefile.Prepare tests" />
+      <item itemvalue="Python tests.pytest for kubeportal.tests.test_api.test_webapp" />
+      <item itemvalue="Python tests.pytest for kubeportal.tests.test_api.test_webapp_placeholders" />
+      <item itemvalue="Python tests.pytest for test_api.test_webapp_placeholders" />
+      <item itemvalue="Python tests.pytest in test_api.py" />
+      <item itemvalue="Python tests.pytest in tests" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python tests.pytest for kubeportal.tests.test_api.test_webapp_placeholders" />
