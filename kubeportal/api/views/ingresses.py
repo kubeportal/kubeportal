@@ -12,23 +12,25 @@ from kubeportal.k8s import kubernetes_api as api
             'HTTPS Ingress example',
             value={
                 'name': 'my-ingress',
-                'annotations': {
-                    'nginx.ingress.kubernetes.io/rewrite-target': '/',
-                },
+                'annotations': [
+                    {'key': 'nginx.ingress.kubernetes.io/rewrite-target', 'value': '/'}
+                ],
                 'tls': True,
-                'rules': {
-                    'www.example.com': {
-                        '/svc': {
-                            'service_name': 'my-svc',
-                            'service_port': 8000
+                'rules': [
+                    {'host': 'www.example.com',
+                     'paths': [
+                        {'path': '/svc',
+                         'service_name': 'my-svc',
+                         'service_port': 8000
                         },
-                        '/docs': {
-                            'service_name': 'my-docs-svc',
-                            'service_port': 5000
+                        {'path': '/docs',
+                         'service_name': 'my-docs-svc',
+                         'service_port': 5000
                         }
+                      ]
                     }
-                }
-            },
+                ]
+            }
         ),
     ]
 )
