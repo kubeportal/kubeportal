@@ -479,7 +479,7 @@ class PortalUserAdmin(UserAdmin):
 
         context = dict(
             self.admin_site.each_context(request),
-            all_namespaces=KubernetesNamespace.objects.all(),
+            all_namespaces=KubernetesNamespace.objects.filter(visible=True),
             current_ns=current_ns
         )
         if request.method == 'POST':
