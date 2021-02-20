@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9f525e2b-06cc-4b3e-bd05-de80d9c4b9c7" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/k8s/kubernetes_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/k8s/kubernetes_api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/helpers.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/helpers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api.py" afterDir="false" />
-    </list>
+    <list default="true" id="9f525e2b-06cc-4b3e-bd05-de80d9c4b9c7" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

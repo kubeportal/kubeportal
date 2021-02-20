@@ -205,7 +205,8 @@ def get_namespaced_services(namespace):
         for svc in services.items:
             stripped_svc = {'name': svc.metadata.name,
                             'type': svc.spec.type,
-                            'selector': svc.spec.selector,
+                            'selector': {'key': list(svc.spec.selector.items())[0][0], 
+                                         'value': list(svc.spec.selector.items())[0][1]},
                             'creation_timestamp': svc.metadata.creation_timestamp}
             ports = []
             for port in svc.spec.ports:
@@ -230,7 +231,7 @@ def create_k8s_service(namespace: str, name: str, svc_type: str, selector: dict,
         metadata=client.V1ObjectMeta(name=name),
         spec=V1ServiceSpec(
             type=svc_type,
-            selector=selector,
+            selector={selector['key']: selector['value']},
             ports=svc_ports
         )
     )
