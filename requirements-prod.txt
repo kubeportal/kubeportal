@@ -8,6 +8,7 @@ django-configurations
 dj-database-url
 django-fsm
 django-allauth
+django-tinymce
 djangorestframework
 python-jose
 django-sortedm2m-filter-horizontal-widget

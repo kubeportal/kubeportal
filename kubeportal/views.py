@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from dj_rest_auth.registration.views import SocialLoginView
 from kubeportal.models.webapplication import WebApplication
+from kubeportal.models.news import News
 from .k8s import kubernetes_api as api
 
 import logging
@@ -48,6 +49,7 @@ class WelcomeView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(*args, **kwargs)
         context['clusterapps'] = self.request.user.web_applications(
             include_invisible=False)
+        context['news'] = News.objects.all().order_by('-modified')
 
         User = get_user_model()
         context['portal_administrators'] = list(

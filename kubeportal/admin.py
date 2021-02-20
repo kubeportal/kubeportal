@@ -8,6 +8,7 @@ from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.template.response import TemplateResponse
+from django.utils.html import strip_tags
 from oidc_provider.models import Client
 from sortedm2m_filter_horizontal_widget.forms import SortedFilteredSelectMultiple
 from kubeportal.models import UserState as states
@@ -19,6 +20,7 @@ from .models.kubernetesnamespace import KubernetesNamespace
 from .models.kubernetesserviceaccount import KubernetesServiceAccount
 from .models.portalgroup import PortalGroup
 from .models.webapplication import WebApplication
+from .models.news import News
 
 logger = logging.getLogger('KubePortal')
 User = get_user_model()
@@ -538,6 +540,16 @@ class OidcClientAdmin(admin.ModelAdmin):
         verbose_name = "OpenID Connect settings"
 
 
+class NewsAdmin(admin.ModelAdmin):
+    exclude = ('author',)
+    list_display = ('title', 'modified', 'priority','author')
+
+    def save_model(self, request, obj, form, change):
+        obj.author = request.user
+        super().save_model(request, obj, form, change)
+
+
+
 admin_site = CustomAdminSite()
 admin_site.register(User, PortalUserAdmin)
 admin_site.register(PortalGroup, PortalGroupAdmin)
@@ -546,3 +558,4 @@ admin_site.register(KubernetesServiceAccount,
 admin_site.register(KubernetesNamespace, KubernetesNamespaceAdmin)
 admin_site.register(WebApplication, WebApplicationAdmin)
 admin_site.register(Client, OidcClientAdmin)
+admin_site.register(News, NewsAdmin)

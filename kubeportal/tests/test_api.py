@@ -22,6 +22,7 @@ from kubeportal.k8s import kubernetes_api as api
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
+from kubeportal.models.news import News
 from kubeportal.tests.helpers import run_minikube_sync, apply_k8s_yml
 
 logger = logging.getLogger('KubePortal')
@@ -548,6 +549,18 @@ def test_user_services_list(api_client, admin_user):
     assert 200 == response.status_code
     data = json.loads(response.content)
     assert "kube-dns" in data[0]['name']
+
+
+def test_news_list(api_client, admin_user):
+    test_news = News(content="<p>Hello World</p>", title="Foo", author=admin_user)
+    test_news.save()
+
+    response = api_client.get(f'/api/{settings.API_VERSION}/news/')
+    assert 200 == response.status_code
+    data = json.loads(response.content)
+    assert "<p>Hello World</p>" == data[0]["content"]
+    assert "Foo" == data[0]["title"]
+    assert admin_user.pk == data[0]["author"]
 
 
 def test_user_services_list_no_k8s(api_client):

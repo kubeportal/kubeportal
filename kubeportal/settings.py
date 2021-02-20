@@ -41,6 +41,7 @@ class Common(Configuration):
         'allauth.socialaccount.providers.oauth2',
         'silk',
         'django_extensions',
+        'tinymce',
         'drf_spectacular', # do late to enable correct config loading
     ]
 
