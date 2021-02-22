@@ -420,10 +420,14 @@ def test_user_deployments_create(api_client, admin_user):
         response = api_client.post(f'/api/{settings.API_VERSION}/deployments/kube-system/',
                              {'name': 'test-deployment',
                               'replicas': 1,
-                              'matchLabels': {'app': 'webapp'},
+                              'matchLabels': [
+                                  {'key': 'app', 'value': 'webapp'},
+                              ],
                               'template': {
                                   'name': 'webapp',
-                                  'labels': {'app': 'webapp'},
+                                  'labels': [
+                                      {'key': 'app', 'value': 'webapp'},
+                                  ],
                                   'containers': [{
                                       'name': 'busybox',
                                       'image': 'busybox'
@@ -446,7 +450,7 @@ def test_user_services_create(api_client, admin_user):
         response = api_client.post(f'/api/{settings.API_VERSION}/services/kube-system/', {
             'name': 'my-service',
             'type': 'NodePort',
-            'selector': {'app': 'kubeportal'},
+            'selector': {'key': 'app', 'value': 'kubeportal'},
             'ports': [{'port': 8000, 'protocol': 'TCP'}]
         })
         assert 201 == response.status_code
@@ -460,7 +464,7 @@ def test_user_services_create_wrong_ns(api_client):
     response = api_client.post(f'/api/{settings.API_VERSION}/services/xyz/', {
         'name': 'my-service',
         'type': 'NodePort',
-        'selector': {'app': 'kubeportal'},
+        'selector': {'key': 'app', 'value': 'kubeportal'},
         'ports': [{'port': 8000, 'protocol': 'TCP'}]
     })
     assert 404 == response.status_code
@@ -474,38 +478,47 @@ def test_user_ingresses_create(api_client, admin_user):
     old_count = len(api.get_namespaced_ingresses("kube-system"))
     try:
         response = api_client.post(f'/api/{settings.API_VERSION}/ingresses/kube-system/',
-                             {'name': 'test-ingress',
-                              'annotations': {
-                                  'nginx.ingress.kubernetes.io/rewrite-target': '/',
-                              },
-                              'tls': True,
-                              'rules': {
-                                  'www.example.com': {
-                                      '/svc': {
-                                          'service_name': 'my-svc',
-                                          'service_port': 8000
-                                      },
-                                      '/docs': {
-                                          'service_name': 'my-docs-svc',
-                                          'service_port': 5000
-                                      }
-                                  }
-                              }})
+         {
+            'name': 'my-ingress',
+            'annotations': [
+                {'key': 'nginx.ingress.kubernetes.io/rewrite-target', 'value': '/'}
+            ],
+            'tls': True,
+            'rules': [
+                {'host': 'www.example.com',
+                 'paths': [
+                    {'path': '/svc',
+                     'service_name': 'my-svc',
+                     'service_port': 8000
+                    },
+                    {'path': '/docs',
+                     'service_name': 'my-docs-svc',
+                     'service_port': 5000
+                    }
+                  ]
+                }
+            ]
+        })
+
         assert 201 == response.status_code
         new_count = len(api.get_namespaced_ingresses("kube-system"))
         assert old_count + 1 == new_count
     finally:
-        api.net_v1.delete_namespaced_ingress(name="test-ingress", namespace="kube-system")
+        api.net_v1.delete_namespaced_ingress(name="my-ingress", namespace="kube-system")
 
 
 def test_user_deployments_create_wrong_ns(api_client):
     response = api_client.post(f'/api/{settings.API_VERSION}/deployments/xyz/',
                          {'name': 'test-deployment',
                           'replicas': 1,
-                          'matchLabels': {'app': 'webapp'},
+                          'matchLabels': [
+                              {'key': 'app', 'value': 'webapp'},
+                          ],
                           'template': {
                               'name': 'webapp',
-                              'labels': {'app': 'webapp'},
+                              'labels': [
+                                  {'key': 'app', 'value': 'webapp'},
+                              ],
                               'containers': [{
                                   'name': 'busybox',
                                   'image': 'busybox'
@@ -516,23 +529,27 @@ def test_user_deployments_create_wrong_ns(api_client):
 
 def test_user_ingresses_create_wrong_ns(api_client):
     response = api_client.post(f'/api/{settings.API_VERSION}/ingresses/xyz/',
-                         {'name': 'test-ingress',
-                          'annotations': {
-                              'nginx.ingress.kubernetes.io/rewrite-target': '/',
-                          },
-                          'tls': True,
-                          'rules': {
-                              'www.example.com': {
-                                  '/svc': {
-                                      'service_name': 'my-svc',
-                                      'service_port': 8000
-                                  },
-                                  '/docs': {
-                                      'service_name': 'my-docs-svc',
-                                      'service_port': 5000
-                                  }
-                              }
-                          }})
+     {
+        'name': 'my-ingress',
+        'annotations': [
+            {'key': 'nginx.ingress.kubernetes.io/rewrite-target', 'value': '/'}
+        ],
+        'tls': True,
+        'rules': [
+            {'host': 'www.example.com',
+             'paths': [
+                {'path': '/svc',
+                 'service_name': 'my-svc',
+                 'service_port': 8000
+                },
+                {'path': '/docs',
+                 'service_name': 'my-docs-svc',
+                 'service_port': 5000
+                }
+              ]
+            }
+        ]
+    })
     assert 404 == response.status_code
 
 
@@ -548,7 +565,11 @@ def test_user_services_list(api_client, admin_user):
     response = api_client.get(f'/api/{settings.API_VERSION}/services/kube-system/')
     assert 200 == response.status_code
     data = json.loads(response.content)
-    assert "kube-dns" in data[0]['name']
+    assert "kube-dns" == data[0]['name']
+    assert "ClusterIP" == data[0]['type']
+    assert 53 == data[0]['ports'][0]['port']
+    assert 53 == data[0]['ports'][1]['port']
+    assert 'k8s-app' == data[0]['selector']['key']
 
 
 def test_user_services_list_no_k8s(api_client):

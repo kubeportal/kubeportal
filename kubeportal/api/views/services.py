@@ -12,7 +12,7 @@ from kubeportal.k8s import kubernetes_api as api
             value={
                 'name': 'my-service',
                 'type': 'NodePort',
-                'selector': {'app': 'kubeportal'},
+                'selector': {'key': 'app', 'value': 'kubeportal'},
                 'ports': [{'port': 8000, 'protocol': 'TCP'}]
             },
         ),
@@ -21,7 +21,7 @@ from kubeportal.k8s import kubernetes_api as api
             value={
                 'name': 'my-service',
                 'type': 'ClusterIP',
-                'selector': {'app': 'kubeportal'},
+                'selector': {'key': 'app', 'value': 'kubeportal'},
                 'ports': [{'port': 8000, 'protocol': 'TCP'}]
             },
         ),
@@ -30,7 +30,7 @@ from kubeportal.k8s import kubernetes_api as api
             value={
                 'name': 'my-service',
                 'type': 'LoadBalancer',
-                'selector': {'app': 'kubeportal'},
+                'selector': {'key': 'app', 'value': 'kubeportal'},
                 'ports': [{'port': 8000, 'protocol': 'TCP'}]
             },
         ),
