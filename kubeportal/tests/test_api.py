@@ -249,6 +249,7 @@ def test_webapp(api_client, admin_group):
     data = response.json()
     assert data['link_name'] == 'app1'
     assert data['link_url'] == 'http://www.heise.de'
+    assert data['category'] == "GENERIC"
 
 
 def test_webapp_placeholders(api_client, admin_group, admin_user_with_k8s_system):
