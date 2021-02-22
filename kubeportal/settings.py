@@ -185,6 +185,8 @@ class Common(Configuration):
 
     LAST_LOGIN_MONTHS_AGO = values.Value(12, environ_prefix='KUBEPORTAL')
 
+    TINYMCE_DEFAULT_CONFIG = {'statusbar': False, 'menubar': False, 'plugins': ['link', 'lists' ],
+                              'toolbar': 'undo redo | cut copy paste | bold italic subscript superscript | removeformat | bullist numlist | link unlink'}
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
