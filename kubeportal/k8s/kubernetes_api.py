@@ -67,17 +67,17 @@ def create_k8s_ns(name: str):
     return core_v1.read_namespace(name=name)
 
 
-def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, tpl: dict):
+def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, template: dict):
     """
     Create a Kubernetes deployment in the cluster.
 
     Returns the new deployment.
     """
     logger.info(f"Creating Kubernetes deployment '{name}'")
-    k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in tpl["containers"]]
-    k8s_labels = {item['key']:item['value'] for item in tpl['labels']}
-    k8s_pod_tpl = client.V1PodTemplateSpec(
-        metadata=client.V1ObjectMeta(name=tpl['name'], labels=k8s_labels),
+    k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in template["containers"]]
+    k8s_labels = {item['key']:item['value'] for item in template['labels']}
+    k8s_pod_template = client.V1PodTemplateSpec(
+        metadata=client.V1ObjectMeta(name=template['name'], labels=k8s_labels),
         spec=client.V1PodSpec(containers=k8s_containers)
     )
     k8s_match_labels = {item['key']:item['value'] for item in match_labels}
@@ -85,7 +85,7 @@ def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels
         metadata=client.V1ObjectMeta(name=name),
         spec=client.V1DeploymentSpec(replicas=replicas,
                                      selector=client.V1LabelSelector(match_labels=k8s_match_labels),
-                                     template=k8s_pod_tpl
+                                     template=k8s_pod_template
                                      )
     )
     apps_v1.create_namespaced_deployment(namespace, k8s_deployment)
