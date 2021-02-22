@@ -7,11 +7,12 @@ from dateutil.parser import parse
 
 from kubeportal.admin import merge_users, UserAdmin
 from kubeportal.k8s import kubernetes_api as api
-from kubeportal.models import UserState
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 from kubeportal.models.portalgroup import PortalGroup
 from .helpers import run_minikube_sync, admin_request
+
+User = get_user_model()
 
 
 @pytest.mark.django_db
@@ -131,7 +132,6 @@ def test_special_k8s_approved(rf, admin_index_request, django_user_model):
     url = reverse('welcome')
     request = rf.get(url)
     u.send_access_request(request)
-    u.save()
     # Just sending an approval request should not change to member list
     assert group.members.count() == 0
     # Prepare K8S namespace
@@ -141,7 +141,6 @@ def test_special_k8s_approved(rf, admin_index_request, django_user_model):
     new_svc.save()
     # Perform approval
     assert(u.approve(admin_index_request, new_svc))
-    u.save()
     # Should lead to addition of user to the add_approved group
     assert group.members.count() == 1
 
@@ -157,12 +156,12 @@ def test_special_k8s_unapproved(django_user_model):
     # create approved user
     u = django_user_model(username="Hugo",
              email="a@b.de",
-             state=UserState.ACCESS_APPROVED,
+             state=User.ACCESS_APPROVED,
              service_account=new_svc)
     u.save()
     assert group.members.count() == 1
     # unapprove
-    u.state = UserState.ACCESS_REJECTED
+    u.state = User.ACCESS_REJECTED
     u.save()
     assert group.members.count() == 0
 
@@ -176,10 +175,8 @@ def test_user_rejection(rf, admin_index_request, django_user_model):
     url = reverse('welcome')
     request = rf.get(url)
     u.send_access_request(request)
-    u.save()
     # Build full-fledged request object for logged-in admin
     assert(u.reject(admin_index_request))
-    u.save()
     assert(u.has_access_rejected())
 
 
@@ -197,7 +194,7 @@ def test_user_merge_access_approved(admin_index_request, django_user_model):
     new_svc.save()
     secondary = django_user_model(
         username="hugo",
-        state=UserState.ACCESS_APPROVED,
+        state=User.ACCESS_APPROVED,
         email="a@b.de",
         comments="secondary user comment",
         service_account=new_svc)
@@ -250,11 +247,10 @@ def test_user_merge_access_rejected(admin_index_request, django_user_model):
     new_svc.save()
     # Perform approval
     assert(primary.approve(admin_index_request, new_svc))
-    primary.save()
 
     secondary = django_user_model(
         username="hugo",
-        state=UserState.ACCESS_APPROVED,
+        state=User.ACCESS_APPROVED,
         email="a@b.de",
         comments="secondary user comment",
         service_account=new_svc)

@@ -17,7 +17,6 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.html import strip_tags
 from django.utils.safestring import mark_safe
-from django_fsm import FSMField, transition
 from django.conf import settings
 from multi_email_field.fields import MultiEmailField
 from kubeportal.k8s import kubernetes_api
@@ -28,26 +27,26 @@ import logging
 logger = logging.getLogger('KubePortal')
 
 
-class UserState:
-    NEW = 'not requested'
-    ACCESS_REQUESTED = 'requested'
-    ACCESS_REJECTED = 'rejected'
-    ACCESS_APPROVED = 'approved'
-
-
-user_state_list = ((UserState.NEW, UserState.NEW),
-                   (UserState.ACCESS_REQUESTED, UserState.ACCESS_REQUESTED),
-                   (UserState.ACCESS_REJECTED, UserState.ACCESS_REJECTED),
-                   (UserState.ACCESS_APPROVED, UserState.ACCESS_APPROVED)
-                   )
-
+USER_STATES = [
+    ('NEW', 'not requested'),
+    ('ACCESS_REQUESTED', 'requested'),
+    ('ACCESS_REJECTED', 'rejected'),
+    ('ACCESS_APPROVED', 'approved')
+]
 
 class User(AbstractUser):
     """
     A portal user.
     """
-    state = FSMField(default=UserState.NEW, verbose_name="Cluster access",
-                     help_text="The state of the cluster access approval workflow.", choices=user_state_list)
+    NEW = 'NEW'
+    ACCESS_REQUESTED = 'ACCESS_REQUESTED'
+    ACCESS_REJECTED = 'ACCESS_REJECTED'
+    ACCESS_APPROVED = 'ACCESS_APPROVED'
+
+    state = models.CharField(default=NEW, 
+                             verbose_name="Cluster access",
+                             help_text="The state of the cluster access approval workflow.", 
+                             choices=USER_STATES)
     approval_id = models.UUIDField(
         default=uuid.uuid4, editable=False, null=True)
     answered_by = models.ForeignKey(
@@ -187,17 +186,17 @@ class User(AbstractUser):
             return False
 
     def has_access_approved(self):
-        result = (self.state == UserState.ACCESS_APPROVED and self.service_account)
+        result = (self.state == User.ACCESS_APPROVED and self.service_account)
         logger.debug("Access approved for user {0}: {1}".format(self, result))
         return result
 
     def has_access_rejected(self):
-        result = (self.state == UserState.ACCESS_REJECTED)
+        result = (self.state == User.ACCESS_REJECTED)
         logger.debug("Access rejected for user {0}: {1}".format(self, result))
         return result
 
     def has_access_requested(self):
-        result = (self.state == UserState.ACCESS_REQUESTED and self.approval_id)
+        result = (self.state == User.ACCESS_REQUESTED and self.approval_id)
         logger.debug("Access requested by user {0}: {1}".format(self, result))
         return result
 
@@ -211,14 +210,9 @@ class User(AbstractUser):
         result = list(cls.objects.filter(last_login__lte=x_months_ago))
         return result
 
-    @transition(field=state, source=[UserState.NEW, UserState.ACCESS_REQUESTED, UserState.ACCESS_APPROVED,
-                                     UserState.ACCESS_REJECTED], target=UserState.ACCESS_REQUESTED)
     def send_access_request(self, request, administrator=None):
         """
         Requests approval for cluster access.
-
-        Note: The user object must be saved by the caller, to reflect the state change,
-              when this method returns "True".
 
         Note: The parameter administrator is an optional argument which can be
               used to send an access request to a specific super user.
@@ -256,21 +250,20 @@ class User(AbstractUser):
 
             logger.debug(
                 'Sent email to admins about access request from ' + str(self))
+
+            self.state = self.ACCESS_REQUESTED
+            self.save()
             return True
         except Exception:
             logger.exception(
                 'Problem while sending email to admins about access request from ' + str(self))
             return False
 
-    @transition(field=state, source='*', target=UserState.ACCESS_REJECTED)
     def reject(self, request):
         """
         Answers a approval request with "rejected".
         The state transition happens automatically, an additional information
         is send to the denied user by email.
-
-        Note: The user object must be saved by the caller, to reflect the state change,
-              when this method returns "True".
         """
         messages.add_message(request, messages.INFO,
                              "Access request for '{0}' was rejected.".format(self))
@@ -297,16 +290,16 @@ class User(AbstractUser):
         # overwrite old approval, if URL is used again by the admins
         self.service_account = None
         self.answered_by = request.user
+
+        self.state = self.ACCESS_REJECTED
+        self.save()
+
         return True
 
-    @transition(field=state, source='*', target=UserState.ACCESS_APPROVED)
     def approve(self, request, new_svc):
         """
         Answers a approval request with "approved".
         The state transition happens automatically.
-
-        Note: The user object must be saved by the caller, to reflect the state change,
-              when this method returns "True".
         """
         self.service_account = new_svc
         self.answered_by = request.user
@@ -338,6 +331,10 @@ class User(AbstractUser):
                 "Problem while sending email to user '{0}' about access request approval".format(self))
             messages.error(
                 request, "Problem while sending information to user '{0}' by eMail.".format(self))
+
+        self.state = self.ACCESS_APPROVED
+        self.save()
+
         return True
 
     def approve_link(self):
