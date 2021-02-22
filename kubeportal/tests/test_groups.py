@@ -121,9 +121,9 @@ def test_dont_touch_superuser(second_user):
 @pytest.mark.django_db
 def test_special_groups():
     """
-    WIth a fresh database, only the two special groups exist.
+    With a fresh database, only the three special groups created by migrations exist.
     """
-    groups = PortalGroup.objects.all()
-    assert 2 == len(groups)
-    for group in groups:
-        assert group.is_special_group() is True
+    for group in PortalGroup.objects.all():
+        assert group.special_k8s_accounts or group.special_all_accounts or group.name == "Admin users"
+
+

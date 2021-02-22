@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
-
+from kubeportal.models.portalgroup import PortalGroup
 
 class Command(BaseCommand):
     '''
@@ -31,3 +31,7 @@ class Command(BaseCommand):
         user.save()
 
         print("Superuser password is '{0}'.".format(pw))
+
+        admin_group = PortalGroup.objects.get(name="Admin users") # auto-created by migration
+        admin_group.members.add(user)
+        admin_group.save()

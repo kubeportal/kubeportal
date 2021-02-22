@@ -128,7 +128,7 @@ class WebApplicationAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('name',)
+            'fields': ('name','category')
         }),
         ('Access allowed', {
             'fields': ('portal_groups',),
