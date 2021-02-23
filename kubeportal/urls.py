@@ -27,6 +27,7 @@ urlpatterns = [
 
     # backend web views
     path('admin/', admin_site.urls),
+    path('tinymce/', include('tinymce.urls')),    
 
     # frontend auth provider views
     # Note: The OpenID Connect URL is /oidc/authorize
@@ -52,6 +53,7 @@ urlpatterns = [
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/cluster/<str:info_slug>/', api_views.ClusterInfoView.as_view()),
     path('api/<str:version>/ingresshosts/', api_views.IngressHostsView.as_view()),
+    path('api/<str:version>/news/', api_views.NewsView.as_view()),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),

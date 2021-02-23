@@ -7,6 +7,7 @@ kubernetes
 django-configurations
 dj-database-url
 django-allauth
+django-tinymce
 django-fsm
 djangorestframework
 python-jose

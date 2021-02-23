@@ -33,5 +33,19 @@
 </div>
 
 
+<p>
+<div class="card-body">
+  {% for n in news %}
+    <h5>{{ n.title }}</h5>
+    <small> {{ n.modified|date:"M. j Y" }} </small>
+    <p>{{ n.content|safe }}</p>
+  {% endfor %}
+</div>
+</p>
+
+
+
+
+
 
 {% endblock %}

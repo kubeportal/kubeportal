@@ -9,3 +9,4 @@ from .ingresshosts import *
 from .services import *
 from .webapps import *
 from .login import *
+from .news import *
