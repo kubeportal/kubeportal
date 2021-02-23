@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('kubeportal', '0009_initial_admin_group'),
+        ('kubeportal', '0010_news'),
     ]
 
     operations = [
