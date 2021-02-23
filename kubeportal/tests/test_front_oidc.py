@@ -1,3 +1,7 @@
+"""
+Tests for the portal OIDC provider functionality.
+"""
+
 import pytest
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse

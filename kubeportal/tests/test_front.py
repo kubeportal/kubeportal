@@ -1,3 +1,8 @@
+"""
+Tests for the (classic) portal frontend, assuming that a user is logged in
+and that she has an approved cluster access.
+"""
+
 import pytest
 from django.urls import reverse
 from pytest_django.asserts import assertRedirects

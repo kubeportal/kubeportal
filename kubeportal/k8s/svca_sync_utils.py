@@ -10,7 +10,16 @@ logger = logging.getLogger('KubePortal')
 
 
 def get_portal_ns_using_k8s_ns(k8s_svca, ignored_missing_ns):
-    portal_ns = KubernetesNamespace.objects.get(name=k8s_svca.metadata.namespace)
+    try:
+        portal_ns = KubernetesNamespace.objects.get(name=k8s_svca.metadata.namespace)
+    except KubernetesNamespace.MultipleObjectsReturned:
+        logger.error(f"Portal database entries for namespace {k8s_svca.metadata.namespace} are duplicated. Deleting all but the oldest one...")
+        while KubernetesNamespace.objects.filter(name=k8s_svca.metadata.namespace).count() > 1:
+            candidate = KubernetesNamespace.objects.filter(name=k8s_svca.metadata.namespace).order_by('-pk')[0]
+            logger.error(f"Deleting record {candidate.pk}. Impacted service accounts: {candidate.service_accounts}")
+            candidate.delete()
+        portal_ns = KubernetesNamespace.objects.get(name=k8s_svca.metadata.namespace)
+
     if portal_ns is None:
         logger.warning("Skipping Kubernetes service account {0}:{1}, namespace does not exist.".format(
             k8s_svca.metadata.namespace, k8s_svca.metadata.name))

@@ -1,3 +1,7 @@
+"""
+Tests for the user group functionality in the portal.
+"""
+
 import pytest
 from django.contrib.auth.models import Permission
 

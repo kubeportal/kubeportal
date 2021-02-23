@@ -1,3 +1,7 @@
+"""
+Tests for the sub-authentication feature of the portal.
+"""
+
 import pytest
 
 from kubeportal.models.portalgroup import PortalGroup

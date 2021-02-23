@@ -6,8 +6,8 @@ colorama
 kubernetes
 django-configurations
 dj-database-url
-django-fsm
 django-allauth
+django-fsm
 djangorestframework
 python-jose
 django-sortedm2m-filter-horizontal-widget

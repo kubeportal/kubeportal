@@ -10,7 +10,6 @@ from django.contrib.auth import get_user_model
 from django.template.response import TemplateResponse
 from oidc_provider.models import Client
 from sortedm2m_filter_horizontal_widget.forms import SortedFilteredSelectMultiple
-from kubeportal.models import UserState as states
 import logging
 import uuid
 from . import models, admin_views
@@ -355,8 +354,7 @@ def make_assign_to_group_action(group):
 
 def reject(modeladmin, request, queryset):
     for user in queryset:
-        if user.reject(request):
-            user.save()
+        user.reject(request)
 reject.short_description = "Reject access request for selected users"
 
 def merge_users(modeladmin, request, queryset):
@@ -368,16 +366,16 @@ def merge_users(modeladmin, request, queryset):
 
     # first check if any of the two accounts are rejected.
     # if any are, make sure to reject both as well.
-    if primary.state == states.ACCESS_REJECTED or secondary.state == states.ACCESS_REJECTED:
+    if primary.state == User.ACCESS_REJECTED or secondary.state == User.ACCESS_REJECTED:
         if primary.reject(request):
-            primary.state = states.ACCESS_REJECTED
+            primary.state = User.ACCESS_REJECTED
             messages.warning(
                 request, F"Rejected cluster access for '{primary.username}'")
 
     # primary should be default. if secondary has more rights, then
     # secondary's values should be merged into primary.
-    if primary.state != states.ACCESS_APPROVED and secondary.state == states.ACCESS_APPROVED:
-        primary.state = states.ACCESS_APPROVED
+    if primary.state != User.ACCESS_APPROVED and secondary.state == User.ACCESS_APPROVED:
+        primary.state = User.ACCESS_APPROVED
         primary.approval_id = secondary.approval_id
         primary.answered_by = secondary.answered_by
     # iterate through the groups of secondary and add them to primary
@@ -411,6 +409,21 @@ class PortalUserAdmin(UserAdmin):
     actions = [reject, merge_users]
     list_filter = ()
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not obj.service_account and obj.state == obj.ACCESS_APPROVED:
+            # The admin manually changed the namespace of an approved user,
+            # in order to "disable" the cluster access
+            obj.state = obj.ACCESS_REJECTED
+            obj.answered_by = request.user
+            obj.save()
+        if obj.service_account and not obj.state == obj.ACCESS_APPROVED:
+            # The admin manually changed the namespace of an approved user,
+            # in order to "enable" the cluster access without approval.
+            obj.state = obj.ACCESS_APPROVED
+            obj.answered_by = request.user
+            obj.save()
+
     def portal_group_list(self, instance):
         from django.urls import reverse
         html_list = []
@@ -439,9 +452,9 @@ class PortalUserAdmin(UserAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if request.user.is_superuser:
-            return []
+            return ['answered_by', 'state']
         else:
-            return ['username', 'email', 'is_superuser']
+            return ['username', 'email', 'is_superuser', 'answered_by', 'state']
 
     def has_add_permission(self, request, obj=None):
         return request.user.is_superuser
@@ -474,23 +487,23 @@ class PortalUserAdmin(UserAdmin):
         It will use the user model's approve()/reject() functions to validate.
         After validation, the namespaces need to be created/deleted accordingly.
         '''
-        user = get_object_or_404(User, approval_id=approval_id)
-        current_ns = user.service_account.namespace if user.service_account else None
+        requesting_user = get_object_or_404(User, approval_id=approval_id)
 
         context = dict(
             self.admin_site.each_context(request),
             all_namespaces=KubernetesNamespace.objects.filter(visible=True),
-            current_ns=current_ns
+            requesting_user=requesting_user
         )
         if request.method == 'POST':
             if request.POST['choice'] == "approve_choose":
+                logger.info(f"Request for assigning '{requesting_user}' to existing namespace {request.POST['approve_choose_name']}")
                 new_ns = get_object_or_404(
                     KubernetesNamespace, name=request.POST['approve_choose_name'])
                 new_svc = get_object_or_404(
                     KubernetesServiceAccount, namespace=new_ns, name="default")
-                if user.approve(request, new_svc):
-                    user.save()
+                requesting_user.approve(request, new_svc)
             if request.POST['choice'] == "approve_create":
+                logger.info(f"Request for assigning user '{requesting_user}' to new namespace {request.POST['approve_create_name']}")
                 new_ns = KubernetesNamespace(
                     name=request.POST['approve_create_name'])
                 new_ns.save()
@@ -498,24 +511,20 @@ class PortalUserAdmin(UserAdmin):
                 if k8s_sync.sync(request):
                     new_svc = get_object_or_404(
                         KubernetesServiceAccount, namespace=new_ns, name="default")
-                    if user.approve(request, new_svc):
-                        user.save()
-                    else:
+                    if not requesting_user.approve(request, new_svc):
                         new_ns.delete()
             if request.POST['choice'] == "reject":
-                if user.reject(request):
-                    user.save()
+                logger.info(f"Request for rejecting approval request from {requesting_user}")
+                requesting_user.reject(request)
             return redirect('admin:kubeportal_user_changelist')
         else:
-            if user.has_access_approved or user.has_access_rejected:
-                context['answered_decision'] = user.state
-                context['answered_by'] = user.answered_by
+            if requesting_user.has_access_approved or requesting_user.has_access_rejected:
+                context['answered_by'] = requesting_user.answered_by
             return TemplateResponse(request, "admin/approve.html", context)
 
     def reject_view(self, request, approval_id):
         user = User.objects.get(approval_id=approval_id)
-        if user.reject(request):
-            user.save()
+        user.reject(request)
         return redirect('admin:kubeportal_user_changelist')
 
 

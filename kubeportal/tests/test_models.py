@@ -1,3 +1,7 @@
+"""
+Tests for model functions.
+"""
+
 import os
 import pytest
 from kubeportal.models.webapplication import WebApplication
