@@ -51,12 +51,11 @@ def create_k8s_ns(name: str):
 
     Returns the new namespace.
     """
-    logger.info(
-        "Creating Kubernetes namespace '{0}'".format(name))
     try:
         k8s_ns = client.V1Namespace(
             api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=name))
         core_v1.create_namespace(k8s_ns)
+        logger.info("Created Kubernetes namespace '{0}'".format(name))
     except client.rest.ApiException as e:
         # Race condition or earlier sync error - the K8S namespace is already there
         if e.status == 409:
@@ -67,23 +66,25 @@ def create_k8s_ns(name: str):
     return core_v1.read_namespace(name=name)
 
 
-def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, tpl: dict):
+def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, template: dict):
     """
     Create a Kubernetes deployment in the cluster.
 
     Returns the new deployment.
     """
     logger.info(f"Creating Kubernetes deployment '{name}'")
-    k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in tpl["containers"]]
-    k8s_pod_tpl = client.V1PodTemplateSpec(
-        metadata=client.V1ObjectMeta(name=tpl['name'], labels=tpl['labels']),
+    k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in template["containers"]]
+    k8s_labels = {item['key']:item['value'] for item in template['labels']}
+    k8s_pod_template = client.V1PodTemplateSpec(
+        metadata=client.V1ObjectMeta(name=template['name'], labels=k8s_labels),
         spec=client.V1PodSpec(containers=k8s_containers)
     )
+    k8s_match_labels = {item['key']:item['value'] for item in match_labels}
     k8s_deployment = client.V1Deployment(
         metadata=client.V1ObjectMeta(name=name),
         spec=client.V1DeploymentSpec(replicas=replicas,
-                                     selector=client.V1LabelSelector(match_labels=match_labels),
-                                     template=k8s_pod_tpl
+                                     selector=client.V1LabelSelector(match_labels=k8s_match_labels),
+                                     template=k8s_pod_template
                                      )
     )
     apps_v1.create_namespaced_deployment(namespace, k8s_deployment)
@@ -203,7 +204,8 @@ def get_namespaced_services(namespace):
         for svc in services.items:
             stripped_svc = {'name': svc.metadata.name,
                             'type': svc.spec.type,
-                            'selector': svc.spec.selector,
+                            'selector': {'key': list(svc.spec.selector.items())[0][0], 
+                                         'value': list(svc.spec.selector.items())[0][1]},
                             'creation_timestamp': svc.metadata.creation_timestamp}
             ports = []
             for port in svc.spec.ports:
@@ -228,7 +230,7 @@ def create_k8s_service(namespace: str, name: str, svc_type: str, selector: dict,
         metadata=client.V1ObjectMeta(name=name),
         spec=V1ServiceSpec(
             type=svc_type,
-            selector=selector,
+            selector={selector['key']: selector['value']},
             ports=svc_ports
         )
     )
@@ -246,20 +248,26 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
     """
     logger.info(f"Creating Kubernetes ingress '{name}'")
 
+    k8s_annotations = {item['key']: item['value'] for item in annotations}
+
     k8s_ing = NetworkingV1beta1Ingress(
-              metadata=client.V1ObjectMeta(name=name, annotations=annotations)
+              metadata=client.V1ObjectMeta(name=name, annotations=k8s_annotations)
     )
 
     k8s_rules = []
-    for host, host_config in rules.items():
+    k8s_hosts = []
+    for rule in rules:
+        host = rule["host"]
+        k8s_hosts.append(host)
+        paths = rule["paths"]
         k8s_rule = NetworkingV1beta1IngressRule(host=host)
         k8s_paths = []
-        for path, path_config in host_config.items():
+        for path_config in paths:
             k8s_backend = NetworkingV1beta1IngressBackend(
                 service_name=path_config['service_name'],
                 service_port=path_config['service_port']
             )
-            k8s_paths.append(NetworkingV1beta1HTTPIngressPath(path=path, backend=k8s_backend))
+            k8s_paths.append(NetworkingV1beta1HTTPIngressPath(path=path_config["path"], backend=k8s_backend))
         k8s_http = NetworkingV1beta1HTTPIngressRuleValue(
             paths=k8s_paths
         )
@@ -270,10 +278,9 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
 
     if tls:
         k8s_ing.metadata.annotations['cert-manager.io/cluster-issuer'] = settings.INGRESS_TLS_ISSUER
-        k8s_spec.tls = [NetworkingV1beta1IngressTLS(hosts=list(rules.keys()), secret_name=f'{name}_tls')]
+        k8s_spec.tls = [NetworkingV1beta1IngressTLS(hosts=k8s_hosts, secret_name=f'{name}_tls')]
 
     k8s_ing.spec = k8s_spec
-    #TODO: networking.k8s.io/v1 Ingress
     net_v1.create_namespaced_ingress(namespace, k8s_ing)
 
 

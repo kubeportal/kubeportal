@@ -99,7 +99,6 @@ class AccessRequestView(LoginRequiredMixin, RedirectView):
 
             # if administrator exists and access request was successfull...
             if admin and request.user.send_access_request(request, administrator=admin):
-                request.user.save()
                 messages.add_message(request, messages.INFO,
                                      'Your request was sent.')
             else:

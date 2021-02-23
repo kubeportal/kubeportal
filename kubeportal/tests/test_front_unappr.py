@@ -1,8 +1,14 @@
+"""
+Tests for the (classic) portal frontend, assuming that a user is logged in.
+"""
+
 from django.urls import reverse
 
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
+from kubeportal.tests.helpers import run_minikube_sync
 from pytest_django.asserts import assertRedirects
+import re
 
 
 def test_index_view(admin_client):
@@ -41,9 +47,95 @@ def test_root_redirect_with_rd_param(admin_client):
     assert response.status_code == 302
 
 
-def test_acess_request_view(admin_client, admin_user):
-    response = admin_client.post('/access/request/', {'selected-administrator': admin_user.username})
+def test_approval_mail(admin_client, admin_user, client, second_user, mailoutbox):
+    # send approval request from non-admin user
+    client.force_login(second_user)
+    response = client.post('/access/request/', {'selected-administrator': admin_user.username})
     assertRedirects(response, '/config/')
+    # check mail to admin
+    assert len(mailoutbox) == 1
+    m = mailoutbox[0]
+    assert m.subject == 'Request for access to "KubePortal"'
+    assert f'user "{second_user.username}" requests access to the KubePortal' in m.body
+    approval_url = re.search('.*http://.*', m.body)[0]
+    assert str(second_user.approval_id) in approval_url
+    # call approval web page as admin
+    response = admin_client.get(approval_url)
+    assert response.status_code == 200
+    response_content = re.search('<table.*', str(response.content))[0]
+    assert f"<td>Username:</td><td>{second_user.username}</td>" in response_content
+
+def test_approval_create(admin_client, admin_user, client, second_user, mailoutbox):
+    client.force_login(second_user)
+    assert second_user.state == second_user.NEW
+    response = client.post('/access/request/', {'selected-administrator': admin_user.username})
+    assertRedirects(response, '/config/')
+    second_user.refresh_from_db()
+    assert second_user.state == second_user.ACCESS_REQUESTED
+    approval_url = f"/admin/kubeportal/user/{second_user.approval_id}/approve/"
+    # Perform approval with new namespace as admin
+    response = admin_client.post(approval_url, {'choice': 'approve_create', 'approve_create_name': 'testsuitens'})
+    assertRedirects(response, '/admin/kubeportal/user/')
+    second_user.refresh_from_db()
+    assert second_user.k8s_namespace().name == 'testsuitens'
+    assert second_user.state == second_user.ACCESS_APPROVED
+    assert second_user.answered_by != None
+
+
+def test_approval_assign(admin_client, admin_user, client, second_user, mailoutbox):
+    client.force_login(second_user)
+    assert second_user.state == second_user.NEW
+    response = client.post('/access/request/', {'selected-administrator': admin_user.username})
+    assertRedirects(response, '/config/')
+    second_user.refresh_from_db()
+    assert second_user.state == second_user.ACCESS_REQUESTED
+    approval_url = f"/admin/kubeportal/user/{second_user.approval_id}/approve/"
+    # Perform approval with existing namespace as admin
+    run_minikube_sync()
+    response = admin_client.post(approval_url, {'choice': 'approve_choose', 'approve_choose_name': 'default'})
+    assertRedirects(response, '/admin/kubeportal/user/')
+    second_user.refresh_from_db()
+    assert second_user.k8s_namespace().name == 'default'
+    assert second_user.state == second_user.ACCESS_APPROVED
+    assert second_user.answered_by != None
+
+def test_approval_reject(admin_client, admin_user, client, second_user, mailoutbox):
+    client.force_login(second_user)
+    assert second_user.state == second_user.NEW
+    response = client.post('/access/request/', {'selected-administrator': admin_user.username})
+    assertRedirects(response, '/config/')
+    second_user.refresh_from_db()
+    assert second_user.state == second_user.ACCESS_REQUESTED
+    approval_url = f"/admin/kubeportal/user/{second_user.approval_id}/approve/"
+    # Perform approval with existing namespace as admin
+    response = admin_client.post(approval_url, {'choice': 'reject'})
+    assertRedirects(response, '/admin/kubeportal/user/')
+    second_user.refresh_from_db()
+    assert second_user.k8s_namespace() == None
+    assert second_user.state == second_user.ACCESS_REJECTED
+    assert second_user.answered_by != None
+
+
+def test_reject_retry(admin_client, admin_user, client, second_user, mailoutbox):
+    # First approval attempt of user
+    client.force_login(second_user)
+    response = client.post('/access/request/', {'selected-administrator': admin_user.username})
+    assertRedirects(response, '/config/')
+    approval_url = f"/admin/kubeportal/user/{second_user.approval_id}/approve/"
+
+    # Admin denies
+    response = admin_client.post(approval_url, {'choice': 'reject'})
+    assertRedirects(response, '/admin/kubeportal/user/')
+
+    # Second approval attempt of user
+    response = client.post('/access/request/', {'selected-administrator': admin_user.username})
+    assertRedirects(response, '/config/')
+
+    second_user.refresh_from_db()
+
+    assert second_user.state == second_user.ACCESS_REQUESTED
+    assert second_user.k8s_namespace() == None
+    assert second_user.answered_by == None
 
 
 def test_acess_request_view_mail_broken(admin_client, admin_user, mocker):

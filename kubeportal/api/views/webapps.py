@@ -1,14 +1,27 @@
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter, extend_schema_serializer, OpenApiExample
 from rest_framework import serializers, viewsets, mixins, generics
 
 from kubeportal.models.webapplication import WebApplication
 
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            '',
+            value={
+                'link_name': 'Grafana',
+                'link_url': 'https://monitoring.example.com',
+                'category': 'MONITORING'
+            },
+            response_only=True
+        ),
+    ]
+)
 class WebAppSerializer(serializers.ModelSerializer):
     class Meta:
         model = WebApplication
-        fields = ['link_name', 'link_url']
+        fields = ['link_name', 'link_url', 'category']
 
     def to_representation(self, data):
         data = super(WebAppSerializer, self).to_representation(data)

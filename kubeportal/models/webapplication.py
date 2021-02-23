@@ -6,7 +6,23 @@ class WebApplication(models.Model):
     """
     A web application protected and / or linked by KubePortal.
     """
+    CATEGORIES = [
+        ("GENERIC", "Generic"),
+        ("DOCUMENTATION", "Documentation"),
+        ("COMMUNICATION", "Communication"),
+        ("KUBERNETES", "Kubernetes"),
+        ("DEVELOPER", "Developer"),
+        ("DATABASE", "Database"),
+        ("MONITORING", "Monitoring")
+    ]
+
+
     name = models.CharField(max_length=100)
+    category = models.CharField(
+        max_length=255, 
+        choices=CATEGORIES, 
+        default="GENERIC",
+        help_text="Category of the web application, impacts the visual representation on the frontend.")
     link_show = models.BooleanField(
         verbose_name="Show link",
         default=False,
