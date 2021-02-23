@@ -1,4 +1,6 @@
 """
+Tests for the Kubeportal REST API.
+
 We take the more complicated way here, and implement the API tests
 with Python requests. This ensures that we are getting as close as possible
 to 'real' API clients, e.g. from JavaScript.

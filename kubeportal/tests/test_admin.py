@@ -1,3 +1,7 @@
+"""
+Tests for the Django Admin backend functionality.
+"""
+
 from unittest import skip
 
 import pytest
