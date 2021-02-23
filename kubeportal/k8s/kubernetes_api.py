@@ -202,10 +202,10 @@ def get_namespaced_services(namespace):
         services = core_v1.list_namespaced_service(namespace)
         stripped_services = []
         for svc in services.items:
+            selector = [{'key': k, 'value': v} for k,v in svc.spec.selector.items()]
             stripped_svc = {'name': svc.metadata.name,
                             'type': svc.spec.type,
-                            'selector': {'key': list(svc.spec.selector.items())[0][0], 
-                                         'value': list(svc.spec.selector.items())[0][1]},
+                            'selector': selector,
                             'creation_timestamp': svc.metadata.creation_timestamp}
             ports = []
             for port in svc.spec.ports:
@@ -218,7 +218,7 @@ def get_namespaced_services(namespace):
         return []
 
 
-def create_k8s_service(namespace: str, name: str, svc_type: str, selector: dict, ports: list):
+def create_k8s_service(namespace: str, name: str, svc_type: str, selector: list, ports: list):
     """
     Create a Kubernetes service in the cluster.
     The 'ports' parameter contains a list of dictionaries, each with the key 'port' and 'protocol'.
@@ -230,7 +230,7 @@ def create_k8s_service(namespace: str, name: str, svc_type: str, selector: dict,
         metadata=client.V1ObjectMeta(name=name),
         spec=V1ServiceSpec(
             type=svc_type,
-            selector={selector['key']: selector['value']},
+            selector={item['key']: item['value'] for item in selector},
             ports=svc_ports
         )
     )

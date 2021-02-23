@@ -453,7 +453,7 @@ def test_user_services_create(api_client, admin_user):
         response = api_client.post(f'/api/{settings.API_VERSION}/services/kube-system/', {
             'name': 'my-service',
             'type': 'NodePort',
-            'selector': {'key': 'app', 'value': 'kubeportal'},
+            'selector': [{'key': 'app', 'value': 'kubeportal'},],
             'ports': [{'port': 8000, 'protocol': 'TCP'}]
         })
         assert 201 == response.status_code
@@ -467,7 +467,7 @@ def test_user_services_create_wrong_ns(api_client):
     response = api_client.post(f'/api/{settings.API_VERSION}/services/xyz/', {
         'name': 'my-service',
         'type': 'NodePort',
-        'selector': {'key': 'app', 'value': 'kubeportal'},
+        'selector': [{'key': 'app', 'value': 'kubeportal'},],
         'ports': [{'port': 8000, 'protocol': 'TCP'}]
     })
     assert 404 == response.status_code
@@ -572,7 +572,7 @@ def test_user_services_list(api_client, admin_user):
     assert "ClusterIP" == data[0]['type']
     assert 53 == data[0]['ports'][0]['port']
     assert 53 == data[0]['ports'][1]['port']
-    assert 'k8s-app' == data[0]['selector']['key']
+    assert 'k8s-app' == data[0]['selector'][0]['key']
 
 
 def test_news_list(api_client, admin_user):
