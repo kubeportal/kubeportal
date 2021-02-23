@@ -472,22 +472,23 @@ class PortalUserAdmin(UserAdmin):
         It will use the user model's approve()/reject() functions to validate.
         After validation, the namespaces need to be created/deleted accordingly.
         '''
-        user = get_object_or_404(User, approval_id=approval_id)
-        current_ns = user.service_account.namespace if user.service_account else None
+        requesting_user = get_object_or_404(User, approval_id=approval_id)
 
         context = dict(
             self.admin_site.each_context(request),
             all_namespaces=KubernetesNamespace.objects.filter(visible=True),
-            current_ns=current_ns
+            requesting_user=requesting_user
         )
         if request.method == 'POST':
             if request.POST['choice'] == "approve_choose":
+                logger.info(f"Request for assigning '{requesting_user}' to existing namespace {request.POST['approve_choose_name']}")
                 new_ns = get_object_or_404(
                     KubernetesNamespace, name=request.POST['approve_choose_name'])
                 new_svc = get_object_or_404(
                     KubernetesServiceAccount, namespace=new_ns, name="default")
-                user.approve(request, new_svc)
+                requesting_user.approve(request, new_svc)
             if request.POST['choice'] == "approve_create":
+                logger.info(f"Request for assigning user '{requesting_user}' to new namespace {request.POST['approve_create_name']}")
                 new_ns = KubernetesNamespace(
                     name=request.POST['approve_create_name'])
                 new_ns.save()
@@ -495,15 +496,15 @@ class PortalUserAdmin(UserAdmin):
                 if k8s_sync.sync(request):
                     new_svc = get_object_or_404(
                         KubernetesServiceAccount, namespace=new_ns, name="default")
-                    if not user.approve(request, new_svc):
+                    if not requesting_user.approve(request, new_svc):
                         new_ns.delete()
             if request.POST['choice'] == "reject":
-                user.reject(request)
+                logger.info(f"Request for rejecting approval request from {requesting_user}")
+                requesting_user.reject(request)
             return redirect('admin:kubeportal_user_changelist')
         else:
-            if user.has_access_approved or user.has_access_rejected:
-                context['answered_decision'] = user.state
-                context['answered_by'] = user.answered_by
+            if requesting_user.has_access_approved or requesting_user.has_access_rejected:
+                context['answered_by'] = requesting_user.answered_by
             return TemplateResponse(request, "admin/approve.html", context)
 
     def reject_view(self, request, approval_id):

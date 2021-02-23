@@ -12,22 +12,22 @@
 <p>
 <table>
 	<tr>
-		<td>Username:</td><td>{{user.username}}</td>
+		<td>Username:</td><td>{{requesting_user.username}}</td>
 	</tr>
 	<tr>
-		<td>Real Name:</td><td>{{user.get_full_name}}</td>
+		<td>Real Name:</td><td>{{requesting_user.get_full_name}}</td>
 	</tr>
 	<tr>
-		<td>eMail:</td><td>{{user.email}}</td>
+		<td>eMail:</td><td>{{requesting_user.email}}</td>
 	</tr>
 	<tr>
-		<td>Last login:</td><td>{{user.last_login}}</td>
+		<td>Last login:</td><td>{{requesting_user.last_login}}</td>
 	</tr>
 </table>
 
 {% if answered_by != None %}
 <p>
-	Sorry, you are too late ... {{ answered_by }} already {{ answered_decision }} this request.
+	Sorry, you are too late ... '{{answered_by}}' already decided about this request.
 </p>
 
 {% else %}
@@ -46,7 +46,7 @@
 		<label style="grid-row:2;grid-column:2" for="approve_choose">Approve request, use existing Kubernetes namespace: </label> 
 		<select style="grid-row:2;grid-column:3" name="approve_choose_name">
 			{% for k8s_ns in all_namespaces %}
-			 <option value="{{k8s_ns}}" {% if current_ns == k8s_ns %}selected{% endif %}>{{k8s_ns}}</option>
+			 <option value="{{k8s_ns}}" {% if requesting_user.k8s_namespace == k8s_ns %}selected{% endif %}>{{k8s_ns}}</option>
 			{% endfor %}
 		</select>
     <input style="grid-row:3;grid-column:1" type="radio" id="reject" name="choice" value="reject" {% if not current_ns %}checked{% endif%}>
