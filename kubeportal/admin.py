@@ -409,6 +409,21 @@ class PortalUserAdmin(UserAdmin):
     actions = [reject, merge_users]
     list_filter = ()
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if not obj.service_account and obj.state == obj.ACCESS_APPROVED:
+            # The admin manually changed the namespace of an approved user,
+            # in order to "disable" the cluster access
+            obj.state = obj.ACCESS_REJECTED
+            obj.answered_by = request.user
+            obj.save()
+        if obj.service_account and not obj.state == obj.ACCESS_APPROVED:
+            # The admin manually changed the namespace of an approved user,
+            # in order to "enable" the cluster access without approval.
+            obj.state = obj.ACCESS_APPROVED
+            obj.answered_by = request.user
+            obj.save()
+
     def portal_group_list(self, instance):
         from django.urls import reverse
         html_list = []
@@ -437,9 +452,9 @@ class PortalUserAdmin(UserAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if request.user.is_superuser:
-            return []
+            return ['answered_by', 'state']
         else:
-            return ['username', 'email', 'is_superuser']
+            return ['username', 'email', 'is_superuser', 'answered_by', 'state']
 
     def has_add_permission(self, request, obj=None):
         return request.user.is_superuser
