@@ -27,51 +27,6 @@ logger = logging.getLogger('KubePortal')
 k8s_ns_uids = []
 
 
-def _sync_namespaces(request):
-    #################################################
-    # K8S namespaces -> portal namespaces
-    #################################################
-    success_count_push = 0
-    success_count_pull = 0
-
-    k8s_ns_list = api.get_namespaces()
-    if k8s_ns_list:
-        for k8s_ns in k8s_ns_list:
-            try:
-                k8s_ns_name, k8s_ns_uid = k8s_ns.metadata.name, k8s_ns.metadata.uid
-                # remember for later use
-                k8s_ns_uids.append(k8s_ns_uid)
-
-                portal_ns, created = KubernetesNamespace.objects.get_or_create(name=k8s_ns_name, uid=k8s_ns_uid)
-                if created:
-                    ns_utils.add_namespace_to_kubeportal(k8s_ns_name, portal_ns, request)
-                else:
-                    # No action needed
-                    logger.debug(f"Found existing record for Kubernetes namespace '{k8s_ns_name}'")
-                    success_count_pull += 1
-            except Exception as e:
-                logger.exception(f"Sync from Kubernetes to portal for namespace '{k8s_ns}' failed.")
-
-    #################################################
-    # portal namespaces -> K8S namespaces
-    #################################################
-    portal_ns_list = KubernetesNamespace.objects.all()
-    for portal_ns in portal_ns_list:
-        try:
-            if portal_ns.uid:
-                ns_utils.check_if_portal_ns_exists_in_k8s(request, portal_ns, k8s_ns_uids, success_count_push)
-            else:
-                # Portal namespaces without UID are new and should be created in K8S
-                ns_utils.add_namespace_to_kubernetes(portal_ns, request, api)
-        except Exception as e:
-            logger.exception(f"Sync from portal to Kubernetes for namespace '{portal_ns.name}' failed.")
-
-    if success_count_push == success_count_pull:
-        messages.success(request, "All valid namespaces are in sync.")
-
-    ns_utils.check_role_bindings_of_namespaces(request)
-
-
 def _sync_svcaccounts(request):
     #################################################
     # K8S svc accounts -> portal svc accounts
@@ -150,7 +105,8 @@ def sync(request):
     Returns True on success.
     '''
     try:
-        _sync_namespaces(request)
+        KubernetesNamespace.create_missing_in_portal()
+        KubernetesNamespace.create_missing_in_cluster()
         _sync_svcaccounts(request)
         return True
     except client.rest.ApiException as e:
