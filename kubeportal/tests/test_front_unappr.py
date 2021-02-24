@@ -82,6 +82,23 @@ def test_approval_create(admin_client, admin_user, client, second_user, mailoutb
     assert second_user.answered_by != None
 
 
+def test_approval_create_existing(admin_client, admin_user, client, second_user, mailoutbox):
+    client.force_login(second_user)
+    assert second_user.state == second_user.NEW
+    response = client.post('/access/request/', {'selected-administrator': admin_user.username})
+    assertRedirects(response, '/config/')
+    second_user.refresh_from_db()
+    assert second_user.state == second_user.ACCESS_REQUESTED
+    approval_url = f"/admin/kubeportal/user/{second_user.approval_id}/approve/"
+    # Perform approval with new namespace as admin
+    response = admin_client.post(approval_url, {'choice': 'approve_create', 'approve_create_name': 'default'})
+    assertRedirects(response, '/admin/kubeportal/user/')
+    second_user.refresh_from_db()
+    assert second_user.k8s_namespace().name == 'default'
+    assert second_user.state == second_user.ACCESS_APPROVED
+    assert second_user.answered_by != None
+
+
 def test_approval_assign(admin_client, admin_user, client, second_user, mailoutbox):
     client.force_login(second_user)
     assert second_user.state == second_user.NEW

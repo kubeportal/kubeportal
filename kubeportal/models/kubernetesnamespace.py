@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Count
 from kubeportal.k8s import kubernetes_api as api
 import logging
+import re
 
 logger = logging.getLogger('KubePortal')
 
@@ -101,7 +102,7 @@ class KubernetesNamespace(models.Model):
                 else:
                     # Portal namespace records without UID are new and should be created in K8S
                     logger.debug(f"Namespace record {portal_ns.name} has no UID, creating it in Kubernetes ...")
-                    portal_ns.create_in_cluster()
+                    portal_ns.create_in_cluster() # ignore success, continue sync in any case
             return True
         except Exception as e:
             logger.exception(f"Syncing new portal namespaces into the cluster failed.")
@@ -113,6 +114,7 @@ class KubernetesNamespace(models.Model):
         Creates a Kubernetes cluster namespace based on an existing KubernetesNamespace object.
         The namespace name in the portal database is sanitized, K8S only allows DNS names for namespaces.
         """
+        logger.debug(f"Creating namespace '{self.name}' in cluster ...")
         try:
             sanitized_name = re.sub('[^a-zA-Z0-9]', '', self.name).lower()
             if sanitized_name != self.name:
@@ -128,11 +130,10 @@ class KubernetesNamespace(models.Model):
             created_k8s_ns = api.create_k8s_ns(sanitized_name)
             self.uid = created_k8s_ns.metadata.uid
             self.save()
-            messages.success(request, "Created namespace '{0}' in Kubernetes, checking role bindings ...".format(sanitized_name))
             self.check_role_bindings()
             return True
         except Exception as e:
-            logger.exception(f"Creation of portal namespaces in the cluster failed.")
+            logger.exception(f"Creation of portal namespace in cluster failed.")
             return False
 
     def check_role_bindings(self):
@@ -181,3 +182,25 @@ class KubernetesNamespace(models.Model):
             rbac_v1.create_namespaced_role_binding(self.name, new_rolebinding)
         except Exception as e:
             logger.exception(f"Could not create role binding of namespace '{self.name}' to '{clusterrole}'")
+
+    @classmethod
+    def get_or_sync(cls, k8s_ns_name):
+        """
+        Returns a KubernetesNamespace object with the given namespace name.
+        When the object does not exist, it is assumed that the namespace only exists in the
+        cluster so far, and that a sync is needed.
+        """
+        try:
+            return cls.objects.get(name=k8s_ns_name)
+        except cls.DoesNotExist:
+            logger.debug(f"Could not find namespace {k8s_ns_name} in portal, triggering sync before next attempt.")
+            cls.create_missing_in_portal()
+            return cls.objects.get(name=k8s_ns_name)
+        except cls.MultipleObjectsReturned:
+            # We saw that happen in practice, reasons are still unclear.
+            logger.error(f"Portal database entries for namespace {k8s_ns_name} are duplicated. Deleting all but the oldest one...")
+            while cls.objects.filter(name=k8s_ns_name).count() > 1:
+                candidate = cls.objects.filter(name=k8s_ns_name).order_by('-pk')[0]
+                logger.error(f"Deleting record {candidate.pk}. Impacted service accounts: {candidate.service_accounts}")
+                candidate.delete()
+            return cls.objects.get(name=k8s_ns_name)

@@ -65,6 +65,26 @@ def create_k8s_ns(name: str):
             raise e
     return core_v1.read_namespace(name=name)
 
+def create_k8s_svca(namespace: str, name: str):
+    """
+    Create a Kubernetes service account in a namespace in the cluster.
+    An existing service account with this name in this namespace leads to a no-op.
+
+    Returns the new service account.
+    """
+    try:
+        k8s_svca = client.V1ServiceAccount(
+            api_version="v1", kind="ServiceAccount", metadata=client.V1ObjectMeta(name=name))
+        core_v1.create_namespaced_service_account(namespace=namespace, body=k8s_svca)
+        logger.info(f"Created Kubernetes service account '{namespace}:{name}'")
+    except client.rest.ApiException as e:
+        # Race condition or earlier sync error - the K8S namespace is already there
+        if e.status == 409:
+            logger.warning(f"Tried to create already existing Kubernetes service account '{namespace}:{name}'. Skipping the creation and using the existing one.")
+        else:
+            raise e
+    return core_v1.read_namespaced_service_account(namespace=namespace, name=name)
+
 
 def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, template: dict):
     """
@@ -99,6 +119,19 @@ def delete_k8s_ns(name):
         core_v1.delete_namespace(name)
     else:
         logger.error("K8S namespace deletion not allowed in production clusters")
+
+
+
+def delete_k8s_svca(name, namespace):
+    """
+    Delete the given service account in the given namespace in the cluster, but only when its Minikube.
+    """
+    if is_minikube():
+        logger.info(f"Deleting Kubernetes service account '{namespace}:{name}'")
+        core_v1.delete_namespaced_service_account(name=name, namespace=namespace)
+    else:
+        logger.error("K8S service account deletion not allowed in production clusters")
+
 
 
 def get_namespaces():
