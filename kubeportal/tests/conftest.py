@@ -3,11 +3,14 @@ Custom PyTest fixtures for this project.
 """
 
 import pytest
+import random
+import string
 from django.conf import settings
 from rest_framework.test import RequestsClient
 from django.core.cache import cache
 
 from .helpers import run_minikube_sync, admin_request
+from kubeportal.k8s import kubernetes_api as api
 from ..models.kubernetesnamespace import KubernetesNamespace
 from ..models.portalgroup import PortalGroup
 
@@ -19,6 +22,20 @@ def run_around_tests():
     """
     cache.clear()   # using the settings fixture to change to dummy cache did not work
     yield
+
+
+@pytest.fixture
+def random_namespace_name():
+    """
+    A PyTest fixture that creates a usable temporary Kubernetes namespace name for testing.
+    It is ensured that the namespace is thrown away afterwards.
+    """
+    random_name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    yield random_name
+    try:
+        api.delete_k8s_ns(random_name)
+    except:
+        pass
 
 
 @pytest.mark.usefixtures("db")

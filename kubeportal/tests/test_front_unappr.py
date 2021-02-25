@@ -66,11 +66,7 @@ def test_approval_mail(admin_client, admin_user, client, second_user, mailoutbox
     response_content = re.search('<table.*', str(response.content))[0]
     assert f"<td>Username:</td><td>{second_user.username}</td>" in response_content
 
-def test_approval_create_new(admin_client, admin_user, client, second_user, mailoutbox):
-    ns_names = [ns.metadata.name for ns in api.get_namespaces()]
-    if "testsuitens" in ns_names:
-        api.delete_k8s_ns("testsuitens")
-
+def test_approval_create_new(admin_client, admin_user, client, second_user, mailoutbox, random_namespace_name):
     client.force_login(second_user)
     assert second_user.state == second_user.NEW
     response = client.post('/access/request/', {'selected-administrator': admin_user.username})
@@ -79,10 +75,10 @@ def test_approval_create_new(admin_client, admin_user, client, second_user, mail
     assert second_user.state == second_user.ACCESS_REQUESTED
     approval_url = f"/admin/kubeportal/user/{second_user.approval_id}/approve/"
     # Perform approval with new namespace as admin
-    response = admin_client.post(approval_url, {'choice': 'approve_create', 'approve_create_name': 'testsuitens'})
+    response = admin_client.post(approval_url, {'choice': 'approve_create', 'approve_create_name': random_namespace_name})
     assertRedirects(response, '/admin/kubeportal/user/')
     second_user.refresh_from_db()
-    assert second_user.k8s_namespace().name == 'testsuitens'
+    assert second_user.k8s_namespace().name == random_namespace_name
     assert second_user.state == second_user.ACCESS_APPROVED
     assert second_user.answered_by != None
 
