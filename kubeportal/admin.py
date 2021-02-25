@@ -60,7 +60,7 @@ class KubernetesServiceAccountAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        k8s_sync.sync(request)
+        KubernetesServiceAccount.create_missing_in_cluster()
 
     def get_queryset(self, request):
         '''
@@ -247,7 +247,7 @@ class KubernetesNamespaceAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
-        k8s_sync.sync(request)
+        KubernetesNamespace.create_missing_in_cluster()
 
     def get_queryset(self, request):
         '''
