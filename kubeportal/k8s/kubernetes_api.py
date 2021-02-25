@@ -397,3 +397,51 @@ def get_memory_sum():
 
 def get_number_of_volumes():
     return len(core_v1.list_persistent_volume().items)
+
+
+def check_role_bindings(ns):
+    """
+    Check, and fix in case, the role bindings for this namespace in the cluster. The list of expected
+    cluster roles to be bound to comes from the application settings.
+
+    We only consider visible namespaces here, to prevent hitting special namespaces and giving them
+    (most likely unnecessary) additional role bindings
+    """
+    if not ns.visible:
+        logger.debug(f"Namespace '{ns.name}' is invisible, skipping role binding check.")
+        return
+
+    try:
+        rolebindings = rbac_v1.list_namespaced_role_binding(ns.name).items
+    except Exception as e:
+        logger.exception(f"Could not fetch role bindings for namespace {self}")
+        return False
+
+    # Get all cluster roles this namespace is currently bound to
+    clusterroles_active = [rolebinding.role_ref.name for rolebinding in rolebindings if
+                           rolebinding.role_ref.kind == 'ClusterRole']
+    logger.debug(f"Namespace '{ns.name}' is currently bound to cluster roles {clusterroles_active}")
+
+    # Check list of default cluster roles from settings
+    for clusterrole in settings.NAMESPACE_CLUSTERROLES:
+        if clusterrole not in clusterroles_active:
+            logger.info(f"Namespace '{ns.name}' is not bound to cluster role '{clusterrole}', fixing this ...")
+            create_role_binding(ns, clusterrole)
+
+    return True
+
+def create_role_binding(ns, clusterrole):
+    """
+    Create a role binding to the given cluster role for the given namespace in the cluster.
+    """
+    try:
+        role_ref = client.V1RoleRef(name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
+
+        # Subject for the cluster role are all service accounts in the namespace
+        subject = client.V1Subject(name="system:serviceaccounts:" + ns.name, kind="Group", api_group="rbac.authorization.k8s.io")
+        metadata = client.V1ObjectMeta(name=clusterrole)
+        new_rolebinding = client.V1RoleBinding(role_ref=role_ref, metadata=metadata, subjects=[subject, ])
+
+        rbac_v1.create_namespaced_role_binding(ns.name, new_rolebinding)
+    except Exception as e:
+        logger.exception(f"Could not create role binding of namespace '{self.name}' to '{clusterrole}'")

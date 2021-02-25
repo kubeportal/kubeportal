@@ -1,8 +1,11 @@
+from django.conf import settings
 from django.db import models
 from django.db.models import Count
 from kubeportal.k8s import kubernetes_api as api
 import logging
 import re
+
+from kubeportal.k8s.kubernetes_api import rbac_v1
 
 logger = logging.getLogger('KubePortal')
 
@@ -113,6 +116,7 @@ class KubernetesNamespace(models.Model):
         """
         Creates a Kubernetes cluster namespace based on an existing KubernetesNamespace object.
         The namespace name in the portal database is sanitized, K8S only allows DNS names for namespaces.
+        UID and role bindings are set accordingly, so all the source object needs is a name.
         """
         logger.debug(f"Creating namespace '{self.name}' in cluster ...")
         try:
@@ -130,58 +134,33 @@ class KubernetesNamespace(models.Model):
             created_k8s_ns = api.create_k8s_ns(sanitized_name)
             self.uid = created_k8s_ns.metadata.uid
             self.save()
-            self.check_role_bindings()
-            return True
+            return api.check_role_bindings(self)
         except Exception as e:
             logger.exception(f"Creation of portal namespace in cluster failed.")
             return False
 
-    def check_role_bindings(self):
+
+    @classmethod
+    def create_or_get(cls, k8s_ns_name):
         """
-        Check, and fix in case, the role bindings for this namespace in the cluster. The list of expected
-        cluster roles to be bound to comes from the application settings.
+        Returns a newly created KubernetesNamespace object with the given name,
+        assuming that it does not exist so far.
 
-        We only consider visible namespaces here, to prevent hitting special namespaces and giving them
-        (most likely unneccessary) additional role bindings
+        When the namespace already exists, this object is returned instead.
+        In any case, it is ensured that the cluster is in sync accordingly.
         """
-        if not self.visible:
-            logger.debug(f"Namespace '{self.name}' is invisible, skipping role binding check.")
-            return
+        if cls.objects.filter(name=k8s_ns_name).exists():
+            return cls.objects.get(name=k8s_ns_name)
+        else:
+            new_ns = cls(name=k8s_ns_name)
+            if new_ns.create_in_cluster():
+                # make sure that new default service account is synced
+                from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
+                KubernetesServiceAccount.create_missing_in_portal()
+                return new_ns
+            else:
+                return None
 
-        try:
-            rolebindings = rbac_v1.list_namespaced_role_binding(self.name).items
-        except Exception as e:
-            logger.exception(f"Could not fetch role bindings for namespace {self}")
-            return False
-
-        # Get all cluster roles this namespace is currently bound to
-        clusterroles_active = [rolebinding.role_ref.name for rolebinding in rolebindings if
-                               rolebinding.role_ref.kind == 'ClusterRole']
-        logger.debug(f"Namespace '{self.name}' is currently bound to cluster roles {clusterroles_active}")
-
-        # Check list of default cluster roles from settings
-        for clusterrole in settings.NAMESPACE_CLUSTERROLES:
-            if clusterrole not in clusterroles_active:
-                logger.info(f"Namespace '{self.name}' is not bound to cluster role '{clusterrole}', fixing this ...")
-                self.create_role_binding(clusterrole)
-
-        return True
-
-    def create_role_binding(self, clusterrole):
-        """
-        Create a role binding to the given cluter role for the given namespace in the cluster.
-        """
-        try:
-            role_ref = client.V1RoleRef(name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
-
-            # Subject for the cluster role are all service accounts in the namespace
-            subject = client.V1Subject(name="system:serviceaccounts:" + self.name, kind="Group", api_group="rbac.authorization.k8s.io")
-            metadata = client.V1ObjectMeta(name=clusterrole)
-            new_rolebinding = client.V1RoleBinding(role_ref=role_ref, metadata=metadata, subjects=[subject, ])
-
-            rbac_v1.create_namespaced_role_binding(self.name, new_rolebinding)
-        except Exception as e:
-            logger.exception(f"Could not create role binding of namespace '{self.name}' to '{clusterrole}'")
 
     @classmethod
     def get_or_sync(cls, k8s_ns_name):

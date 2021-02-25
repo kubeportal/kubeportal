@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
+from kubeportal.k8s import kubernetes_api as api
 from kubeportal.tests.helpers import run_minikube_sync
 from pytest_django.asserts import assertRedirects
 import re
@@ -65,7 +66,11 @@ def test_approval_mail(admin_client, admin_user, client, second_user, mailoutbox
     response_content = re.search('<table.*', str(response.content))[0]
     assert f"<td>Username:</td><td>{second_user.username}</td>" in response_content
 
-def test_approval_create(admin_client, admin_user, client, second_user, mailoutbox):
+def test_approval_create_new(admin_client, admin_user, client, second_user, mailoutbox):
+    ns_names = [ns.metadata.name for ns in api.get_namespaces()]
+    if "testsuitens" in ns_names:
+        api.delete_k8s_ns("testsuitens")
+
     client.force_login(second_user)
     assert second_user.state == second_user.NEW
     response = client.post('/access/request/', {'selected-administrator': admin_user.username})

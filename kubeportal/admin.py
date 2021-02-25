@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.conf import settings
+from django.http import HttpResponseServerError
 from django.urls import path, reverse
 from django.utils.html import format_html
 from django.shortcuts import redirect, get_object_or_404
@@ -506,15 +507,11 @@ class PortalUserAdmin(UserAdmin):
                 requesting_user.approve(request, new_svc)
             if request.POST['choice'] == "approve_create":
                 logger.info(f"Request for assigning user '{requesting_user}' to new namespace {request.POST['approve_create_name']}")
-                new_ns = KubernetesNamespace(
-                    name=request.POST['approve_create_name'])
-                new_ns.save()
-                # creates "default" service account automatically
-                if k8s_sync.sync(request):
-                    new_svc = get_object_or_404(
-                        KubernetesServiceAccount, namespace=new_ns, name="default")
-                    if not requesting_user.approve(request, new_svc):
-                        new_ns.delete()
+                ns = KubernetesNamespace.create_or_get(request.POST['approve_create_name'])
+                if not ns:
+                    return HttpResponseServerError()
+                new_svc = get_object_or_404(KubernetesServiceAccount, namespace=ns, name="default")
+                requesting_user.approve(request, new_svc)
             if request.POST['choice'] == "reject":
                 logger.info(f"Request for rejecting approval request from {requesting_user}")
                 requesting_user.reject(request)
