@@ -100,7 +100,7 @@ def test_approval_create_existing(admin_client, admin_user, client, second_user,
     assert second_user.answered_by != None
 
 
-def test_approval_assign(admin_client, admin_user, client, second_user, mailoutbox):
+def test_approval_assign_plus_comment(admin_client, admin_user, client, second_user, mailoutbox):
     client.force_login(second_user)
     assert second_user.state == second_user.NEW
     response = client.post('/access/request/', {'selected-administrator': admin_user.username})
@@ -110,11 +110,12 @@ def test_approval_assign(admin_client, admin_user, client, second_user, mailoutb
     approval_url = f"/admin/kubeportal/user/{second_user.approval_id}/approve/"
     # Perform approval with existing namespace as admin
     run_minikube_sync()
-    response = admin_client.post(approval_url, {'choice': 'approve_choose', 'approve_choose_name': 'default', 'comments': ''})
+    response = admin_client.post(approval_url, {'choice': 'approve_choose', 'approve_choose_name': 'default', 'comments': 'The intern'})
     assertRedirects(response, '/admin/kubeportal/user/')
     second_user.refresh_from_db()
     assert second_user.k8s_namespace().name == 'default'
     assert second_user.state == second_user.ACCESS_APPROVED
+    assert second_user.comments == "The intern"
     assert second_user.answered_by != None
 
 def test_approval_reject(admin_client, admin_user, client, second_user, mailoutbox):
@@ -160,3 +161,42 @@ def test_acess_request_view_mail_broken(admin_client, admin_user, mocker):
     mocker.patch('kubeportal.models.User.send_access_request', return_value=False)
     response = admin_client.post('/access/request/', {'selected-administrator': admin_user.username})
     assertRedirects(response, '/config/')
+
+
+def test_approval_groups(admin_client, admin_user, client, second_user, mailoutbox, random_namespace_name):
+    client.force_login(second_user)
+    assert second_user.state == second_user.NEW
+    response = client.post('/access/request/', {'selected-administrator': admin_user.username})
+    assertRedirects(response, '/config/')
+    second_user.refresh_from_db()
+    assert second_user.state == second_user.ACCESS_REQUESTED
+    approval_url = f"/admin/kubeportal/user/{second_user.approval_id}/approve/"
+    # We only check for non-special groups (all / K8s users) here, they are tested elsewhere
+    group1 = PortalGroup(name="Group the user does not have, and gets")
+    group1.save()
+    group2 = PortalGroup(name="Group the user already has, and keeps")
+    group2.save()
+    second_user.portal_groups.add(group2)
+    group3 = PortalGroup(name="Group the user does not have, and still don't get")
+    group3.save()
+    group4 = PortalGroup(name="Group the user already has, and looses")
+    group4.save()
+    second_user.portal_groups.add(group4)
+    # Perform approval with new namespace as admin
+    response = admin_client.post(
+        approval_url, 
+        {'choice': 'approve_create', 
+         'approve_create_name': random_namespace_name, 
+         'comments': '', 
+         'portal_groups': [group1.pk, group2.pk] 
+        }
+    )
+    assertRedirects(response, '/admin/kubeportal/user/')
+    second_user.refresh_from_db()
+    assert second_user.k8s_namespace().name == random_namespace_name
+    assert second_user.state == second_user.ACCESS_APPROVED
+    assert group1 in list(second_user.portal_groups.all())
+    assert group2 in list(second_user.portal_groups.all())
+    assert group3 not in list(second_user.portal_groups.all())
+    assert group4 not in list(second_user.portal_groups.all())
+    assert second_user.answered_by != None

@@ -522,6 +522,7 @@ class PortalUserAdmin(UserAdmin):
 
             requesting_user.comments = request.POST['comments']
 
+            requesting_user.portal_groups.clear()
             for group_id in request.POST.getlist('portal_groups'):
                 group = get_object_or_404(PortalGroup, pk=int(group_id))
                 logger.debug(f"Adding approved user {requesting_user} to group '{group}'")
