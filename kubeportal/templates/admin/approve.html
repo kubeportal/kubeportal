@@ -1,5 +1,13 @@
 {% extends "admin/base_site.html" %}
 
+{% block extrastyle %}
+<style>
+	ul li {
+		  list-style-type: none;
+	}
+</style>
+{% endblock %}
+
 {% block content %}
 <ul class="messagelist">
 {% for log in ns_logs %}
@@ -7,7 +15,7 @@
 {% endfor %}
 </ul>
 
-<h1>Request for cluster access</h1>
+<h1>Access to the Kubernetes cluster was requested by:</h1>
 
 <p>
 <table>
@@ -32,12 +40,12 @@
 
 {% else %}
 
-<h3>Please choose an option:</h3>
-
-<p>
 <form action="." method="post">
+{% csrf_token %}
+
+	<h3>Please choose an option:</h3>
+
 	<div style="display: grid; grid-auto-rows: 45px; width: 600px; align-items: center; justify-content: stretch;">
-	    {% csrf_token %}
 	    <input style="grid-row:1;grid-column:1" type="radio" id="approve_create" name="choice" value="approve_create">
     	<label style="grid-row:1;grid-column:2" for="approve_create">Approve request, create new Kubernetes namespace: </label> 
 	    <input style="grid-row:1;grid-column:3" type="text" id="approve_create_name" name="approve_create_name">
@@ -49,12 +57,24 @@
 			 <option value="{{k8s_ns}}" {% if requesting_user.k8s_namespace == k8s_ns %}selected{% endif %}>{{k8s_ns}}</option>
 			{% endfor %}
 		</select>
-    <input style="grid-row:3;grid-column:1" type="radio" id="reject" name="choice" value="reject" {% if not current_ns %}checked{% endif%}>
-	<label style="grid-row:3;grid-column:2" for="reject">Reject request</label> 
+	    <input style="grid-row:3;grid-column:1" type="radio" id="reject" name="choice" value="reject" {% if not current_ns %}checked{% endif%}>
+		<label style="grid-row:3;grid-column:2" for="reject">Reject request</label> 
 	</div>
-	<br/>
-    <input type="submit" value="Submit">
+
+	<h3>Comment about this user:</h3>
+
+	{{ user_form.comments.errors }}
+	{{ user_form.comments }}
+
+	<h3>Groups for this user:</h3>
+
+	{{ user_form.portal_groups.errors }}
+	{{ user_form.portal_groups }}
+
+    <input style="grid-row:2;grid-column:1" type="submit" value="Submit">
+
 </form>
+
 
 {% endif %}
 

@@ -9,6 +9,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth import get_user_model
 from django.template.response import TemplateResponse
 from django.utils.html import strip_tags
+from django.forms import modelformset_factory, SelectMultiple, CheckboxSelectMultiple, modelform_factory
 from oidc_provider.models import Client
 from sortedm2m_filter_horizontal_widget.forms import SortedFilteredSelectMultiple
 import logging
@@ -496,7 +497,9 @@ class PortalUserAdmin(UserAdmin):
             all_namespaces=KubernetesNamespace.objects.filter(visible=True),
             requesting_user=requesting_user
         )
+
         if request.method == 'POST':
+
             if request.POST['choice'] == "approve_choose":
                 logger.info(f"Request for assigning '{requesting_user}' to existing namespace {request.POST['approve_choose_name']}")
                 new_ns = get_object_or_404(
@@ -504,6 +507,7 @@ class PortalUserAdmin(UserAdmin):
                 new_svc = get_object_or_404(
                     KubernetesServiceAccount, namespace=new_ns, name="default")
                 requesting_user.approve(request, new_svc)
+
             if request.POST['choice'] == "approve_create":
                 logger.info(f"Request for assigning user '{requesting_user}' to new namespace {request.POST['approve_create_name']}")
                 new_ns = KubernetesNamespace(
@@ -515,11 +519,29 @@ class PortalUserAdmin(UserAdmin):
                         KubernetesServiceAccount, namespace=new_ns, name="default")
                     if not requesting_user.approve(request, new_svc):
                         new_ns.delete()
+
             if request.POST['choice'] == "reject":
                 logger.info(f"Request for rejecting approval request from {requesting_user}")
                 requesting_user.reject(request)
+
+            requesting_user.comments = request.POST['comments']
+
+            for group_id in request.POST.getlist('portal_groups'):
+                group = get_object_or_404(PortalGroup, pk=int(group_id))
+                logger.debug(f"Adding approved user {requesting_user} to group '{group}'")
+                requesting_user.portal_groups.add(group)
+
+            requesting_user.save()
+
             return redirect('admin:kubeportal_user_changelist')
         else:
+            UserForm = modelform_factory(
+                User, 
+                fields= ('comments', 'portal_groups',), 
+                widgets={'portal_groups': CheckboxSelectMultiple(attrs={'verbose_name': 'user groups'})}
+            )
+            user_form = UserForm(instance=requesting_user)
+            context['user_form'] = user_form
             if requesting_user.has_access_approved or requesting_user.has_access_rejected:
                 context['answered_by'] = requesting_user.answered_by
             return TemplateResponse(request, "admin/approve.html", context)
