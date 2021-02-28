@@ -57,52 +57,48 @@ def test_user_changelist(admin_client):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_new_external_ns_sync():
-    api.create_k8s_ns("new-external-ns1")
-    try:
-        run_minikube_sync()
-        new_ns_object = KubernetesNamespace.objects.get(
-            name="new-external-ns1")
-        assert new_ns_object.is_synced() == True
-        for svc_account in new_ns_object.service_accounts.all():
-            assert svc_account.is_synced() == True
-    finally:
-        api.delete_k8s_ns("new-external-ns1")
+def test_new_external_ns_sync(random_namespace_name):
+    api.create_k8s_ns(random_namespace_name)
+    run_minikube_sync()
+    new_ns_object = KubernetesNamespace.objects.get(
+        name=random_namespace_name)
+    assert new_ns_object.is_synced() == True
+    for svc_account in new_ns_object.service_accounts.all():
+        assert svc_account.is_synced() == True
 
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_exists_both_sides_sync():
-    api.create_k8s_ns("new-external-ns2")
-    new_ns = KubernetesNamespace(name="new-external-ns2")
+def test_exists_both_sides_sync(random_namespace_name):
+    api.create_k8s_ns(random_namespace_name)
+    new_ns = KubernetesNamespace(name=random_namespace_name)
     new_ns.save()
-    try:
-        run_minikube_sync()
-    finally:
-        api.delete_k8s_ns("new-external-ns2")
+    run_minikube_sync()
 
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_new_svc_sync():
-    default_ns = KubernetesNamespace.objects.get(name="default")
-    new_svc = KubernetesServiceAccount(name="foobar", namespace=default_ns)
+def test_new_svc_sync(random_namespace_name):
+    ns = KubernetesNamespace(name=random_namespace_name)
+    ns.save()
+    ns.create_in_cluster()
+    new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
     new_svc.save()
     run_minikube_sync()
-    svc_names = [
-        svc.metadata.name for svc in api.get_service_accounts()]
-    assert "foobar" in svc_names
-
+    svc_list = api.get_service_accounts()
+    for svc in svc_list:
+        if svc.metadata.name == "foobar" and svc.metadata.namespace == random_namespace_name:
+            return
+    assert False
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_new_ns_sync():
-    new_ns = KubernetesNamespace(name="foo")
+def test_new_ns_sync(random_namespace_name):
+    new_ns = KubernetesNamespace(name=random_namespace_name)
     new_ns.save()
     run_minikube_sync()
     ns_names = [ns.metadata.name for ns in api.get_namespaces()]
-    assert "foo" in ns_names
-
+    assert random_namespace_name in ns_names
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
@@ -115,6 +111,7 @@ def test_new_ns_broken_name_sync():
         ns_names = [ns.metadata.name for ns in api.get_namespaces()]
         assert old not in ns_names
         assert new in ns_names
+        api.delete_k8s_ns(new)
 
 
 def test_admin_index_view(admin_client):
@@ -124,7 +121,7 @@ def test_admin_index_view(admin_client):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_special_k8s_approved(rf, admin_index_request, django_user_model):
+def test_special_k8s_approved(rf, admin_index_request, django_user_model, random_namespace_name):
     # Creating an auto_add_approved group should not change its member list.
     group = PortalGroup.objects.get(special_k8s_accounts=True)
     assert group.members.count() == 0
@@ -139,7 +136,7 @@ def test_special_k8s_approved(rf, admin_index_request, django_user_model):
     # Just sending an approval request should not change to member list
     assert group.members.count() == 0
     # Prepare K8S namespace
-    ns = KubernetesNamespace(name="default")
+    ns = KubernetesNamespace(name=random_namespace_name)
     ns.save()
     new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
     new_svc.save()
@@ -151,9 +148,9 @@ def test_special_k8s_approved(rf, admin_index_request, django_user_model):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_special_k8s_unapproved(django_user_model):
+def test_special_k8s_unapproved(django_user_model, random_namespace_name):
     group = PortalGroup.objects.get(special_k8s_accounts=True)
-    ns = KubernetesNamespace(name="default")
+    ns = KubernetesNamespace(name=random_namespace_name)
     ns.save()
     new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
     new_svc.save()
@@ -238,13 +235,13 @@ def test_user_merge_access_approved(admin_index_request, django_user_model):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_user_merge_access_rejected(admin_index_request, django_user_model):
+def test_user_merge_access_rejected(admin_index_request, django_user_model, random_namespace_name):
     primary = django_user_model(
         username="HUGO",
         email="a@b.de")
     primary.save()
 
-    ns = KubernetesNamespace(name="default")
+    ns = KubernetesNamespace(name=random_namespace_name)
     ns.save()
 
     new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
@@ -279,7 +276,7 @@ def test_user_merge_access_rejected(admin_index_request, django_user_model):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_backend_cleanup_view(rf, admin_user):
+def test_backend_cleanup_view(rf, admin_user, random_namespace_name):
     User = get_user_model()
     u = User(
         username="HUGO",
@@ -290,7 +287,7 @@ def test_backend_cleanup_view(rf, admin_user):
     u.last_login = parse("2017-09-23 11:21:52.909020 +02:00")
     u.save()
 
-    ns = KubernetesNamespace(name="aaasdfadfasdfasdf", visible=True)
+    ns = KubernetesNamespace(name=random_namespace_name)
     ns.save()
 
     new_svc = KubernetesServiceAccount(name="foobar", namespace=ns)
@@ -301,11 +298,11 @@ def test_backend_cleanup_view(rf, admin_user):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
-def test_backend_cleanup_entitity_getters(django_user_model, admin_user):
+def test_backend_cleanup_entitity_getters(django_user_model, admin_user, random_namespace_name):
     admin_user.last_login = parse("2017-09-23 11:21:52.909020 +02:00")
     admin_user.save()
 
-    ns = KubernetesNamespace(name="asdfadfasdfasdf", visible=True)
+    ns = KubernetesNamespace(name=random_namespace_name)
     ns.save()
 
     assert admin_user in django_user_model.inactive_users()

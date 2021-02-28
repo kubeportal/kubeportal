@@ -40,7 +40,7 @@ def run_minikube_sync():
     messages = FallbackStorage(request)
     setattr(request, '_messages', messages)
 
-    k8s_sync.sync(request)
+    assert k8s_sync.sync(request) == True
 
 
 def admin_request(rf, admin_user, rel_url):
