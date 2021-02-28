@@ -85,24 +85,31 @@ def test_exists_both_sides_sync():
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
 def test_new_svc_sync():
+    svc_list = api.get_service_accounts()
+    for svc in svc_list:
+        if svc.metadata.name == "foobar" and svc.metadata.namespace == "default":
+            api.delete_k8s_svca(svc.metadata.name, svc.metadata.namespace)
+            break
     default_ns = KubernetesNamespace.objects.get(name="default")
     new_svc = KubernetesServiceAccount(name="foobar", namespace=default_ns)
     new_svc.save()
     run_minikube_sync()
-    svc_names = [
-        svc.metadata.name for svc in api.get_service_accounts()]
-    assert "foobar" in svc_names
-
+    for svc in svc_list:
+        if svc.metadata.name == "foobar" and svc.metadata.namespace == "default":
+            return
+    assert False
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
 def test_new_ns_sync():
+    ns_names = [ns.metadata.name for ns in api.get_namespaces()]
+    if "foo" in ns_names:
+        api.delete_k8s_ns("foo")
     new_ns = KubernetesNamespace(name="foo")
     new_ns.save()
     run_minikube_sync()
     ns_names = [ns.metadata.name for ns in api.get_namespaces()]
     assert "foo" in ns_names
-
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("minikube_sync")
