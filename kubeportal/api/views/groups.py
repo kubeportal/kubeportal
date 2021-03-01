@@ -1,6 +1,6 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
-from rest_framework import serializers, viewsets, mixins, generics
+from rest_framework import serializers, generics
 
 from kubeportal.models.portalgroup import PortalGroup
 

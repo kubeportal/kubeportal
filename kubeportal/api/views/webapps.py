@@ -1,6 +1,7 @@
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter, extend_schema_serializer, OpenApiExample
-from rest_framework import serializers, viewsets, mixins, generics
+from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter, extend_schema_serializer, \
+    OpenApiExample
+from rest_framework import serializers, generics
 
 from kubeportal.models.webapplication import WebApplication
 
@@ -27,10 +28,10 @@ class WebAppSerializer(serializers.ModelSerializer):
         data = super(WebAppSerializer, self).to_representation(data)
         link = data["link_url"]
         try:
-            ns  = self.context["request"].user.service_account.namespace.name
+            ns = self.context["request"].user.service_account.namespace.name
             svc = self.context["request"].user.service_account.name
         except:
-            ns  = ""
+            ns = ""
             svc = ""
         link = link.replace("{{{{namespace}}}}", ns).replace("{{{{serviceaccount}}}}", svc)
         data["link_url"] = link

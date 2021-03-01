@@ -25,8 +25,6 @@ class DeploymentsView(generics.ListCreateAPIView):
             # https://lockmedown.com/when-should-you-return-404-instead-of-403-http-status-code/
             raise NotFound
 
-
-
     @extend_schema(
         summary="Create a deployment in a namespace."
     )

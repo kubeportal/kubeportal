@@ -1,7 +1,8 @@
 from drf_spectacular.utils import extend_schema, extend_schema_serializer, OpenApiExample
-from rest_framework import serializers, mixins, viewsets, generics
+from rest_framework import serializers, generics
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+
 from kubeportal.k8s import kubernetes_api as api
 
 

@@ -3,13 +3,22 @@
   <component name="ChangeListManager">
     <list default="true" id="9f525e2b-06cc-4b3e-bd05-de80d9c4b9c7" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/admin.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/admin.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/templates/admin/approve.html" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/templates/admin/approve.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/deployments.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/deployments.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/groups.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/groups.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/news.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/news.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/users.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/webapps.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/webapps.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectId" id="1njjZTToCqutNnrTDvetrWmrUXk" />
   <component name="ProjectStartupLocalConfiguration">
@@ -27,17 +36,75 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$/Makefile" />
     <property name="settings.editor.selected.configurable" value="preferences.keymap" />
   </component>
-  <component name="RunManager" selected="Python tests.pytest in tests">
+  <component name="RunManager" selected="Python tests.pytest for kubeportal.tests.test_api">
     <configuration name="Prepare tests" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile">
       <makefile filename="$PROJECT_DIR$/Makefile" target="minikube-start" workingDirectory="" arguments="">
         <envs />
       </makefile>
       <method v="2" />
     </configuration>
+    <configuration name="pytest for kubeportal.tests" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="kubeportal" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/kubeportal/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;kubeportal.tests&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest for kubeportal.tests.test_api" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="kubeportal" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/kubeportal/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;kubeportal.tests.test_api&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest in test_api.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="kubeportal" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/kubeportal/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/kubeportal/tests/test_api.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
     <list>
       <item itemvalue="Makefile.Prepare tests" />
       <item itemvalue="Python tests.pytest in tests" />
+      <item itemvalue="Python tests.pytest in test_api.py" />
+      <item itemvalue="Python tests.pytest for kubeportal.tests" />
+      <item itemvalue="Python tests.pytest for kubeportal.tests.test_api" />
     </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.pytest for kubeportal.tests.test_api" />
+        <item itemvalue="Python tests.pytest for kubeportal.tests" />
+        <item itemvalue="Python tests.pytest in test_api.py" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -55,17 +122,17 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/kubeportal/api/views/webapps.py</url>
-          <line>14</line>
+          <line>41</line>
           <option name="timeStamp" value="16" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/kubeportal/k8s/kubernetes_api.py</url>
-          <line>283</line>
+          <line>323</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/kubeportal/k8s/kubernetes_api.py</url>
-          <line>248</line>
+          <line>285</line>
           <option name="timeStamp" value="18" />
         </line-breakpoint>
       </breakpoints>

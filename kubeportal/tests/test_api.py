@@ -17,7 +17,6 @@ import os
 
 from django.conf import settings
 from django.test import override_settings
-from kubernetes import utils as k8s_utils
 
 from kubeportal.api.views import ClusterInfoView
 from kubeportal.k8s import kubernetes_api as api
@@ -60,17 +59,16 @@ def test_api_login(api_client_anon, admin_user):
     # self.assertEqual(cookie['kubeportal-auth']['samesite'], 'Lax,')
     # self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
     data = response.json()
-    assert 5 == len(data)
-    assert 'group_ids' in data
-    assert 'webapp_ids' in data
-    assert 'user_id' in data
+    assert 3 == len(data)
+    assert 'user' in data
     assert 'access_token' in data
-    assert 'k8s_namespace' in data
-    assert data['user_id'] == admin_user.pk
+    assert 'refresh_token' in data
+    assert str(admin_user.pk) in data['user']
 
 
 def test_api_wrong_login(api_client_anon):
-    response = api_client_anon.post(f'/api/{settings.API_VERSION}/login/', {'username': 'username', 'password': 'blabla'})
+    response = api_client_anon.post(f'/api/{settings.API_VERSION}/login/',
+                                    {'username': 'username', 'password': 'blabla'})
     assert response.status_code == 400
 
 
@@ -150,12 +148,6 @@ def test_services_denied(api_client_anon):
     assert response.status_code == 401
 
 
-def test_logout(api_client_anon):
-    # logout should work anyway, even when nobody is logged in
-    response = api_client_anon.post(f'/api/{settings.API_VERSION}/logout/')
-    assert response.status_code == 200
-
-
 def test_options_preflight_without_auth(api_client_anon, admin_user, admin_group):
     test_path = [('/api/', 'GET'),
                  (f'/api/{settings.API_VERSION}/users/{admin_user.pk}', 'GET'),
@@ -181,7 +173,8 @@ def test_invalid_google_login(api_client_anon):
     We have no valid OAuth credentials when running the test suite, but at least
     we can check that no crash happens when using this API call with fake data.
     """
-    response = api_client_anon.post(f'/api/{settings.API_VERSION}/login_google/', {'access_token': 'foo', 'code': 'bar'})
+    response = api_client_anon.post(f'/api/{settings.API_VERSION}/login_google/',
+                                    {'access_token': 'foo', 'code': 'bar'})
     assert response.status_code == 400
 
 
@@ -310,10 +303,10 @@ def test_user(api_client, admin_user_with_k8s_system):
         assert key in data
 
     assert data["user_id"] == 1
-    assert data["group_ids"] == [1]
+    assert len(data["portal_groups"]) > 0   # all users group, at least
+    assert "http://testserver/api/" in data["portal_groups"][0]
     assert data['all_emails'] == ['admin@example.com']
-    assert data['k8s_accounts'] == [{'namespace': 'kube-system', 'service_account': 'default'},]
-
+    assert data['k8s_accounts'] == [{'namespace': 'kube-system', 'service_account': 'default'}, ]
 
 
 def test_patch_user(api_client, admin_user):
@@ -325,8 +318,9 @@ def test_patch_user(api_client, admin_user):
     assert updated_primary_email == data_mock['primary_email']
     assert response.status_code == 200
 
+
 def test_user_all_email_adrs(api_client, admin_user):
-    admin_user.email ="a@b.de"
+    admin_user.email = "a@b.de"
     admin_user.alt_mails = ["c@d.de", "e@f.de"]
     admin_user.save()
 
@@ -335,6 +329,7 @@ def test_user_all_email_adrs(api_client, admin_user):
     all_emails = json.loads(response.text)['all_emails']
     assert all_emails == ["a@b.de", "c@d.de", "e@f.de"]
     assert response.status_code == 200
+
 
 def test_user_all_email_adrs_empty_alt(api_client, admin_user):
     admin_user.alt_mails = None
@@ -421,21 +416,21 @@ def test_user_deployments_create(api_client, admin_user):
     old_count = len(api.get_namespaced_deployments("kube-system"))
     try:
         response = api_client.post(f'/api/{settings.API_VERSION}/deployments/kube-system/',
-                             {'name': 'test-deployment',
-                              'replicas': 1,
-                              'matchLabels': [
-                                  {'key': 'app', 'value': 'webapp'},
-                              ],
-                              'template': {
-                                  'name': 'webapp',
-                                  'labels': [
-                                      {'key': 'app', 'value': 'webapp'},
-                                  ],
-                                  'containers': [{
-                                      'name': 'busybox',
-                                      'image': 'busybox'
-                                  }, ]
-                              }})
+                                   {'name': 'test-deployment',
+                                    'replicas': 1,
+                                    'matchLabels': [
+                                        {'key': 'app', 'value': 'webapp'},
+                                    ],
+                                    'template': {
+                                        'name': 'webapp',
+                                        'labels': [
+                                            {'key': 'app', 'value': 'webapp'},
+                                        ],
+                                        'containers': [{
+                                            'name': 'busybox',
+                                            'image': 'busybox'
+                                        }, ]
+                                    }})
         assert 201 == response.status_code
         new_count = len(api.get_namespaced_deployments("kube-system"))
         assert old_count + 1 == new_count
@@ -453,7 +448,7 @@ def test_user_services_create(api_client, admin_user):
         response = api_client.post(f'/api/{settings.API_VERSION}/services/kube-system/', {
             'name': 'my-service',
             'type': 'NodePort',
-            'selector': [{'key': 'app', 'value': 'kubeportal'},],
+            'selector': [{'key': 'app', 'value': 'kubeportal'}, ],
             'ports': [{'port': 8000, 'protocol': 'TCP'}]
         })
         assert 201 == response.status_code
@@ -467,7 +462,7 @@ def test_user_services_create_wrong_ns(api_client):
     response = api_client.post(f'/api/{settings.API_VERSION}/services/xyz/', {
         'name': 'my-service',
         'type': 'NodePort',
-        'selector': [{'key': 'app', 'value': 'kubeportal'},],
+        'selector': [{'key': 'app', 'value': 'kubeportal'}, ],
         'ports': [{'port': 8000, 'protocol': 'TCP'}]
     })
     assert 404 == response.status_code
@@ -481,27 +476,27 @@ def test_user_ingresses_create(api_client, admin_user):
     old_count = len(api.get_namespaced_ingresses("kube-system"))
     try:
         response = api_client.post(f'/api/{settings.API_VERSION}/ingresses/kube-system/',
-         {
-            'name': 'my-ingress',
-            'annotations': [
-                {'key': 'nginx.ingress.kubernetes.io/rewrite-target', 'value': '/'}
-            ],
-            'tls': True,
-            'rules': [
-                {'host': 'www.example.com',
-                 'paths': [
-                    {'path': '/svc',
-                     'service_name': 'my-svc',
-                     'service_port': 8000
-                    },
-                    {'path': '/docs',
-                     'service_name': 'my-docs-svc',
-                     'service_port': 5000
-                    }
-                  ]
-                }
-            ]
-        })
+                                   {
+                                       'name': 'my-ingress',
+                                       'annotations': [
+                                           {'key': 'nginx.ingress.kubernetes.io/rewrite-target', 'value': '/'}
+                                       ],
+                                       'tls': True,
+                                       'rules': [
+                                           {'host': 'www.example.com',
+                                            'paths': [
+                                                {'path': '/svc',
+                                                 'service_name': 'my-svc',
+                                                 'service_port': 8000
+                                                 },
+                                                {'path': '/docs',
+                                                 'service_name': 'my-docs-svc',
+                                                 'service_port': 5000
+                                                 }
+                                            ]
+                                            }
+                                       ]
+                                   })
 
         assert 201 == response.status_code
         new_count = len(api.get_namespaced_ingresses("kube-system"))
@@ -512,47 +507,47 @@ def test_user_ingresses_create(api_client, admin_user):
 
 def test_user_deployments_create_wrong_ns(api_client):
     response = api_client.post(f'/api/{settings.API_VERSION}/deployments/xyz/',
-                         {'name': 'test-deployment',
-                          'replicas': 1,
-                          'matchLabels': [
-                              {'key': 'app', 'value': 'webapp'},
-                          ],
-                          'template': {
-                              'name': 'webapp',
-                              'labels': [
-                                  {'key': 'app', 'value': 'webapp'},
-                              ],
-                              'containers': [{
-                                  'name': 'busybox',
-                                  'image': 'busybox'
-                              }, ]
-                          }})
+                               {'name': 'test-deployment',
+                                'replicas': 1,
+                                'matchLabels': [
+                                    {'key': 'app', 'value': 'webapp'},
+                                ],
+                                'template': {
+                                    'name': 'webapp',
+                                    'labels': [
+                                        {'key': 'app', 'value': 'webapp'},
+                                    ],
+                                    'containers': [{
+                                        'name': 'busybox',
+                                        'image': 'busybox'
+                                    }, ]
+                                }})
     assert 404 == response.status_code
 
 
 def test_user_ingresses_create_wrong_ns(api_client):
     response = api_client.post(f'/api/{settings.API_VERSION}/ingresses/xyz/',
-     {
-        'name': 'my-ingress',
-        'annotations': [
-            {'key': 'nginx.ingress.kubernetes.io/rewrite-target', 'value': '/'}
-        ],
-        'tls': True,
-        'rules': [
-            {'host': 'www.example.com',
-             'paths': [
-                {'path': '/svc',
-                 'service_name': 'my-svc',
-                 'service_port': 8000
-                },
-                {'path': '/docs',
-                 'service_name': 'my-docs-svc',
-                 'service_port': 5000
-                }
-              ]
-            }
-        ]
-    })
+                               {
+                                   'name': 'my-ingress',
+                                   'annotations': [
+                                       {'key': 'nginx.ingress.kubernetes.io/rewrite-target', 'value': '/'}
+                                   ],
+                                   'tls': True,
+                                   'rules': [
+                                       {'host': 'www.example.com',
+                                        'paths': [
+                                            {'path': '/svc',
+                                             'service_name': 'my-svc',
+                                             'service_port': 8000
+                                             },
+                                            {'path': '/docs',
+                                             'service_name': 'my-docs-svc',
+                                             'service_port': 5000
+                                             }
+                                        ]
+                                        }
+                                   ]
+                               })
     assert 404 == response.status_code
 
 
@@ -640,4 +635,10 @@ def test_ingresshosts_list(api_client, admin_user_with_k8s):
 
 def test_logout(api_client, admin_user):
     response = api_client.post(f'/api/{settings.API_VERSION}/logout/')
+    assert response.status_code == 200
+
+
+def test_logout_anon(api_client_anon):
+    # logout should work anyway, even when nobody is logged in
+    response = api_client_anon.post(f'/api/{settings.API_VERSION}/logout/')
     assert response.status_code == 200

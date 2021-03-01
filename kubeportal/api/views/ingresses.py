@@ -19,16 +19,16 @@ from kubeportal.k8s import kubernetes_api as api
                 'rules': [
                     {'host': 'www.example.com',
                      'paths': [
-                        {'path': '/svc',
-                         'service_name': 'my-svc',
-                         'service_port': 8000
-                        },
-                        {'path': '/docs',
-                         'service_name': 'my-docs-svc',
-                         'service_port': 5000
-                        }
-                      ]
-                    }
+                         {'path': '/svc',
+                          'service_name': 'my-svc',
+                          'service_port': 8000
+                          },
+                         {'path': '/docs',
+                          'service_name': 'my-docs-svc',
+                          'service_port': 5000
+                          }
+                     ]
+                     }
                 ]
             }
         ),

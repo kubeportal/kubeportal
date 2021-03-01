@@ -1,29 +1,30 @@
 from drf_spectacular.utils import extend_schema_view, extend_schema
-from rest_framework import serializers, mixins, viewsets, generics
+from rest_framework import serializers, generics
 
 from kubeportal.api.views.tools import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(read_only = True)
-    portal_groups = serializers.HyperlinkedRelatedField(many=True, view_name='group', lookup_url_kwarg='group_id', read_only=True)
-    #webapps = serializers.HyperlinkedRelatedField(many=True, view_name='webapplication', lookup_url_kwarg='webapp_id', read_only=True)
+    user_id = serializers.IntegerField(read_only=True)
+    portal_groups = serializers.HyperlinkedRelatedField(many=True, view_name='group', lookup_url_kwarg='group_id',
+                                                        read_only=True)
+    # webapps = serializers.HyperlinkedRelatedField(many=True, view_name='webapplication', lookup_url_kwarg='webapp_id', read_only=True)
     firstname = serializers.CharField(source='first_name')
     name = serializers.CharField(source='last_name')
-    username = serializers.CharField(read_only = True)
+    username = serializers.CharField(read_only=True)
     primary_email = serializers.EmailField(source='email')
-    admin = serializers.BooleanField(source='is_staff', read_only = True)
-    all_emails = serializers.ListField(read_only = True)
-    k8s_accounts = serializers.ListField(read_only = True,
-        child = serializers.DictField(read_only = True,
-          child = serializers.CharField(read_only = True)))
-    k8s_token = serializers.CharField(source='token', read_only = True)
+    admin = serializers.BooleanField(source='is_staff', read_only=True)
+    all_emails = serializers.ListField(read_only=True)
+    k8s_accounts = serializers.ListField(read_only=True,
+                                         child=serializers.DictField(read_only=True,
+                                                                     child=serializers.CharField(read_only=True)))
+    k8s_token = serializers.CharField(source='token', read_only=True)
 
     class Meta:
         model = User
         fields = ('user_id',
                   'portal_groups',
-                  #'webapps',
+                  # 'webapps',
                   'firstname',
                   'name',
                   'username',
