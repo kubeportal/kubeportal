@@ -1,31 +1,9 @@
 from drf_spectacular.utils import OpenApiExample, extend_schema_serializer, extend_schema
 from rest_framework import serializers
+
 from dj_rest_auth.serializers import LoginSerializer as OriginalLoginSerializer
 from dj_rest_auth.serializers import JWTSerializer as OriginalJWTSerializer
-
 from dj_rest_auth.views import LoginView as OriginalLoginView
-
-class JWTSerializer(OriginalJWTSerializer):   # modify returned data structure from library
-    user_id = serializers.IntegerField()
-    group_ids = serializers.ListField(
-        child = serializers.IntegerField()
-    )
-    webapp_ids = serializers.ListField(
-        child = serializers.IntegerField()
-    )
-    k8s_namespace = serializers.CharField()
-    access_token = serializers.CharField()
-
-    def to_representation(self, instance):
-        user = instance['user']
-        k8s_namespace = user.k8s_namespace()        
-
-        return {'user_id': user.user_id(),
-                'group_ids': user.group_ids(),
-                'webapp_ids': user.webapp_ids(),
-                'k8s_namespace': k8s_namespace.name if k8s_namespace else "",
-                'access_token': str(instance['access_token'])
-                }
 
 
 @extend_schema_serializer(
@@ -54,6 +32,10 @@ class LoginSerializer(OriginalLoginSerializer): # remove third optional field fr
     username = serializers.CharField()
     password = serializers.CharField()
 
+class JWTSerializer(OriginalJWTSerializer):
+    access_token = serializers.CharField()
+    refresh_token = serializers.CharField()
+    user = serializers.HyperlinkedRelatedField(view_name='user', lookup_url_kwarg='user_id', read_only=True)
 
 @extend_schema(
     summary="Perform API login with username and password.",
@@ -63,4 +45,5 @@ class LoginView(OriginalLoginView):
     serializer_class = LoginSerializer
 
     def get_response_serializer(self):
+        # not using settings.py for the overloading, but this, avoids a circular import
         return JWTSerializer

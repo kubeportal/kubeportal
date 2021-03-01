@@ -6,12 +6,8 @@ from kubeportal.api.views.tools import User
 
 class UserSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(read_only = True)
-    group_ids = serializers.ListField(read_only = True,
-        child = serializers.IntegerField()
-    )
-    webapp_ids = serializers.ListField(read_only = True,
-        child = serializers.IntegerField()
-    )
+    portal_groups = serializers.HyperlinkedRelatedField(many=True, view_name='group', lookup_url_kwarg='group_id', read_only=True)
+    #webapps = serializers.HyperlinkedRelatedField(many=True, view_name='webapplication', lookup_url_kwarg='webapp_id', read_only=True)
     firstname = serializers.CharField(source='first_name')
     name = serializers.CharField(source='last_name')
     username = serializers.CharField(read_only = True)
@@ -26,8 +22,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('user_id',
-                  'group_ids',
-                  'webapp_ids',
+                  'portal_groups',
+                  #'webapps',
                   'firstname',
                   'name',
                   'username',

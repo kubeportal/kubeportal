@@ -76,18 +76,11 @@ class User(AbstractUser):
         """
         return [self.email, *self.alt_mails]
 
-
-    def group_ids(self):
+    def webapps(self):
         """
         Used as property by the API serializer.
         """
-        return [group.pk for group in self.portal_groups.all()]        
-
-    def webapp_ids(self):
-        """
-        Used as property by the API serializer.
-        """
-        return [webapp.pk for webapp in self.web_applications(False)]        
+        return self.web_applications(False)        
 
 
     def k8s_accounts(self):
