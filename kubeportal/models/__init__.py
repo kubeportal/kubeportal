@@ -106,6 +106,16 @@ class User(AbstractUser):
         else:
             return KubernetesNamespace.objects.none()
 
+    def k8s_namespace_names(self):
+        """
+        Used as property by the API serializer.
+        Prepared for future support of multiple namespaces per user.
+        """
+        if self.service_account:
+            return KubernetesNamespace.objects.filter(pk = self.service_account.namespace.pk).values_list('name', flat=True)
+        else:
+            return KubernetesNamespace.objects.none()
+
 
     def has_namespace(self, namespace):
         """

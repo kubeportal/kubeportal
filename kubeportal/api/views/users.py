@@ -15,6 +15,8 @@ class UserSerializer(serializers.ModelSerializer):
     admin = serializers.BooleanField(source='is_staff', read_only=True)
     all_emails = serializers.ListField(read_only=True)
     k8s_accounts = serializers.HyperlinkedRelatedField(many=True, view_name='serviceaccount', lookup_url_kwarg='uid', lookup_field='uid', read_only=True)
+    k8s_namespaces = serializers.HyperlinkedRelatedField(many=True, view_name='namespace', lookup_url_kwarg='name', lookup_field='name', read_only=True)
+    k8s_namespace_names = serializers.ListField(read_only=True)
     k8s_token = serializers.CharField(source='token', read_only=True)
 
     class Meta:
@@ -28,6 +30,8 @@ class UserSerializer(serializers.ModelSerializer):
                   'admin',
                   'all_emails',
                   'k8s_accounts',
+                  'k8s_namespaces',
+                  'k8s_namespace_names',
                   'k8s_token')
 
 

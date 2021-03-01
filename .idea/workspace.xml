@@ -2,16 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f525e2b-06cc-4b3e-bd05-de80d9c4b9c7" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/kubeportal/api/views/namespaces.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/kubeportal/api/views/serviceaccounts.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/api/views/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/users.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/models/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_front_unappr.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_front_unappr.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/urls.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -166,7 +159,14 @@
       <option name="project" value="LOCAL" />
       <updated>1614596571985</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="More API hyperlinks, add service accounts and namespaces as resources">
+      <created>1614605045597</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1614605045597</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -183,7 +183,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="PEP-8, fix tests" />
     <MESSAGE value="Hyperlinks for webapps" />
-    <option name="LAST_COMMIT_MESSAGE" value="Hyperlinks for webapps" />
+    <MESSAGE value="More API hyperlinks, add service accounts and namespaces as resources" />
+    <option name="LAST_COMMIT_MESSAGE" value="More API hyperlinks, add service accounts and namespaces as resources" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
