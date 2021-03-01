@@ -78,7 +78,7 @@ def test_approval_create_new(admin_client, admin_user, client, second_user, mail
     response = admin_client.post(approval_url, {'choice': 'approve_create', 'approve_create_name': random_namespace_name, 'comments': ''})
     assertRedirects(response, '/admin/kubeportal/user/')
     second_user.refresh_from_db()
-    assert second_user.k8s_namespace().name == random_namespace_name
+    assert second_user.k8s_namespaces()[0].name == random_namespace_name
     assert second_user.state == second_user.ACCESS_APPROVED
     assert second_user.answered_by != None
 
@@ -111,7 +111,7 @@ def test_approval_create_existing(admin_client, admin_user, client, second_user,
     response = admin_client.post(approval_url, {'choice': 'approve_create', 'approve_create_name': 'default', 'comments': ''})
     assertRedirects(response, '/admin/kubeportal/user/')
     second_user.refresh_from_db()
-    assert second_user.k8s_namespace().name == 'default'
+    assert second_user.k8s_namespaces()[0].name == 'default'
     assert second_user.state == second_user.ACCESS_APPROVED
     assert second_user.answered_by != None
 
@@ -129,7 +129,7 @@ def test_approval_assign_plus_comment(admin_client, admin_user, client, second_u
     response = admin_client.post(approval_url, {'choice': 'approve_choose', 'approve_choose_name': 'default', 'comments': 'The intern'})
     assertRedirects(response, '/admin/kubeportal/user/')
     second_user.refresh_from_db()
-    assert second_user.k8s_namespace().name == 'default'
+    assert second_user.k8s_namespaces()[0].name == 'default'
     assert second_user.state == second_user.ACCESS_APPROVED
     assert second_user.comments == "The intern"
     assert second_user.answered_by != None
@@ -146,7 +146,7 @@ def test_approval_reject(admin_client, admin_user, client, second_user, mailoutb
     response = admin_client.post(approval_url, {'choice': 'reject', 'comments': ''})
     assertRedirects(response, '/admin/kubeportal/user/')
     second_user.refresh_from_db()
-    assert second_user.k8s_namespace() == None
+    assert len(second_user.k8s_namespaces()) == 0
     assert second_user.state == second_user.ACCESS_REJECTED
     assert second_user.answered_by != None
 
@@ -169,7 +169,7 @@ def test_reject_retry(admin_client, admin_user, client, second_user, mailoutbox)
     second_user.refresh_from_db()
 
     assert second_user.state == second_user.ACCESS_REQUESTED
-    assert second_user.k8s_namespace() == None
+    assert len(second_user.k8s_namespaces()) == 0
     assert second_user.answered_by == None
 
 
@@ -209,7 +209,7 @@ def test_approval_groups(admin_client, admin_user, client, second_user, mailoutb
     )
     assertRedirects(response, '/admin/kubeportal/user/')
     second_user.refresh_from_db()
-    assert second_user.k8s_namespace().name == random_namespace_name
+    assert second_user.k8s_namespaces()[0].name == random_namespace_name
     assert second_user.state == second_user.ACCESS_APPROVED
     assert group1 in list(second_user.portal_groups.all())
     assert group2 in list(second_user.portal_groups.all())

@@ -11,8 +11,8 @@ from .helpers import create_group, apply_k8s_yml
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/'
 
 
-def test_user_k8s_namespace(admin_user_with_k8s):
-    assert admin_user_with_k8s.k8s_namespace().name == "default"
+def test_user_k8s_namespaces(admin_user_with_k8s):
+    assert admin_user_with_k8s.k8s_namespaces()[0].name == "default"
 
 def test_user_inactive_users(admin_user):
     assert admin_user.inactive_users() == []

@@ -14,9 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
     primary_email = serializers.EmailField(source='email')
     admin = serializers.BooleanField(source='is_staff', read_only=True)
     all_emails = serializers.ListField(read_only=True)
-    k8s_accounts = serializers.ListField(read_only=True,
-                                         child=serializers.DictField(read_only=True,
-                                                                     child=serializers.CharField(read_only=True)))
+    k8s_accounts = serializers.HyperlinkedRelatedField(many=True, view_name='serviceaccount', lookup_url_kwarg='uid', lookup_field='uid', read_only=True)
     k8s_token = serializers.CharField(source='token', read_only=True)
 
     class Meta:

@@ -1,6 +1,5 @@
 from django.conf.urls import include
 from django.urls import path
-from django.conf import settings
 from django.views.decorators.cache import cache_page
 from django.views.generic.base import RedirectView
 from oidc_provider.views import ProviderInfoView
@@ -9,8 +8,6 @@ from dj_rest_auth import views as dj_rest_views
 from kubeportal import views
 from kubeportal.api import views as api_views
 from kubeportal.admin import admin_site
-
-from rest_framework import permissions, routers
 
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
@@ -32,7 +29,7 @@ urlpatterns = [
     # frontend auth provider views
     # Note: The OpenID Connect URL is /oidc/authorize
     path('subauthreq/<int:webapp_pk>/', cache_page(60 * 15)(views.SubAuthRequestView.as_view()), name='subauthreq'),
-    #path('subauthreq/<int:webapp_pk>/', views.SubAuthRequestView.as_view(), name='subauthreq'),
+    # path('subauthreq/<int:webapp_pk>/', views.SubAuthRequestView.as_view(), name='subauthreq'),
     path('oidc/', include('oidc_provider.urls', namespace='oidc_provider')),
     path('.well-known/openid-configuration', ProviderInfoView.as_view(), name='provider_info'),
 
@@ -42,6 +39,8 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 
     path('api/<str:version>/users/<int:user_id>/', api_views.UserView.as_view(), name='user'),
+    path('api/<str:version>/namespaces/<str:name>/', api_views.NamespaceView.as_view(), name='namespace'),
+    path('api/<str:version>/serviceaccounts/<str:uid>/', api_views.ServiceAccountView.as_view(), name='serviceaccount'),
     path('api/<str:version>/groups/<int:group_id>/', api_views.GroupView.as_view(), name='group'),
     path('api/<str:version>/webapps/<int:webapp_id>/', api_views.WebAppView.as_view(), name='webapplication'),
     path('api/<str:version>/pods/<str:namespace>/', api_views.PodsView.as_view(), name='pods'),

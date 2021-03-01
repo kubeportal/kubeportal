@@ -261,6 +261,44 @@ def test_webapp_placeholders(api_client, admin_group, admin_user_with_k8s_system
     assert data['link_url'] == 'http://www.heise.de/kube-system/default'
 
 
+def test_namespace(api_client, admin_group, admin_user_with_k8s_system):
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/')
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data['name'] == 'kube-system'
+
+
+def test_namespace_no_permission(api_client, admin_user_with_k8s_system):
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/')
+    assert response.status_code == 404
+
+
+def test_namespace_illegal(api_client, admin_user_with_k8s_system):
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/blub/')
+    assert response.status_code == 404
+
+
+def test_serviceaccount(api_client, admin_group, admin_user_with_k8s_system):
+    response = api_client.get(f'/api/{settings.API_VERSION}/serviceaccounts/{admin_user_with_k8s_system.service_account.uid}/')
+    assert response.status_code == 200
+
+
+def test_serviceaccount_no_permission(api_client, admin_user_with_k8s_system):
+    for item in api.get_service_accounts():
+        if item.metadata.namespace == 'default' and item.metadata.name == 'default':
+            uid = item.metadata.uid
+            response = api_client.get(f'/api/{settings.API_VERSION}/serviceaccounts/{uid}/')
+            assert response.status_code == 404
+            return
+    assert False
+
+
+def test_serviceaccount_illegal(api_client, admin_user_with_k8s_system):
+    response = api_client.get(f'/api/{settings.API_VERSION}/serviceaccounts/blibblub/')
+    assert response.status_code == 404
+
+
 def test_group(api_client, admin_group):
     response = api_client.get(f'/api/{settings.API_VERSION}/groups/{admin_group.pk}/')
     assert response.status_code == 200
@@ -316,8 +354,7 @@ def test_user(api_client, admin_user_with_k8s_system):
     assert len(data["portal_groups"]) > 0   # all users group, at least
     assert "http://testserver/api/" in data["portal_groups"][0]
     assert data['all_emails'] == ['admin@example.com']
-    assert data['k8s_accounts'] == [{'namespace': 'kube-system', 'service_account': 'default'}, ]
-
+    assert data['k8s_accounts'][0].startswith("http://testserver")
 
 def test_patch_user(api_client, admin_user):
     data_mock = {"primary_email": "foo@bar.de"}
