@@ -282,6 +282,14 @@ def test_group_non_member(api_client):
 
 
 def test_user(api_client, admin_user_with_k8s_system):
+    webapp1 = WebApplication(name="webapp1", link_show=True)
+    webapp1.save()
+    group1 = PortalGroup(name="group1")
+    group1.save()
+    group1.can_web_applications.add(webapp1)
+    group1.save()
+    admin_user_with_k8s_system.portal_groups.add(group1)
+
     user_attr_expected = [
         'firstname',
         'name',
@@ -291,18 +299,20 @@ def test_user(api_client, admin_user_with_k8s_system):
         'admin',
         'k8s_accounts',
         'k8s_token',
+        'webapps',
+        'portal_groups'
     ]
 
     response = api_client.get(f'/api/{settings.API_VERSION}/users/{admin_user_with_k8s_system.pk}/')
     assert response.status_code == 200
     data = response.json()
+    print(data)
 
     assert True is data['admin']
 
     for key in user_attr_expected:
         assert key in data
 
-    assert data["user_id"] == 1
     assert len(data["portal_groups"]) > 0   # all users group, at least
     assert "http://testserver/api/" in data["portal_groups"][0]
     assert data['all_emails'] == ['admin@example.com']

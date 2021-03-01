@@ -3,13 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="9f525e2b-06cc-4b3e-bd05-de80d9c4b9c7" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/deployments.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/deployments.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/groups.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/groups.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/news.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/news.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/services.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/api/views/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/users.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/webapps.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/webapps.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -36,7 +30,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$/Makefile" />
     <property name="settings.editor.selected.configurable" value="preferences.keymap" />
   </component>
-  <component name="RunManager" selected="Python tests.pytest for kubeportal.tests.test_api">
+  <component name="RunManager" selected="Python tests.pytest for test_api.test_user">
     <configuration name="Prepare tests" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile">
       <makefile filename="$PROJECT_DIR$/Makefile" target="minikube-start" workingDirectory="" arguments="">
         <envs />
@@ -75,6 +69,38 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
+    <configuration name="pytest for kubeportal.tests.test_api.test_user" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="kubeportal" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/kubeportal/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;kubeportal.tests.test_api.test_user&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest for test_api.test_user" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="kubeportal" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/kubeportal/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_api.test_user&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <configuration name="pytest in test_api.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="kubeportal" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -97,12 +123,16 @@
       <item itemvalue="Python tests.pytest in test_api.py" />
       <item itemvalue="Python tests.pytest for kubeportal.tests" />
       <item itemvalue="Python tests.pytest for kubeportal.tests.test_api" />
+      <item itemvalue="Python tests.pytest for kubeportal.tests.test_api.test_user" />
+      <item itemvalue="Python tests.pytest for test_api.test_user" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.pytest for test_api.test_user" />
+        <item itemvalue="Python tests.pytest for kubeportal.tests.test_api.test_user" />
+        <item itemvalue="Python tests.pytest in test_api.py" />
         <item itemvalue="Python tests.pytest for kubeportal.tests.test_api" />
         <item itemvalue="Python tests.pytest for kubeportal.tests" />
-        <item itemvalue="Python tests.pytest in test_api.py" />
       </list>
     </recent_temporary>
   </component>
@@ -115,7 +145,30 @@
       <option name="presentableId" value="Default" />
       <updated>1611910451331</updated>
     </task>
+    <task id="LOCAL-00001" summary="PEP-8, fix tests">
+      <created>1614595994352</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1614595994352</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="PEP-8, fix tests" />
+    <option name="LAST_COMMIT_MESSAGE" value="PEP-8, fix tests" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
