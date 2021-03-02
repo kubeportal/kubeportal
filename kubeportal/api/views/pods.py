@@ -10,6 +10,11 @@ class PodSerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class PodView(generics.RetrieveAPIView):
+    serializer_class = PodSerializer
+
+
+
 class PodsView(generics.ListAPIView):
     serializer_class = PodSerializer
 

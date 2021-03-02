@@ -124,12 +124,12 @@ def test_groups_denied(api_client_anon):
 
 
 def test_pods_denied(api_client_anon):
-    response = api_client_anon.get(f'/api/{settings.API_VERSION}/pods/kube-system/')
+    response = api_client_anon.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/pods/')
     assert response.status_code == 401
 
 
 def test_ingresses_denied(api_client_anon):
-    response = api_client_anon.get(f'/api/{settings.API_VERSION}/ingresses/default/')
+    response = api_client_anon.get(f'/api/{settings.API_VERSION}/namespaces/default/ingresses/')
     assert response.status_code == 401
 
 
@@ -139,12 +139,12 @@ def test_ingresshosts_denied(api_client_anon):
 
 
 def test_deployments_denied(api_client_anon):
-    response = api_client_anon.get(f'/api/{settings.API_VERSION}/deployments/default/')
+    response = api_client_anon.get(f'/api/{settings.API_VERSION}/namespaces/default/deployments/')
     assert response.status_code == 401
 
 
 def test_services_denied(api_client_anon):
-    response = api_client_anon.get(f'/api/{settings.API_VERSION}/services/default/')
+    response = api_client_anon.get(f'/api/{settings.API_VERSION}/namespaces/default/services/')
     assert response.status_code == 401
 
 
@@ -420,10 +420,10 @@ def test_user_pods_list(api_client, admin_user):
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/pods/foobar/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/foobar/pods/')
     assert 404 == response.status_code
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/pods/kube-system/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/pods/')
     assert 200 == response.status_code
     data = json.loads(response.content)
     names = [record['name'] for record in data]
@@ -431,7 +431,7 @@ def test_user_pods_list(api_client, admin_user):
 
 
 def test_user_pods_list_no_k8s(api_client):
-    response = api_client.get(f'/api/{settings.API_VERSION}/pods/default/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/pods/')
     assert 404 == response.status_code
 
 
@@ -441,17 +441,17 @@ def test_user_deployments_list(api_client, admin_user):
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/foobar/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/foobar/deployments/')
     assert 404 == response.status_code
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/kube-system/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/deployments/')
     assert 200 == response.status_code
     data = json.loads(response.content)
     assert "coredns" in data[0]['name']
 
 
 def test_user_deployments_list_no_k8s(api_client):
-    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/default/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/deployments/')
     assert 404 == response.status_code
 
 
@@ -462,7 +462,7 @@ def test_user_deployments_create(api_client, admin_user):
     admin_user.save()
     old_count = len(api.get_namespaced_deployments("kube-system"))
     try:
-        response = api_client.post(f'/api/{settings.API_VERSION}/deployments/kube-system/',
+        response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/deployments/',
                                    {'name': 'test-deployment',
                                     'replicas': 1,
                                     'matchLabels': [
@@ -492,7 +492,7 @@ def test_user_services_create(api_client, admin_user):
     admin_user.save()
     old_count = len(api.get_namespaced_services("kube-system"))
     try:
-        response = api_client.post(f'/api/{settings.API_VERSION}/services/kube-system/', {
+        response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/services/', {
             'name': 'my-service',
             'type': 'NodePort',
             'selector': [{'key': 'app', 'value': 'kubeportal'}, ],
@@ -506,7 +506,7 @@ def test_user_services_create(api_client, admin_user):
 
 
 def test_user_services_create_wrong_ns(api_client):
-    response = api_client.post(f'/api/{settings.API_VERSION}/services/xyz/', {
+    response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/xyz/services/', {
         'name': 'my-service',
         'type': 'NodePort',
         'selector': [{'key': 'app', 'value': 'kubeportal'}, ],
@@ -522,7 +522,7 @@ def test_user_ingresses_create(api_client, admin_user):
     admin_user.save()
     old_count = len(api.get_namespaced_ingresses("kube-system"))
     try:
-        response = api_client.post(f'/api/{settings.API_VERSION}/ingresses/kube-system/',
+        response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/ingresses/',
                                    {
                                        'name': 'my-ingress',
                                        'annotations': [
@@ -553,7 +553,7 @@ def test_user_ingresses_create(api_client, admin_user):
 
 
 def test_user_deployments_create_wrong_ns(api_client):
-    response = api_client.post(f'/api/{settings.API_VERSION}/deployments/xyz/',
+    response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/xyz/deployments/',
                                {'name': 'test-deployment',
                                 'replicas': 1,
                                 'matchLabels': [
@@ -573,7 +573,7 @@ def test_user_deployments_create_wrong_ns(api_client):
 
 
 def test_user_ingresses_create_wrong_ns(api_client):
-    response = api_client.post(f'/api/{settings.API_VERSION}/ingresses/xyz/',
+    response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/xyz/ingresses/',
                                {
                                    'name': 'my-ingress',
                                    'annotations': [
@@ -604,10 +604,10 @@ def test_user_services_list(api_client, admin_user):
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/services/foobar/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/xyz/services/')
     assert 404 == response.status_code
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/services/kube-system/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/services/')
     assert 200 == response.status_code
     data = json.loads(response.content)
     assert "kube-dns" == data[0]['name']
@@ -630,14 +630,14 @@ def test_news_list(api_client, admin_user):
 
 
 def test_user_services_list_no_k8s(api_client):
-    response = api_client.get(f'/api/{settings.API_VERSION}/services/default/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/services/')
     assert 404 == response.status_code
 
 
 def test_user_ingresses_list(api_client, admin_user_with_k8s):
     apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/ingresses/default/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/ingresses/')
     assert 200 == response.status_code
     data = json.loads(response.content)
     assert "test-ingress-1" == data[0]['name']
@@ -646,7 +646,7 @@ def test_user_ingresses_list(api_client, admin_user_with_k8s):
 def test_user_ingresses_list_no_k8s(api_client):
     apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/ingresses/default/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/ingresses/')
     assert 404 == response.status_code
 
 
@@ -654,7 +654,7 @@ def test_ingress_list(api_client, admin_user_with_k8s):
     apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
     apply_k8s_yml(BASE_DIR + "fixtures/ingress2.yml")
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/ingresses/default/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/ingresses/')
     assert 200 == response.status_code
     data = json.loads(response.content)
     host_names = [list(el["rules"].keys()) for el in data]
@@ -665,7 +665,7 @@ def test_ingress_list_illegal_ns(api_client, admin_user_with_k8s):
     apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
     apply_k8s_yml(BASE_DIR + "fixtures/ingress2.yml")
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/ingresses/foobar/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/foobar/ingresses/')
     assert 404 == response.status_code
 
 

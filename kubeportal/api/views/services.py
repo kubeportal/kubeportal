@@ -53,6 +53,9 @@ class ServiceSerializer(serializers.Serializer):
     creation_timestamp = serializers.DateTimeField(read_only=True)
 
 
+class ServiceView(generics.RetrieveAPIView):
+    serializer_class = ServiceSerializer
+
 class ServicesView(generics.ListCreateAPIView):
     serializer_class = ServiceSerializer
 

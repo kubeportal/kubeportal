@@ -11,6 +11,7 @@ class NamespaceSerializer(serializers.ModelSerializer):
 
 class NamespaceView(generics.RetrieveAPIView):
     lookup_field = 'name'
+    lookup_url_kwarg = 'namespace'
     serializer_class = NamespaceSerializer
     queryset = KubernetesNamespace.objects.all()
 

@@ -12,6 +12,9 @@ class DeploymentSerializer(serializers.Serializer):
     creation_timestamp = serializers.DateTimeField(read_only=True)
 
 
+class DeploymentView(generics.RetrieveAPIView):
+    serializer_class = DeploymentSerializer
+
 class DeploymentsView(generics.ListCreateAPIView):
     serializer_class = DeploymentSerializer
 

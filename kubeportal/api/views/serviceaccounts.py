@@ -5,7 +5,7 @@ from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 
 class ServiceAccountSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
-    namespace = serializers.HyperlinkedRelatedField(view_name='namespace', lookup_field='name', lookup_url_kwarg='name', read_only=True)
+    namespace = serializers.HyperlinkedRelatedField(view_name='namespace', lookup_field='name', lookup_url_kwarg='namespace', read_only=True)
 
 
     class Meta:

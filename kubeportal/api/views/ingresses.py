@@ -42,6 +42,10 @@ class IngressSerializer(serializers.Serializer):
     creation_timestamp = serializers.DateTimeField(read_only=True)
 
 
+class IngressView(generics.RetrieveAPIView):
+    serializer_class = IngressSerializer
+
+
 class IngressesView(generics.ListCreateAPIView):
     serializer_class = IngressSerializer
 
