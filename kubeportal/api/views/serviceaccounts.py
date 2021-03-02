@@ -20,3 +20,7 @@ class ServiceAccountView(generics.RetrieveAPIView):
     def get_queryset(self):
         # Clients can only request details of the service accounts that are assigned to them
         return self.request.user.k8s_accounts()
+
+
+class ServiceAccountsView(generics.ListAPIView):
+    serializer_class = ServiceAccountSerializer

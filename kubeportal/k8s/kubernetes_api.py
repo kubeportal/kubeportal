@@ -181,29 +181,26 @@ def get_pods():
         logger.exception("Error while fetching list of all pods from Kubernetes")
         return None
 
+def get_pod(uid):
+    """
+    Get pod in the cluster by its uid.
+    """
+    try:
+        pods = get_pods()
+        for pod in pods:
+            if pod.metadata.uid == uid:
+                return pod 
+        return None
+    except Exception as e:
+        logger.exception(f"Error while fetching pod {name} of namespace {namespace}")
+        return None
 
 def get_namespaced_pods(namespace):
     """
     Get all pods for a specific Kubernetes namespace in the cluster.
-
-    Make sure to update the 'Pod' component at static/docs/openapi_manual.yaml
-    when touching this code.
     """
     try:
-        pods = core_v1.list_namespaced_pod(namespace)
-        # logger.debug(f"Got list of pods for namespace {namespace}: {pods.items}")
-        stripped_pods = []
-        for pod in pods.items:
-            stripped_pod = {'name': pod.metadata.name,
-                            'creation_timestamp': pod.metadata.creation_timestamp}
-            stripped_containers = []
-            for container in pod.spec.containers:
-                c = {'image': container.image,
-                     'name': container.name}
-                stripped_containers.append(c)
-            stripped_pod['containers'] = stripped_containers
-            stripped_pods.append(stripped_pod)
-        return stripped_pods
+        return core_v1.list_namespaced_pod(namespace).items
     except Exception as e:
         logger.exception(f"Error while fetching pods of namespace {namespace}")
         return []
@@ -214,17 +211,25 @@ def get_namespaced_deployments(namespace):
     Get all deployments for a specific Kubernetes namespace in the cluster.
     """
     try:
-        deployments = apps_v1.list_namespaced_deployment(namespace)
-        stripped_deployments = []
-        for deployment in deployments.items:
-            stripped_depl = {'name': deployment.metadata.name,
-                             'creation_timestamp': deployment.metadata.creation_timestamp,
-                             'replicas': deployment.spec.replicas}
-            stripped_deployments.append(stripped_depl)
-        return stripped_deployments
+        return apps_v1.list_namespaced_deployment(namespace).items
     except Exception as e:
         logger.exception(f"Error while fetching deployments of namespace {namespace}")
-        return []
+        return None
+
+
+def get_deployment_pods(deployment):
+    """
+    Gets a list of pod API objects belonging to a deployment API object.
+    """
+    ns = deployment.metadata.namespace
+    selector = deployment.spec.selector # V1LabelSelector
+    selector_str = ",".join([k+'='+v for k,v in selector.match_labels.items()])
+    try:
+        return core_v1.list_namespaced_pod(namespace=ns, label_selector=selector_str).items
+    except Exception as e:
+        logger.exception(f"Error while fetching pods of deployment {deployment.metadata.name}")
+        return None
+
 
 
 def get_namespaced_services(namespace):
