@@ -111,7 +111,12 @@ class ApiClient:
     def get(self, relative_url, headers={}):
         if self.jwt:
             headers["Authorization"] = "Bearer " + self.jwt
-        return self.client.get('http://testserver' + relative_url, headers=headers)
+        return self.get_absolute('http://testserver' + relative_url, headers=headers)
+
+    def get_absolute(self, url, headers={}):
+        if self.jwt:
+            headers["Authorization"] = "Bearer " + self.jwt
+        return self.client.get(url, headers=headers)
 
     def patch(self, relative_url, data, headers={}):
         if self.jwt:

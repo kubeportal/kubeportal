@@ -415,7 +415,7 @@ def test_no_general_user_list(api_client):
     assert response.status_code == 404
 
 
-def test_user_pods_list(api_client, admin_user):
+def test_namespace_pods_list(api_client, admin_user):
     run_minikube_sync()
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
     admin_user.service_account = system_namespace.service_accounts.all()[0]
@@ -427,8 +427,8 @@ def test_user_pods_list(api_client, admin_user):
     response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/pods/')
     assert 200 == response.status_code
     data = json.loads(response.content)
-    names = [record['name'] for record in data]
-    assert len(names) > 0
+    assert len(data) > 0   # set of hyperlinks to pods
+    assert data[0].startswith("http://testserver")
 
 
 def test_get_pod(api_client, admin_user):
@@ -459,12 +459,12 @@ def test_get_illegal_pod(api_client, admin_user):
     assert 404 == response.status_code
 
 
-def test_user_pods_list_no_k8s(api_client):
+def test_namespace_pods_list_no_k8s(api_client):
     response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/pods/')
     assert 404 == response.status_code
 
 
-def test_user_deployments_list(api_client, admin_user):
+def test_namespace_deployments_list(api_client, admin_user):
     run_minikube_sync()
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
     admin_user.service_account = system_namespace.service_accounts.all()[0]
@@ -475,9 +475,21 @@ def test_user_deployments_list(api_client, admin_user):
 
     response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/deployments/')
     assert 200 == response.status_code
-    data = json.loads(response.content)
-    assert "coredns" in data[0]['name']
-    assert len(data[0]['pods']) > 0
+    deployments = json.loads(response.content)
+    assert len(deployments) > 0
+
+    # fetch first deployment info
+    response = api_client.get_absolute(deployments[0])
+    assert 200 == response.status_code
+    deployment = json.loads(response.content)
+    assert "coredns" in deployment['name']
+
+    # fetch first pod info
+    assert len(deployment['pods']) > 0
+    response = api_client.get_absolute(deployment['pods'][0])
+    assert 200 == response.status_code
+    pod = json.loads(response.content)
+    assert "coredns" in pod['name']
 
 
 def test_user_deployments_list_no_k8s(api_client):

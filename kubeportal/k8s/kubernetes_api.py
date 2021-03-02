@@ -192,7 +192,7 @@ def get_pod(uid):
                 return pod 
         return None
     except Exception as e:
-        logger.exception(f"Error while fetching pod {name} of namespace {namespace}")
+        logger.exception(f"Error while fetching pod with uid {uid}")
         return None
 
 def get_namespaced_pods(namespace):
@@ -230,6 +230,30 @@ def get_deployment_pods(deployment):
         logger.exception(f"Error while fetching pods of deployment {deployment.metadata.name}")
         return None
 
+
+def get_deployments():
+    """
+    Returns the list of deployments in the cluster, or None on error.
+    """
+    try:
+        return apps_v1.list_deployment_for_all_namespaces().items
+    except Exception as e:
+        logger.exception("Error while fetching list of all deployments from Kubernetes")
+        return None
+
+def get_deployment(uid):
+    """
+    Get deployment in the cluster by its uid.
+    """
+    try:
+        deployments = get_deployments()
+        for deployment in deployments:
+            if deployment.metadata.uid == uid:
+                return deployment 
+        return None
+    except Exception as e:
+        logger.exception(f"Error while fetching deployment with uid {uid}")
+        return None
 
 
 def get_namespaced_services(namespace):
