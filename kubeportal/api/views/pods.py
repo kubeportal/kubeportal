@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, generics
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from kubeportal.k8s import kubernetes_api as api
 
@@ -45,7 +46,7 @@ class PodsView(generics.ListAPIView):
     )
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
-            pods = api.get_namespaced_pods(namespace)
-            return Response([_get_pod_details(pod) for pod in pods])
+            pod_list = api.get_namespaced_pods(namespace)
+            return Response([reverse(viewname='pod', kwargs={'uid': pod.metadata.uid}, request=request) for pod in pod_list])
         else:
             raise NotFound
