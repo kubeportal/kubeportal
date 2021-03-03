@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from urllib.parse import urlparse
 from configurations import Configuration, values
 from kubeportal.secret import get_secret_key
