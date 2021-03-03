@@ -283,6 +283,10 @@ def test_serviceaccount(api_client, admin_group, admin_user_with_k8s_system):
     uid = admin_user_with_k8s_system.service_account.uid
     response = api_client.get(f'/api/{settings.API_VERSION}/serviceaccounts/{uid}/')
     assert response.status_code == 200
+    data = response.json()
+    assert 'uid' in data.keys()
+    assert 'name' in data.keys()
+    assert data['namespace'].startswith('http://testserver')
 
 
 def test_serviceaccount_no_permission(api_client, admin_user_with_k8s_system):
@@ -333,6 +337,7 @@ def test_user(api_client, admin_user_with_k8s_system):
         'firstname',
         'name',
         'username',
+        'user_id',
         'primary_email',
         'all_emails',
         'admin',
@@ -345,7 +350,6 @@ def test_user(api_client, admin_user_with_k8s_system):
     response = api_client.get(f'/api/{settings.API_VERSION}/users/{admin_user_with_k8s_system.pk}/')
     assert response.status_code == 200
     data = response.json()
-    print(data)
 
     assert True is data['admin']
 
@@ -508,6 +512,23 @@ def test_get_illegal_deployment(api_client, admin_user):
     admin_user.save()
     response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.uid}/')
     assert 200 == response.status_code
+
+
+def test_deployment(api_client, admin_user):
+    run_minikube_sync()
+    system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+
+    deployment = api.apps_v1.read_namespaced_deployment('coredns', 'kube-system')
+
+    admin_user.service_account = system_namespace.service_accounts.all()[0]
+    admin_user.save()
+    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.uid}/')
+    assert 200 == response.status_code
+    data = json.loads(response.content)
+    assert 'uid' in data.keys()
+    assert 'name' in data.keys()
+    assert 'replicas' in data.keys()
+    assert 'pods' in data.keys()
 
 
 def test_user_deployments_list_no_k8s(api_client):

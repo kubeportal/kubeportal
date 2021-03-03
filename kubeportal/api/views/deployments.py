@@ -13,6 +13,7 @@ logger = logging.getLogger('KubePortal')
 
 class DeploymentSerializer(serializers.Serializer):
     name = serializers.CharField()
+    uid = serializers.CharField(read_only=True)
     creation_timestamp = serializers.DateTimeField(read_only=True)
     replicas = serializers.IntegerField()
     pods = serializers.ListField(child=serializers.URLField())
@@ -25,6 +26,7 @@ class DeploymentSerializer(serializers.Serializer):
         """
         pod_list = api.get_deployment_pods(deployment)
         stripped_depl = {'name': deployment.metadata.name,
+                         'uid': deployment.metadata.uid,
                          'creation_timestamp': deployment.metadata.creation_timestamp,
                          'replicas': deployment.spec.replicas,
                          'pods': [reverse(viewname='pod', kwargs={'uid': pod.metadata.uid}, request=request) for pod in pod_list]}

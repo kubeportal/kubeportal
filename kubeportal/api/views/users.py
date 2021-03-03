@@ -11,6 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
     firstname = serializers.CharField(source='first_name')
     name = serializers.CharField(source='last_name')
     username = serializers.CharField(read_only=True)
+    user_id = serializers.IntegerField(read_only=True)
     primary_email = serializers.EmailField(source='email')
     admin = serializers.BooleanField(source='is_staff', read_only=True)
     all_emails = serializers.ListField(read_only=True)
@@ -26,6 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'firstname',
                   'name',
                   'username',
+                  'user_id',
                   'primary_email',
                   'admin',
                   'all_emails',
