@@ -492,6 +492,24 @@ def test_namespace_deployments_list(api_client, admin_user):
     assert "coredns" in pod['name']
 
 
+def test_get_illegal_deployment(api_client, admin_user):
+    run_minikube_sync()
+    system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+    default_namespace = KubernetesNamespace.objects.get(name="default")
+
+    deployment = api.apps_v1.read_namespaced_deployment('coredns', 'kube-system')
+
+    admin_user.service_account = default_namespace.service_accounts.all()[0]
+    admin_user.save()
+    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.uid}/')
+    assert 404 == response.status_code
+
+    admin_user.service_account = system_namespace.service_accounts.all()[0]
+    admin_user.save()
+    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.uid}/')
+    assert 200 == response.status_code
+
+
 def test_user_deployments_list_no_k8s(api_client):
     response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/deployments/')
     assert 404 == response.status_code
