@@ -243,6 +243,11 @@ class Development(Common):
         }
     }
 
+    SIMPLE_JWT = {
+        'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # simplify interactive API testing
+    }
+
+
 
 class Production(Common):
     DEBUG = False
