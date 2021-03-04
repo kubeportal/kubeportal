@@ -10,6 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
     webapps = serializers.HyperlinkedRelatedField(many=True, view_name='webapplication', lookup_url_kwarg='webapp_id', read_only=True)
     firstname = serializers.CharField(source='first_name')
     name = serializers.CharField(source='last_name')
+    state = serializers.CharField(read_only=True)
     username = serializers.CharField(read_only=True)
     user_id = serializers.IntegerField(read_only=True)
     primary_email = serializers.EmailField(source='email')
@@ -30,6 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'user_id',
                   'primary_email',
                   'admin',
+                  'state',
                   'all_emails',
                   'k8s_accounts',
                   'k8s_namespaces',
