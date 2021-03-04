@@ -47,6 +47,7 @@ class BootstrapInfoView(GenericAPIView):
             'csrf_token': csrf.get_token(request),
             'links': {
                 'login': reverse(viewname='rest_login', request=request),
+                'logout': reverse(viewname='rest_logout', request=request),
                 'login_google': reverse(viewname='api_google_login', request=request),
             }
         })
