@@ -34,12 +34,11 @@ urlpatterns = [
     path('.well-known/openid-configuration', ProviderInfoView.as_view(), name='provider_info'),
 
     # frontend API views
-    path('api/', api_views.BootstrapInfoView.as_view()),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 
+    path('api/<str:version>/', api_views.BootstrapInfoView.as_view()),
     path('api/<str:version>/users/<int:user_id>/', api_views.UserView.as_view(), name='user'),
-
     path('api/<str:version>/namespaces/<str:namespace>/', api_views.NamespaceView.as_view(), name='namespace'),
     path('api/<str:version>/namespaces/<str:namespace>/serviceaccounts/', api_views.ServiceAccountsView.as_view(), name='serviceaccounts'),
     path('api/<str:version>/serviceaccounts/<str:uid>/', api_views.ServiceAccountView.as_view(), name='serviceaccount'),

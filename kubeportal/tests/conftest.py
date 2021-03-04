@@ -102,40 +102,79 @@ def admin_group(admin_user):
     return admin_group
 
 
-class ApiClient:
+class ApiClientAnonymous:
+    def __init__(self):
+        self.client = RequestsClient()
+        self.csrf = None
+
+    def get(self, relative_url, headers={}):
+        return self.get_absolute('http://testserver' + relative_url, headers)
+
+    def get_absolute(self, url, headers={}):
+        return self.client.get(url, headers=headers)
+
+    def patch(self, relative_url, data, headers={}):
+        if self.csrf:
+            add_headers['X-CSRFToken'] = self.csrf
+        return self.client.patch('http://testserver' + relative_url,
+                                 json=data, headers=add_headers)
+
+    def post(self, relative_url, data=None, add_headers={}):
+        if self.jwt:
+            add_headers["Authorization"] = "Bearer " + self.jwt
+        if self.csrf:
+            add_headers['X-CSRFToken'] = self.csrf
+        return self.client.post('http://testserver' + relative_url,
+                                json=data, headers=add_headers)
+
+    def options(self, relative_url, add_headers={}):
+        return self.client.options('http://testserver' + relative_url, headers=add_headers)
+
+    def api_login(self, user):
+        user.set_password("passwort")
+        user.save()
+
+        response = self.post(f'/api/{settings.API_VERSION}/login/',
+                             {'username': user.username, 'password': 'passwort'})
+        assert response.status_code == 200
+        data = response.json()
+        assert 'access_token' in data
+        self.jwt = data['access_token']
+        return response
+
+
+class ApiClientAnonymous:
     def __init__(self):
         self.client = RequestsClient()
         self.jwt = None
         self.csrf = None
 
-    def get(self, relative_url, headers={}):
-        if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
-        return self.get_absolute('http://testserver' + relative_url, headers=headers)
+    def get(self, relative_url, add_headers={}):
+        return self.get_absolute('http://testserver' + relative_url, add_headers)
 
-    def get_absolute(self, url, headers={}):
+    def get_absolute(self, url, add_headers={}):
         if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
-        return self.client.get(url, headers=headers)
+            add_headers["Authorization"] = "Bearer " + self.jwt
+        return self.client.get(url, headers=add_headers)
 
-    def patch(self, relative_url, data, headers={}):
+    def patch(self, relative_url, data, add_headers={}):
         if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
+            add_headers["Authorization"] = "Bearer " + self.jwt
         if self.csrf:
-            headers['X-CSRFToken'] = self.csrf
+            add_headers['X-CSRFToken'] = self.csrf
         return self.client.patch('http://testserver' + relative_url,
-                                 json=data, headers=headers)
+                                 json=data, headers=add_headers)
 
-    def post(self, relative_url, data=None, headers={}):
+    def post(self, relative_url, data=None, add_headers={}):
         if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
+            add_headers["Authorization"] = "Bearer " + self.jwt
         if self.csrf:
-            headers['X-CSRFToken'] = self.csrf
+            add_headers['X-CSRFToken'] = self.csrf
         return self.client.post('http://testserver' + relative_url,
-                                json=data, headers=headers)
+                                json=data, headers=add_headers)
 
-    def options(self, relative_url, headers={}):
-        return self.client.options('http://testserver' + relative_url)
+    def options(self, relative_url, add_headers={}):
+        return self.client.options('http://testserver' + relative_url, headers=add_headers)
 
     def api_login(self, user):
         user.set_password("passwort")
@@ -158,6 +197,6 @@ def api_client(admin_user):
 
 
 @pytest.fixture
-def api_client_anon(admin_user):
+def api_client_anon():
     c = ApiClient()
     return c
