@@ -55,11 +55,11 @@ urlpatterns = [
     path('api/<str:version>/groups/<int:group_id>/', api_views.GroupView.as_view(), name='group'),
     path('api/<str:version>/webapps/<int:webapp_id>/', api_views.WebAppView.as_view(), name='webapplication'),
 
-    path('api/<str:version>/login/', api_views.LoginView.as_view(), name='rest_login'),
+    path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
     path('api/<str:version>/cluster/<str:info_slug>/', api_views.ClusterInfoView.as_view()),
-    path('api/<str:version>/news/', api_views.NewsView.as_view()),
+    path('api/<str:version>/news/', api_views.NewsView.as_view(), name='news'),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),

@@ -95,6 +95,12 @@ class Common(Configuration):
         'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
     }
 
+    REST_AUTH_SERIALIZERS = {
+        'JWT_SERIALIZER': 'kubeportal.api.views.JWTSerializer',
+        'LOGIN_SERIALIZER': 'kubeportal.api.views.LoginSerializer',
+    }
+
+
     SPECTACULAR_SETTINGS = {
         'TITLE': 'Kubeportal Backend API',
         'VERSION': API_VERSION,
