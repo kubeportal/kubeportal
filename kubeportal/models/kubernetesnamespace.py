@@ -57,6 +57,21 @@ class KubernetesNamespace(models.Model):
                 namespaces_without_pods.append(ns)
         return namespaces_without_pods
 
+    def get_pod_uids(self):
+        """
+        Get UIDs of the pods in this namespace.
+        """
+        pods = api.get_namespaced_pods(self.name)
+        return [item.metadata.uid for item in pods]
+
+    def get_deployment_uids(self):
+        """
+        Get UIDs of the deployments in this namespace.
+        """
+        deployments = api.get_namespaced_deployments(self.name)
+        return [item.metadata.uid for item in deployments]
+
+
     @classmethod
     def create_missing_in_portal(cls):
         """

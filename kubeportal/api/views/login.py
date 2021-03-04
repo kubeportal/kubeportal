@@ -45,5 +45,6 @@ class JWTSerializer(serializers.Serializer):
         uid = obj['user'].pk
         request = self.context['request']
         return {'user': reverse(viewname='user', kwargs={'user_id': uid}, request=request),
-                'news': reverse(viewname='news', request=request)}
+                'news': reverse(viewname='news', request=request)
+                }
 
