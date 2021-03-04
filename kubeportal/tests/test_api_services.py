@@ -1,4 +1,5 @@
 import json
+import pytest
 
 from django.conf import settings
 
@@ -7,6 +8,7 @@ from kubeportal.models import KubernetesNamespace
 from kubeportal.tests.helpers import run_minikube_sync
 
 
+@pytest.mark.django_db
 def test_services_denied(api_client_anon):
     response = api_client_anon.get(f'/api/{settings.API_VERSION}/namespaces/default/services/')
     assert response.status_code == 401

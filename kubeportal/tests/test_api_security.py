@@ -39,7 +39,7 @@ def test_js_api_bearer_auth(api_client):
     del (api_client.client.cookies['kubeportal-auth'])
     # Simulate JS code calling, add Bearer token
     headers = {'Origin': 'http://testserver', 'Authorization': f'Bearer {api_client.jwt}'}
-    response = api_client.get(f'/api/{settings.API_VERSION}/cluster/portal_version/', add_headers=headers)
+    response = api_client.get(f'/api/{settings.API_VERSION}/cluster/portal_version/', headers=headers)
     assert response.status_code == 200
 
 
@@ -79,7 +79,7 @@ def test_cors_single_origin(api_client):
     headers = {'Origin': 'http://testserver'}
     relative_urls = [f'/api/{settings.API_VERSION}/login/', f'/api/{settings.API_VERSION}/cluster/portal_version/']
     for url in relative_urls:
-        response = api_client.get(url, add_headers=headers)
+        response = api_client.get(url, headers=headers)
         assert response.headers['Access-Control-Allow-Origin'] == 'http://testserver'
         assert response.headers['Access-Control-Allow-Credentials'] == 'true'
 
@@ -87,7 +87,7 @@ def test_cors_single_origin(api_client):
 @override_settings(ALLOWED_URLS=['http://testserver', 'https://example.org:8000'])
 def test_cors_multiple_allowed(api_client):
     headers = {'Origin': 'http://testserver'}
-    response = api_client.get(f'/api/{settings.API_VERSION}/cluster/portal_version/', add_headers=headers)
+    response = api_client.get(f'/api/{settings.API_VERSION}/cluster/portal_version/', headers=headers)
     assert response.headers['Access-Control-Allow-Origin'] == 'http://testserver'
 
 

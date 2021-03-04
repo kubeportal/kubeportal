@@ -13,6 +13,7 @@ with seem to have trouble accessing the cookies sometimes. Ask @Kat-Hi.
 
 import logging
 import os
+import pytest
 from django.conf import settings
 
 logger = logging.getLogger('KubePortal')
@@ -20,6 +21,7 @@ logger = logging.getLogger('KubePortal')
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/'
 
 
+@pytest.mark.django_db
 def test_api_bootstrap(api_client_anon):
     response = api_client_anon.get(f'/api/{settings.API_VERSION}/')
     assert response.status_code == 200
