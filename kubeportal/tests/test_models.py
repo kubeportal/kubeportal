@@ -7,10 +7,12 @@ import pytest
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.models.portalgroup import PortalGroup
 from .helpers import create_group, apply_k8s_yml
+from kubeportal.tests.helpers import minikube_unavailable
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/'
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_k8s_namespaces(admin_user_with_k8s):
     assert admin_user_with_k8s.k8s_namespaces()[0].name == "default"
 
@@ -34,15 +36,19 @@ def test_user_web_applications(admin_user):
     assert len(admin_user.web_applications(include_invisible=True)) == 2
     assert len(admin_user.web_applications(include_invisible=False)) == 1
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_pods(admin_user_with_k8s_system):
     assert len(admin_user_with_k8s_system.k8s_pods()) > 0
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_deployments(admin_user_with_k8s_system):
     assert len(admin_user_with_k8s_system.k8s_deployments()) > 0
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_services(admin_user_with_k8s_system):
     assert len(admin_user_with_k8s_system.k8s_services()) > 0
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_ingresses(admin_user_with_k8s):
     apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
     assert len(admin_user_with_k8s.k8s_ingresses()) > 0
@@ -56,6 +62,7 @@ def test_user_deployments_no_k8s(admin_user):
 def test_user_services_no_k8s(admin_user):
     assert len(admin_user.k8s_services()) == 0
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_ingresses_no_k8s(admin_user):
     apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
     assert len(admin_user.k8s_ingresses()) == 0

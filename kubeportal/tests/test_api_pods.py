@@ -5,7 +5,7 @@ from django.conf import settings
 
 from kubeportal.k8s import kubernetes_api as api
 from kubeportal.models import KubernetesNamespace
-from kubeportal.tests.helpers import run_minikube_sync
+from kubeportal.tests.helpers import run_minikube_sync, minikube_unavailable
 
 
 @pytest.mark.django_db
@@ -14,6 +14,7 @@ def test_pods_denied(api_client_anon):
     assert response.status_code == 401
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_namespace_pods_list(api_client, admin_user):
     run_minikube_sync()
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
@@ -30,6 +31,7 @@ def test_namespace_pods_list(api_client, admin_user):
     assert data[0].startswith("http://testserver")
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_get_pod(api_client, admin_user):
     run_minikube_sync()
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
@@ -45,6 +47,7 @@ def test_get_pod(api_client, admin_user):
     assert data['containers'][0]['name'] == 'kube-apiserver'
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_get_illegal_pod(api_client, admin_user):
     run_minikube_sync()
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")

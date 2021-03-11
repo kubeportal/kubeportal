@@ -1,8 +1,10 @@
 from django.conf import settings
-
 from kubeportal.k8s import kubernetes_api as api
+import pytest
+from kubeportal.tests.helpers import minikube_unavailable
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_serviceaccount(api_client, admin_group, admin_user_with_k8s_system):
     uid = admin_user_with_k8s_system.service_account.uid
     response = api_client.get(f'/api/{settings.API_VERSION}/serviceaccounts/{uid}/')
@@ -13,6 +15,7 @@ def test_serviceaccount(api_client, admin_group, admin_user_with_k8s_system):
     assert data['namespace'].startswith('http://testserver')
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_serviceaccount_no_permission(api_client, admin_user_with_k8s_system):
     for item in api.get_service_accounts():
         if item.metadata.namespace == 'default' and item.metadata.name == 'default':
@@ -23,6 +26,7 @@ def test_serviceaccount_no_permission(api_client, admin_user_with_k8s_system):
     assert False
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_serviceaccount_illegal(api_client, admin_user_with_k8s_system):
     response = api_client.get(f'/api/{settings.API_VERSION}/serviceaccounts/blibblub/')
     assert response.status_code == 404

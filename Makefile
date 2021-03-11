@@ -35,6 +35,9 @@ docs: venv
 test: venv minikube-start
 	./venv/bin/pytest ${case}
 
+no-minikube-test: venv
+	./venv/bin/pytest ${case}
+
 # Run all tests and obtain coverage information.
 coverage: venv 
 	./venv/bin/pytest --cov=kubeportal --cov-report=html 

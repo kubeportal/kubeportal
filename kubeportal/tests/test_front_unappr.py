@@ -7,10 +7,10 @@ from django.urls import reverse
 from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.k8s import kubernetes_api as api
-from kubeportal.tests.helpers import run_minikube_sync
+from kubeportal.tests.helpers import run_minikube_sync, minikube_unavailable
 from pytest_django.asserts import assertRedirects
 import re
-
+import pytest
 
 def test_index_view(admin_client):
     # User is already logged in, expecting welcome redirect
@@ -66,6 +66,7 @@ def test_approval_mail(admin_client, admin_user, client, second_user, mailoutbox
     response_content = re.search('<table.*', str(response.content))[0]
     assert f"<td>Username:</td><td>{second_user.username}</td>" in response_content
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_approval_create_new(admin_client, admin_user, client, second_user, mailoutbox, random_namespace_name):
     client.force_login(second_user)
     assert second_user.state == second_user.NEW
@@ -99,6 +100,7 @@ def test_approval_create_existing(admin_client, admin_user, client, second_user,
     assert second_user.answered_by != None
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_approval_create_existing(admin_client, admin_user, client, second_user, mailoutbox):
     client.force_login(second_user)
     assert second_user.state == second_user.NEW
@@ -116,6 +118,7 @@ def test_approval_create_existing(admin_client, admin_user, client, second_user,
     assert second_user.answered_by != None
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_approval_assign_plus_comment(admin_client, admin_user, client, second_user, mailoutbox):
     client.force_login(second_user)
     assert second_user.state == second_user.NEW
@@ -179,6 +182,7 @@ def test_acess_request_view_mail_broken(admin_client, admin_user, mocker):
     assertRedirects(response, '/config/')
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_approval_groups(admin_client, admin_user, client, second_user, mailoutbox, random_namespace_name):
     client.force_login(second_user)
     assert second_user.state == second_user.NEW
