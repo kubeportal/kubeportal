@@ -5,7 +5,7 @@ from django.conf import settings
 
 from kubeportal.k8s import kubernetes_api as api
 from kubeportal.models import KubernetesNamespace
-from kubeportal.tests.helpers import run_minikube_sync
+from kubeportal.tests.helpers import run_minikube_sync, minikube_unavailable
 
 
 @pytest.mark.django_db
@@ -14,6 +14,7 @@ def test_services_denied(api_client_anon):
     assert response.status_code == 401
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_services_create(api_client, admin_user):
     run_minikube_sync()
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
@@ -44,6 +45,7 @@ def test_user_services_create_wrong_ns(api_client):
     assert 404 == response.status_code
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_services_list(api_client, admin_user):
     run_minikube_sync()
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")

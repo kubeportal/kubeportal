@@ -23,6 +23,9 @@ from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 
 
+def minikube_unavailable():
+    return not k8s_api.is_minikube()
+
 def run_minikube_sync():
     """
     Perform synchronization between Minikube and the portal database.
