@@ -98,32 +98,35 @@ class ApiClient:
         self.csrf = None
         self.jwt = None
 
-    def get(self, relative_url, headers={}):
+    def _all_headers(self, headers):
+        """
+        Make sure that the parameters stays "None" if
+        nothing is to set, and nothing was given by the caller.
+        """
+        if (self.jwt or self.csrf) and not headers:
+            headers = {}
+        if self.jwt:
+            headers["Authorization"] = "Bearer " + self.jwt
+        if self.csrf:
+            headers['X-CSRFToken'] = self.csrf
+        return headers
+
+    def get(self, relative_url, headers=None):
         return self.get_absolute('http://testserver' + relative_url, headers)
 
-    def get_absolute(self, url, headers={}):
-        if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
-        return self.client.get(url, headers=headers)
+    def get_absolute(self, url, headers=None):
+        return self.client.get(url, headers=self._all_headers(headers))
 
-    def patch(self, relative_url, data, headers={}):
-        if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
-        if self.csrf:
-            headers['X-CSRFToken'] = self.csrf
+    def patch(self, relative_url, data, headers=None):
         return self.client.patch('http://testserver' + relative_url,
-                                 json=data, headers=headers)
+                                 json=data, headers=self._all_headers(headers))
 
-    def post(self, relative_url, data=None, headers={}):
-        if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
-        if self.csrf:
-            headers['X-CSRFToken'] = self.csrf
+    def post(self, relative_url, data=None, headers=None):
         return self.client.post('http://testserver' + relative_url,
-                                json=data, headers=headers)
+                                json=data, headers=self._all_headers(headers))
 
-    def options(self, relative_url, headers={}):
-        return self.client.options('http://testserver' + relative_url, headers=headers)
+    def options(self, relative_url, headers=None):
+        return self.client.options('http://testserver' + relative_url, headers=self._all_headers(headers))
 
     def api_login(self, user):
         user.set_password("passwort")

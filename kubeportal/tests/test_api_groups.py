@@ -6,7 +6,8 @@ from kubeportal.models.portalgroup import PortalGroup
 
 @pytest.mark.django_db
 def test_single_group_denied(api_client_anon, admin_group):
-    response = api_client_anon.get(f'/api/{settings.API_VERSION}/groups/{admin_group.pk}/')
+    url = f'/api/{settings.API_VERSION}/groups/{admin_group.pk}/'
+    response = api_client_anon.get(url)
     assert response.status_code == 401
 
 
