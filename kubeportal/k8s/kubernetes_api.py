@@ -235,7 +235,10 @@ def get_namespaced_services(namespace):
         services = core_v1.list_namespaced_service(namespace)
         stripped_services = []
         for svc in services.items:
-            selector = [{'key': k, 'value': v} for k,v in svc.spec.selector.items()]
+            if svc.spec.selector:
+                selector = [{'key': k, 'value': v} for k,v in svc.spec.selector.items()]
+            else:
+                selector = None 
             stripped_svc = {'name': svc.metadata.name,
                             'type': svc.spec.type,
                             'selector': selector,
