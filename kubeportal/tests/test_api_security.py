@@ -17,10 +17,10 @@ def test_api_login(api_client_anon, admin_user):
     # self.assertEqual(cookie['kubeportal-auth']['httponly'], True)
     data = response.json()
     assert 3 == len(data)
-    assert 'user' in data
+    assert 'links' in data
     assert 'access_token' in data
     assert 'refresh_token' in data
-    assert str(admin_user.pk) in data['user']
+    assert str(admin_user.pk) in data['links']['user']
 
 
 @pytest.mark.django_db
@@ -39,7 +39,7 @@ def test_js_api_bearer_auth(api_client):
     del (api_client.client.cookies['kubeportal-auth'])
     # Simulate JS code calling, add Bearer token
     headers = {'Origin': 'http://testserver', 'Authorization': f'Bearer {api_client.jwt}'}
-    response = api_client.get(f'/api/{settings.API_VERSION}/cluster/portal_version/', headers=headers)
+    response = api_client.get(f'/api/{settings.API_VERSION}/info/portal_version/', headers=headers)
     assert response.status_code == 200
 
 
@@ -48,12 +48,12 @@ def test_options_preflight_without_auth(api_client_anon, admin_user, admin_group
                  (f'/api/{settings.API_VERSION}/users/{admin_user.pk}', 'GET'),
                  (f'/api/{settings.API_VERSION}/users/{admin_user.pk}', 'PATCH'),
                  (f'/api/{settings.API_VERSION}/groups/{admin_group.pk}', 'GET'),
-                 (f'/api/{settings.API_VERSION}/cluster/k8s_apiserver', 'GET'),
+                 (f'/api/{settings.API_VERSION}/info/k8s_apiserver', 'GET'),
                  (f'/api/{settings.API_VERSION}/login/', 'POST'),
                  ]
     for path, request_method in test_path:
         response = api_client_anon.options(path)
-        assert 200 == response.status_code
+        assert 200 == response.status_code, f"Unexpected status code {response.status_code} for {request_method} to path {path}, expected 200"
 
 
 @override_settings(SOCIALACCOUNT_PROVIDERS={'google': {

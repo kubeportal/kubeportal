@@ -38,16 +38,6 @@ def random_namespace_name():
         pass
 
 
-@pytest.mark.usefixtures("db")
-@pytest.fixture
-def minikube_sync():
-    """
-    A PyTest fixture making sure that the Minikube installation was synced
-    to the portal database.
-    """
-    run_minikube_sync()
-
-
 @pytest.fixture
 def admin_user_with_k8s(admin_user):
     """
