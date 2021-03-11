@@ -2,12 +2,14 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
+from rest_framework import serializers
+from rest_framework.reverse import reverse
+
 
 from kubeportal.api.views.tools import get_user_count, get_kubeportal_version, get_cluster_name
 from kubeportal.k8s import kubernetes_api as api
 
-
-class ClusterInfoView(GenericAPIView):
+class InfoDetailView(GenericAPIView):
     stats = {'k8s_version': api.get_kubernetes_version,
              'k8s_apiserver_url': api.get_apiserver,
              'k8s_node_count': api.get_number_of_nodes,
@@ -22,9 +24,9 @@ class ClusterInfoView(GenericAPIView):
 
     @extend_schema(
         operation={
-            "operationId": "get_clusterinfo",
+            "operationId": "get_info",
             "tags": ["api"],
-            "summary": "Get information about the cluster.",
+            "summary": "Get information about the portal and the cluster.",
             "security": [{"jwtAuth": []}],
             "parameters": [{
                 "in": "path",
@@ -64,6 +66,14 @@ class ClusterInfoView(GenericAPIView):
             return Response({info_slug: self.stats[info_slug]()})
         else:
             raise NotFound
+
+
+class InfoView(GenericAPIView):
+    def get(self, request, version):
+        result = {}
+        for info_slug in InfoDetailView.stats.keys():
+            result[info_slug] = reverse(viewname='info_detail', kwargs={'info_slug': info_slug}, request=request)
+        return Response({'links': result})
 
 
 

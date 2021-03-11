@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 from django.middleware import csrf
 from django.conf import settings
 
@@ -28,17 +29,25 @@ class BootstrapInfoView(GenericAPIView):
                                         "type": "string",
                                         "example": "OIiIQkMv5xGfrI75GDAfnm1C1BPxxWlyMgUudmaTBaNKmtulGpSCWQje8uWrQjsb"
                                     },
-                                    "portal_version": {
-                                        "type": "string",
-                                        "example": "v1.5.0"
-                                    },
-                                    "default_api_version": {
-                                        "type": "string",
-                                        "example": "v2.0.0"
+                                    "links": {
+                                        "type": "object",
+                                        "properties": {
+                                            "login": {
+                                                "type": "string",
+                                                "example": "http://testserver/api/v2.0.0/login/"
+                                            },
+                                            "login_google": {
+                                                "type": "string",
+                                                "example": "http://testserver/api/v2.0.0/login_google/"
+                                            }
+                                        }
                                     }}}}}}}})
-    def get(self, request):
+    def get(self, request, version):
         return Response({
             'csrf_token': csrf.get_token(request),
-            'portal_version': get_kubeportal_version(),
-            'default_api_version': settings.API_VERSION
+            'links': {
+                'login': reverse(viewname='rest_login', request=request),
+                'logout': reverse(viewname='rest_logout', request=request),
+                'login_google': reverse(viewname='api_google_login', request=request),
+            }
         })

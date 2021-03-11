@@ -17,6 +17,5 @@ dj-rest-auth[with_social]
 djangorestframework-simplejwt
 drf-nested-routers
 django-silk
-psycopg2-binary
 django-extensions # mainly for show_urls
 drf-spectacular

@@ -14,14 +14,15 @@ from kubeportal.k8s import kubernetes_api as api
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 from kubeportal.models.portalgroup import PortalGroup
-from .helpers import run_minikube_sync, admin_request
+from .helpers import run_minikube_sync, admin_request, minikube_unavailable
 
 User = get_user_model()
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_kube_ns_changelist(admin_client):
+    run_minikube_sync()
     response = admin_client.get(
         reverse('admin:kubeportal_kubernetesnamespace_changelist'))
     assert response.status_code == 200
@@ -41,23 +42,26 @@ def test_portalgroup_changelist(admin_client):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_kube_svc_changelist(admin_client):
+    run_minikube_sync()
     response = admin_client.get(
         reverse('admin:kubeportal_kubernetesserviceaccount_changelist'))
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_changelist(admin_client):
+    run_minikube_sync()
     response = admin_client.get(reverse('admin:kubeportal_user_changelist'))
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_new_external_ns_sync(random_namespace_name):
+    run_minikube_sync()
     api.create_k8s_ns(random_namespace_name)
     run_minikube_sync()
     new_ns_object = KubernetesNamespace.objects.get(
@@ -68,8 +72,9 @@ def test_new_external_ns_sync(random_namespace_name):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_exists_both_sides_sync(random_namespace_name):
+    run_minikube_sync()
     api.create_k8s_ns(random_namespace_name)
     new_ns = KubernetesNamespace(name=random_namespace_name)
     new_ns.save()
@@ -77,8 +82,9 @@ def test_exists_both_sides_sync(random_namespace_name):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_new_svc_sync(random_namespace_name):
+    run_minikube_sync()
     ns = KubernetesNamespace(name=random_namespace_name)
     ns.save()
     ns.create_in_cluster()
@@ -92,8 +98,9 @@ def test_new_svc_sync(random_namespace_name):
     assert False
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_new_ns_sync(random_namespace_name):
+    run_minikube_sync()
     new_ns = KubernetesNamespace(name=random_namespace_name)
     new_ns.save()
     run_minikube_sync()
@@ -101,8 +108,9 @@ def test_new_ns_sync(random_namespace_name):
     assert random_namespace_name in ns_names
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_new_ns_broken_name_sync():
+    run_minikube_sync()
     test_cases = {"foo_bar": "foobar", "ABCDEF": "abcdef"}
     for old, new in test_cases.items():
         new_ns = KubernetesNamespace(name=old)
@@ -120,8 +128,9 @@ def test_admin_index_view(admin_client):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_special_k8s_approved(rf, admin_index_request, django_user_model, random_namespace_name):
+    run_minikube_sync()
     # Creating an auto_add_approved group should not change its member list.
     group = PortalGroup.objects.get(special_k8s_accounts=True)
     assert group.members.count() == 0
@@ -147,8 +156,9 @@ def test_special_k8s_approved(rf, admin_index_request, django_user_model, random
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_special_k8s_unapproved(django_user_model, random_namespace_name):
+    run_minikube_sync()
     group = PortalGroup.objects.get(special_k8s_accounts=True)
     ns = KubernetesNamespace(name=random_namespace_name)
     ns.save()
@@ -168,8 +178,9 @@ def test_special_k8s_unapproved(django_user_model, random_namespace_name):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_rejection(rf, admin_index_request, django_user_model):
+    run_minikube_sync()
     u = django_user_model(username="Hugo", email="a@b.de")
     u.save()
     # walk through rejection workflow
@@ -182,8 +193,9 @@ def test_user_rejection(rf, admin_index_request, django_user_model):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_merge_access_approved(admin_index_request, django_user_model):
+    run_minikube_sync()
     primary = django_user_model(
         username="HUGO",
         email="a@b.de")
@@ -234,8 +246,9 @@ def test_user_merge_access_approved(admin_index_request, django_user_model):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_merge_access_rejected(admin_index_request, django_user_model, random_namespace_name):
+    run_minikube_sync()
     primary = django_user_model(
         username="HUGO",
         email="a@b.de")
@@ -275,8 +288,9 @@ def test_user_merge_access_rejected(admin_index_request, django_user_model, rand
     assert primary.has_access_rejected
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_backend_cleanup_view(rf, admin_user, random_namespace_name):
+    run_minikube_sync()
     User = get_user_model()
     u = User(
         username="HUGO",
@@ -297,8 +311,9 @@ def test_backend_cleanup_view(rf, admin_user, random_namespace_name):
     assert admin_request(rf, admin_user, 'admin:cleanup')
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_backend_cleanup_entitity_getters(django_user_model, admin_user, random_namespace_name):
+    run_minikube_sync()
     admin_user.last_login = parse("2017-09-23 11:21:52.909020 +02:00")
     admin_user.save()
 
@@ -311,8 +326,9 @@ def test_backend_cleanup_entitity_getters(django_user_model, admin_user, random_
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("minikube_sync")
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_backend_prune_view(django_user_model, admin_client):
+    run_minikube_sync()
     from django.utils import dateparse
     # we need an inactive user for the the filter to work
     user_list = [

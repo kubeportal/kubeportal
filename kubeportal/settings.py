@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from urllib.parse import urlparse
 from configurations import Configuration, values
 from kubeportal.secret import get_secret_key
@@ -93,6 +94,12 @@ class Common(Configuration):
             ],
         'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
     }
+
+    REST_AUTH_SERIALIZERS = {
+        'JWT_SERIALIZER': 'kubeportal.api.views.JWTSerializer',
+        'LOGIN_SERIALIZER': 'kubeportal.api.views.LoginSerializer',
+    }
+
 
     SPECTACULAR_SETTINGS = {
         'TITLE': 'Kubeportal Backend API',
@@ -242,6 +249,11 @@ class Development(Common):
             },
         }
     }
+
+    SIMPLE_JWT = {
+        'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # simplify interactive API testing
+    }
+
 
 
 class Production(Common):

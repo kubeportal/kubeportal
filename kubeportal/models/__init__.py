@@ -23,6 +23,8 @@ from kubeportal.k8s import kubernetes_api
 
 import logging
 
+from kubeportal.models.kubernetesnamespace import KubernetesNamespace
+from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 
 logger = logging.getLogger('KubePortal')
 
@@ -76,45 +78,51 @@ class User(AbstractUser):
         """
         return [self.email, *self.alt_mails]
 
-
-    def group_ids(self):
+    def webapps(self):
         """
         Used as property by the API serializer.
         """
-        return [group.pk for group in self.portal_groups.all()]        
-
-    def webapp_ids(self):
-        """
-        Used as property by the API serializer.
-        """
-        return [webapp.pk for webapp in self.web_applications(False)]        
+        return self.web_applications(False)        
 
 
     def k8s_accounts(self):
         """
         Used as property by the API serializer.
+        Prepared for future support of multiple namespaces per user.
         """
         if self.service_account:
-            return [{'namespace': self.service_account.namespace.name, 
-                     'service_account': self.service_account.name},]
+            return KubernetesServiceAccount.objects.filter(pk = self.service_account.pk)
         else:
-            return []
+            return KubernetesServiceAccount.objects.none()
 
 
-    def k8s_namespace(self):
+    def k8s_namespaces(self):
         """
-        Used as property by the API serializer, and by the admin backend.
+        Used as property by the API serializer.
+        Prepared for future support of multiple namespaces per user.
         """
         if self.service_account:
-            return self.service_account.namespace
+            return KubernetesNamespace.objects.filter(pk = self.service_account.namespace.pk)
         else:
-            return None
+            return KubernetesNamespace.objects.none()
+
+    def k8s_namespace_names(self):
+        """
+        Used as property by the API serializer.
+        Prepared for future support of multiple namespaces per user.
+        """
+        if self.service_account:
+            return KubernetesNamespace.objects.filter(pk = self.service_account.namespace.pk).values_list('name', flat=True)
+        else:
+            return KubernetesNamespace.objects.none()
+
 
     def has_namespace(self, namespace):
         """
         Check if this user has permissions for this Kubernetes namespace.
         This decision is based on the configuration in the portal,
         not on the RBAC situation in the cluster.
+        Prepared for future support of multiple namespaces per user.
         """
         if self.service_account:
             return namespace == self.service_account.namespace.name

@@ -8,8 +8,10 @@ from kubeportal.models.portalgroup import PortalGroup
 from kubeportal.models.webapplication import WebApplication
 from kubeportal.tests.helpers import create_group
 from kubeportal.views import SubAuthRequestView
+from kubeportal.tests.helpers import minikube_unavailable
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 @pytest.mark.parametrize("case, expected", [
     # Constellations for group membership of user and app
     ((True, True, False, False, True), 401),
@@ -53,6 +55,7 @@ def test_subauth_k8s_user(case, expected, admin_user_with_k8s, admin_client):
     assert response.status_code == expected
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 @pytest.mark.django_db
 def test_subauth_caching(admin_user_with_k8s, admin_client, mocker):
 

@@ -38,16 +38,6 @@ def random_namespace_name():
         pass
 
 
-@pytest.mark.usefixtures("db")
-@pytest.fixture
-def minikube_sync():
-    """
-    A PyTest fixture making sure that the Minikube installation was synced
-    to the portal database.
-    """
-    run_minikube_sync()
-
-
 @pytest.fixture
 def admin_user_with_k8s(admin_user):
     """
@@ -105,32 +95,38 @@ def admin_group(admin_user):
 class ApiClient:
     def __init__(self):
         self.client = RequestsClient()
-        self.jwt = None
         self.csrf = None
+        self.jwt = None
 
-    def get(self, relative_url, headers={}):
-        if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
-        return self.client.get('http://testserver' + relative_url, headers=headers)
-
-    def patch(self, relative_url, data, headers={}):
+    def _all_headers(self, headers):
+        """
+        Make sure that the parameters stays "None" if
+        nothing is to set, and nothing was given by the caller.
+        """
+        if (self.jwt or self.csrf) and not headers:
+            headers = {}
         if self.jwt:
             headers["Authorization"] = "Bearer " + self.jwt
         if self.csrf:
             headers['X-CSRFToken'] = self.csrf
+        return headers
+
+    def get(self, relative_url, headers=None):
+        return self.get_absolute('http://testserver' + relative_url, headers)
+
+    def get_absolute(self, url, headers=None):
+        return self.client.get(url, headers=self._all_headers(headers))
+
+    def patch(self, relative_url, data, headers=None):
         return self.client.patch('http://testserver' + relative_url,
-                                 json=data, headers=headers)
+                                 json=data, headers=self._all_headers(headers))
 
-    def post(self, relative_url, data=None, headers={}):
-        if self.jwt:
-            headers["Authorization"] = "Bearer " + self.jwt
-        if self.csrf:
-            headers['X-CSRFToken'] = self.csrf
+    def post(self, relative_url, data=None, headers=None):
         return self.client.post('http://testserver' + relative_url,
-                                json=data, headers=headers)
+                                json=data, headers=self._all_headers(headers))
 
-    def options(self, relative_url, headers={}):
-        return self.client.options('http://testserver' + relative_url)
+    def options(self, relative_url, headers=None):
+        return self.client.options('http://testserver' + relative_url, headers=self._all_headers(headers))
 
     def api_login(self, user):
         user.set_password("passwort")
@@ -153,6 +149,6 @@ def api_client(admin_user):
 
 
 @pytest.fixture
-def api_client_anon(admin_user):
+def api_client_anon():
     c = ApiClient()
     return c
