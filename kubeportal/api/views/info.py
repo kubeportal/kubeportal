@@ -9,6 +9,14 @@ from rest_framework.reverse import reverse
 from kubeportal.api.views.tools import get_user_count, get_kubeportal_version, get_cluster_name
 from kubeportal.k8s import kubernetes_api as api
 
+
+class InfoListSerializer(serializers.Serializer):
+    """
+    The API serializer for a list of infos.
+    """
+    info_urls = serializers.DictField(read_only=True)
+
+
 class InfoDetailView(GenericAPIView):
     stats = {'k8s_version': api.get_kubernetes_version,
              'k8s_apiserver_url': api.get_apiserver,
@@ -67,13 +75,15 @@ class InfoDetailView(GenericAPIView):
         else:
             raise NotFound
 
-
 class InfoView(GenericAPIView):
+
+    @extend_schema(
+        summary="Get endpoints for retreiving information about the portal and the cluster.",
+        responses={200: InfoListSerializer}
+    )
     def get(self, request, version):
         result = {}
         for info_slug in InfoDetailView.stats.keys():
             result[info_slug] = reverse(viewname='info_detail', kwargs={'info_slug': info_slug}, request=request)
-        return Response({'links': result})
-
-
+        return Response({'info_urls': result})
 

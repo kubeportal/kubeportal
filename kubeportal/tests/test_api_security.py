@@ -48,7 +48,7 @@ def test_options_preflight_without_auth(api_client_anon, admin_user, admin_group
                  (f'/api/{settings.API_VERSION}/users/{admin_user.pk}', 'GET'),
                  (f'/api/{settings.API_VERSION}/users/{admin_user.pk}', 'PATCH'),
                  (f'/api/{settings.API_VERSION}/groups/{admin_group.pk}', 'GET'),
-                 (f'/api/{settings.API_VERSION}/info/k8s_apiserver', 'GET'),
+                 (f'/api/{settings.API_VERSION}/infos/k8s_apiserver', 'GET'),
                  (f'/api/{settings.API_VERSION}/login/', 'POST'),
                  ]
     for path, request_method in test_path:

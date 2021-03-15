@@ -1,4 +1,5 @@
-from drf_spectacular.utils import OpenApiExample, extend_schema_serializer, extend_schema
+from drf_spectacular.utils import OpenApiExample, extend_schema_serializer, extend_schema, extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
@@ -17,35 +18,39 @@ from django.utils.module_loading import import_string
             },
             request_only=True
         ),
-        OpenApiExample(
-            '',
-            value={
-                'user_id': 42,
-                'group_ids': [5,7,13],
-                'namespace': 'default',
-                'jwt': '89ew4z7ro9ew47reswu'
-            },
-            response_only=True
-        ),
     ]
 )
 class LoginSerializer(OriginalLoginSerializer): # remove third optional field from library
+    """
+    The API serializer for username / password login.
+    """
     username = serializers.CharField()
     password = serializers.CharField()
+    email = None
 
 class JWTSerializer(serializers.Serializer):
     """
-    Serializer for JWT authentication.
+    The API serializer for getting security information after successful login.
     """
     access_token = serializers.CharField()
     refresh_token = serializers.CharField()
-    links = serializers.SerializerMethodField()
+    user_url = serializers.SerializerMethodField()
+    news_url = serializers.SerializerMethodField()
+    infos_url = serializers.SerializerMethodField()
 
-    def get_links(self, obj):
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_user_url(self, obj):
         uid = obj['user'].pk
         request = self.context['request']
-        return {'user': reverse(viewname='user', kwargs={'user_id': uid}, request=request),
-                'news': reverse(viewname='news', request=request),
-                'infos': reverse(viewname="info_overview", request=request)
-                }
+        return reverse(viewname='user', kwargs={'user_id': uid}, request=request)
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_news_url(self, obj):
+        request = self.context['request']
+        return reverse(viewname='news', request=request)
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_infos_url(self, obj):
+        request = self.context['request']
+        return reverse(viewname='info_overview', request=request)
 

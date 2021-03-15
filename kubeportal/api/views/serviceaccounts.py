@@ -14,7 +14,7 @@ class ServiceAccountSerializer(serializers.ModelSerializer):
         fields = ['name', 'uid', 'namespace']
 
 
-class ServiceAccountView(generics.RetrieveAPIView):
+class ServiceAccountRetrievalView(generics.RetrieveAPIView):
     lookup_field = 'uid'
     serializer_class = ServiceAccountSerializer
 
@@ -23,5 +23,3 @@ class ServiceAccountView(generics.RetrieveAPIView):
         return self.request.user.k8s_accounts()
 
 
-class ServiceAccountsView(generics.ListAPIView):
-    serializer_class = ServiceAccountSerializer

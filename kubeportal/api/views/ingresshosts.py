@@ -2,32 +2,22 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from kubeportal.k8s import kubernetes_api as api
+from rest_framework import serializers, generics
+
+
+
+class IngressHostListSerializer(serializers.Serializer):
+    """
+    The API serializer for a list of ingress host names.
+    """
+    hosts = serializers.ListField(read_only=True, child=serializers.CharField())
 
 
 class IngressHostsView(GenericAPIView):
 
     @extend_schema(
-        operation={
-            "operationId": "get_ingresshosts",
-            "tags": ["api"],
-            "summary": "Get the list of host names used by ingresses in all namespaces.",
-            "security": [{"jwtAuth": []}],
-            "responses": {
-                "200": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string",
-                                    "example": "app.example.com"
-                                    }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        summary="Get the list of host names used by ingresses in all namespaces.",
+        responses={200: IngressHostListSerializer}
     )
     def get(self, request, version):
-        return Response(api.get_ingress_hosts())
+        return Response({'hosts': api.get_ingress_hosts()})

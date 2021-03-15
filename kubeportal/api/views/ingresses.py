@@ -6,43 +6,47 @@ from rest_framework.response import Response
 from kubeportal.k8s import kubernetes_api as api
 
 
-@extend_schema_serializer(
-    examples=[
-        OpenApiExample(
-            'HTTPS Ingress example',
-            value={
-                'name': 'my-ingress',
-                'annotations': [
-                    {'key': 'nginx.ingress.kubernetes.io/rewrite-target', 'value': '/'}
-                ],
-                'tls': True,
-                'rules': [
-                    {'host': 'www.example.com',
-                     'paths': [
-                         {'path': '/svc',
-                          'service_name': 'my-svc',
-                          'service_port': 8000
-                          },
-                         {'path': '/docs',
-                          'service_name': 'my-docs-svc',
-                          'service_port': 5000
-                          }
-                     ]
-                     }
-                ]
-            }
-        ),
-    ]
-)
+class AnnotationSerializer(serializers.Serializer):
+    """
+    The API serializer for a annotation definition.
+    """
+    key = serializers.CharField()
+    value = serializers.CharField()
+
+
+class IngressPathSerializer(serializers.Serializer):
+    path = serializers.CharField()
+    service_name = serializers.CharField()
+    service_port = serializers.IntegerField()
+
+
+class IngressRuleSerializer(serializers.Serializer):
+    """
+    The API serializer for a ingress rule definition.
+    """
+    host = serializers.CharField()
+    paths = serializers.ListField(child=IngressPathSerializer())
+
+
 class IngressSerializer(serializers.Serializer):
+    """
+    The API serializer for an ingress definition.
+    """
     name = serializers.CharField()
-    annotations = serializers.DictField()
+    annotations = serializers.ListField(child=AnnotationSerializer())
     tls = serializers.BooleanField()
-    rules = serializers.ListField()
+    rules = serializers.ListField(child=IngressRuleSerializer())
     creation_timestamp = serializers.DateTimeField(read_only=True)
 
 
-class IngressView(generics.RetrieveAPIView):
+class IngressListSerializer(serializers.Serializer):
+    """
+    The API serializer for a list of ingresses.
+    """
+    deployment_urls = serializers.ListField(read_only=True, child=serializers.URLField())
+
+
+class IngressRetrievalView(generics.RetrieveAPIView):
     serializer_class = IngressSerializer
 
 

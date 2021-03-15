@@ -10,12 +10,21 @@ import logging
 logger = logging.getLogger('KubePortal')
 
 
-class PodSerializer(serializers.Serializer):
+class ContainerSerializer(serializers.Serializer):
+    """
+    The API serializer for a container.
+    """
     name = serializers.CharField()
-    uid = serializers.CharField()
-    creation_timestamp = serializers.DateTimeField(read_only=True)
-    containers = serializers.ListField(child=serializers.DictField())
+    image = serializers.CharField()
 
+class PodSerializer(serializers.Serializer):
+    """
+    The API serializer for a pod.
+    """
+    name = serializers.CharField()
+    uid = serializers.CharField(read_only=True)
+    creation_timestamp = serializers.DateTimeField(read_only=True)
+    containers = serializers.ListField(child=ContainerSerializer())
 
     @classmethod
     def to_json(cls, pod):
@@ -34,7 +43,7 @@ class PodSerializer(serializers.Serializer):
         return stripped_pod
 
 
-class PodView(generics.RetrieveAPIView):
+class PodRetrievalView(generics.RetrieveAPIView):
     serializer_class = PodSerializer
 
     @extend_schema(
@@ -49,16 +58,3 @@ class PodView(generics.RetrieveAPIView):
             raise NotFound
 
 
-class PodsView(generics.ListAPIView):
-    serializer_class = PodSerializer
-
-    @extend_schema(
-        summary="Get list of all pods in a namespace."
-    )
-    def get(self, request, version, namespace):
-        if request.user.has_namespace(namespace):
-            pod_list = api.get_namespaced_pods(namespace)
-            return Response([reverse(viewname='pod', kwargs={'uid': pod.metadata.uid}, request=request) for pod in pod_list])
-        else:
-            logger.warning(f"User '{request.user}' has no access to pods of the namespace '{namespace}'. Access denied.")
-            raise NotFound

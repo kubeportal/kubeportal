@@ -5,15 +5,17 @@ from kubeportal.models.news import News
 
 
 class NewsSerializer(serializers.ModelSerializer):
+    author_url = serializers.URLField()
+
     class Meta:
         model = News
-        fields = ['title', 'content', 'author', 'created', 'modified', 'priority']
+        fields = ['title', 'content', 'author_url', 'created', 'modified', 'priority']
 
     def to_representation(self, data):
         data = super(NewsSerializer, self).to_representation(data)
         request = self.context['request']
         author_url = reverse(viewname='user', kwargs={'user_id': data['author']}, request=request)
-        data['author'] = author_url
+        data['author_url'] = author_url
         return data
 
 

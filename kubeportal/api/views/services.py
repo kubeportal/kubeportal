@@ -6,67 +6,41 @@ from rest_framework.response import Response
 from kubeportal.k8s import kubernetes_api as api
 
 
-@extend_schema_serializer(
-    examples=[
-        OpenApiExample(
-            'NodePort example',
-            value={
-                'name': 'my-service',
-                'type': 'NodePort',
-                'selector': {'key': 'app', 'value': 'kubeportal'},
-                'ports': [{'port': 8000, 'protocol': 'TCP'}]
-            },
-        ),
-        OpenApiExample(
-            'ClusterIP example',
-            value={
-                'name': 'my-service',
-                'type': 'ClusterIP',
-                'selector': {'key': 'app', 'value': 'kubeportal'},
-                'ports': [{'port': 8000, 'protocol': 'TCP'}]
-            },
-        ),
-        OpenApiExample(
-            'LoadBalancer example',
-            value={
-                'name': 'my-service',
-                'type': 'LoadBalancer',
-                'selector': {'key': 'app', 'value': 'kubeportal'},
-                'ports': [{'port': 8000, 'protocol': 'TCP'}]
-            },
-        ),
-    ]
-)
+class SelectorSerializer(serializers.Serializer):
+    """
+    The API serializer for a label selector.
+    """
+    key = serializers.CharField()
+    value = serializers.CharField()
+
+
+class PortSerializer(serializers.Serializer):
+    """
+    The API serializer for a port definition.
+    """
+    port = serializers.IntegerField()
+    protocol = serializers.ChoiceField(
+        choices=("TCP", "UDP")
+    )
+
 class ServiceSerializer(serializers.Serializer):
+    """
+    The API serializer for a service defition.
+    """
     name = serializers.CharField()
+    creation_timestamp = serializers.DateTimeField(read_only=True)
     type = serializers.ChoiceField(
         choices=("NodePort", "ClusterIP", "LoadBalancer")
     )
-    selector = serializers.DictField(
-        allow_empty=False
-    )
-    ports = serializers.ListField(
-        child=serializers.DictField(
-            allow_empty=False
-        ),
-        allow_empty=False)
-    creation_timestamp = serializers.DateTimeField(read_only=True)
+    selector = SelectorSerializer()
+    ports = serializers.ListField(child=PortSerializer())
 
 
-class ServiceView(generics.RetrieveAPIView):
+class ServiceRetrievalView(generics.RetrieveAPIView):
     serializer_class = ServiceSerializer
 
-class ServicesView(generics.ListCreateAPIView):
+class ServiceCreationView(generics.CreateAPIView):
     serializer_class = ServiceSerializer
-
-    @extend_schema(
-        summary="Get services in a namespace."
-    )
-    def get(self, request, version, namespace):
-        if request.user.has_namespace(namespace):
-            return Response(api.get_namespaced_services(namespace))
-        else:
-            raise NotFound
 
     @extend_schema(
         summary="Create service in a namespace."

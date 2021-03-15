@@ -72,6 +72,22 @@ class KubernetesNamespace(models.Model):
         return [item.metadata.uid for item in deployments]
 
 
+    def get_service_uids(self):
+        """
+        Get UIDs of the services in this namespace.
+        """
+        services = api.get_namespaced_services(self.name)
+        return [item.metadata.uid for item in services]
+
+
+    def get_ingress_uids(self):
+        """
+        Get UIDs of the ingresses in this namespace.
+        """
+        ingresses = api.get_namespaced_ingresses(self.name)
+        return [item.metadata.uid for item in ingresses]
+
+
     @classmethod
     def create_missing_in_portal(cls):
         """

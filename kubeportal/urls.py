@@ -38,29 +38,40 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 
     path('api/<str:version>/', api_views.BootstrapInfoView.as_view()),
+
     path('api/<str:version>/users/<int:user_id>/', api_views.UserView.as_view(), name='user'),
+
     path('api/<str:version>/namespaces/<str:namespace>/', api_views.NamespaceView.as_view(), name='namespace'),
-    path('api/<str:version>/namespaces/<str:namespace>/serviceaccounts/', api_views.ServiceAccountsView.as_view(), name='serviceaccounts'),
-    path('api/<str:version>/serviceaccounts/<str:uid>/', api_views.ServiceAccountView.as_view(), name='serviceaccount'),
-    path('api/<str:version>/namespaces/<str:namespace>/deployments/', api_views.DeploymentsView.as_view(), name='deployments'),
-    path('api/<str:version>/deployments/<str:uid>/', api_views.DeploymentView.as_view(), name='deployment'),
-    path('api/<str:version>/namespaces/<str:namespace>/pods/', api_views.PodsView.as_view(), name='pods'),
-    path('api/<str:version>/pods/<str:uid>/', api_views.PodView.as_view(), name='pod'),
-    path('api/<str:version>/namespaces/<str:namespace>/services/', api_views.ServicesView.as_view(), name='services'),
-    path('api/<str:version>/services/<str:uid>/', api_views.ServiceView.as_view(), name='service'),
-    path('api/<str:version>/namespaces/<str:namespace>/ingresses/', api_views.IngressesView.as_view(), name='ingresses'),
-    path('api/<str:version>/ingresses/<str:uid>/', api_views.IngressView.as_view(), name='ingress'),
+
     path('api/<str:version>/ingresshosts/', api_views.IngressHostsView.as_view()),
 
+    path('api/<str:version>/infos/', api_views.InfoView.as_view(), name='info_overview'),
+    path('api/<str:version>/infos/<str:info_slug>/', api_views.InfoDetailView.as_view(), name='info_detail'),
+
+    path('api/<str:version>/news/', api_views.NewsView.as_view(), name='news'),
+
     path('api/<str:version>/groups/<int:group_id>/', api_views.GroupView.as_view(), name='group'),
+
     path('api/<str:version>/webapps/<int:webapp_id>/', api_views.WebAppView.as_view(), name='webapplication'),
+
+    # path('api/<str:version>/namespaces/<str:namespace>/serviceaccounts/', api_views.ServiceAccountCreationView.as_view(), name='serviceaccount_creation'),
+    path('api/<str:version>/serviceaccounts/<str:uid>/', api_views.ServiceAccountRetrievalView.as_view(), name='serviceaccount_retrieval'),
+
+    path('api/<str:version>/namespaces/<str:namespace>/deployments/', api_views.DeploymentCreationView.as_view(), name='deployment_creation'),
+    path('api/<str:version>/deployments/<str:uid>/', api_views.DeploymentRetrievalView.as_view(), name='deployment_retrieval'),
+
+    # path('api/<str:version>/namespaces/<str:namespace>/pods/', api_views.PodCreationView.as_view(), name='pod_creation'),
+    path('api/<str:version>/pods/<str:uid>/', api_views.PodRetrievalView.as_view(), name='pod_retrieval'),
+
+    path('api/<str:version>/namespaces/<str:namespace>/services/', api_views.ServiceCreationView.as_view(), name='service_creation'),
+    path('api/<str:version>/services/<str:uid>/', api_views.ServiceRetrievalView.as_view(), name='service_retrieval'),
+
+    # path('api/<str:version>/namespaces/<str:namespace>/ingresses/', api_views.IngressCreationView.as_view(), name='ingress_creation'),
+    path('api/<str:version>/ingresses/<str:uid>/', api_views.IngressRetrievalView.as_view(), name='ingress_retrieval'),
 
     path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
-    path('api/<str:version>/info/', api_views.InfoView.as_view(), name='info_overview'),
-    path('api/<str:version>/info/<str:info_slug>/', api_views.InfoDetailView.as_view(), name='info_detail'),
-    path('api/<str:version>/news/', api_views.NewsView.as_view(), name='news'),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),
