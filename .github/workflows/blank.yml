@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        k8sversion: ['v1.15', 'v1.16', 'v1.17', 'v1.18', 'v1.19', 'v1.20']
+        k8sversion: ['v1.14.10', 'v1.15.12', 'v1.16.15', 'v1.17.17', 'v1.18.17', 'v1.19.9', 'v1.20.2']
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
