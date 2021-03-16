@@ -19,8 +19,14 @@ def test_namespace_pods_list(api_client, admin_user):
     assert 200 == response.status_code
     data = json.loads(response.content)
     assert len(data) > 0
-    pods_list = data["pod_urls"]
-    assert pods_list[0].startswith("http://testserver")
+    from urllib.parse import urlparse
+    pods_url = urlparse(data["pods_url"])
+    response = api_client.get(pods_url.path)
+    assert 200 == response.status_code
+    data = json.loads(response.content)
+    assert len(data) > 0
+    pod_urls = data["pod_urls"]
+    assert pod_urls[0].startswith("http")
 
 
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
@@ -73,6 +79,6 @@ def test_get_illegal_pod(api_client, admin_user):
     assert 404 == response.status_code
 
 
-def test_namespace_pods_list_no_k8s(api_client):
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/pods/')
-    assert 404 == response.status_code
+def test_namespace_pods_list_forbidden(api_client):
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/pods/')
+    assert response.status_code == 404

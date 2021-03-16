@@ -55,14 +55,19 @@ def test_user_services_list(api_client, admin_user):
     response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/')
     assert 200 == response.status_code
     data = json.loads(response.content)
-    services = data["service_urls"]
 
-    # fetch details of DNS service
     from urllib.parse import urlparse
-    service = urlparse(services[0])
-    response = api_client.get(service.path)
+    services_url = urlparse(data["services_url"])
+
+    response = api_client.get(services_url.path)
     assert 200 == response.status_code
     data = json.loads(response.content)
+    service_url = urlparse(data["service_urls"][0])
+
+    response = api_client.get(service_url.path)
+    assert 200 == response.status_code
+    data = json.loads(response.content)
+
     assert "kube-dns" == data['name']
     assert "ClusterIP" == data['type']
     assert 53 == data['ports'][0]['port']

@@ -57,16 +57,16 @@ urlpatterns = [
     # path('api/<str:version>/namespaces/<str:namespace>/serviceaccounts/', api_views.ServiceAccountCreationView.as_view(), name='serviceaccount_creation'),
     path('api/<str:version>/serviceaccounts/<str:uid>/', api_views.ServiceAccountRetrievalView.as_view(), name='serviceaccount_retrieval'),
 
-    path('api/<str:version>/namespaces/<str:namespace>/deployments/', api_views.DeploymentCreationView.as_view(), name='deployment_creation'),
+    path('api/<str:version>/namespaces/<str:namespace>/deployments/', api_views.DeploymentsView.as_view(), name='deployments'),
     path('api/<str:version>/deployments/<str:uid>/', api_views.DeploymentRetrievalView.as_view(), name='deployment_retrieval'),
 
-    # path('api/<str:version>/namespaces/<str:namespace>/pods/', api_views.PodCreationView.as_view(), name='pod_creation'),
+    path('api/<str:version>/namespaces/<str:namespace>/pods/', api_views.PodsView.as_view(), name='pods'),
     path('api/<str:version>/pods/<str:uid>/', api_views.PodRetrievalView.as_view(), name='pod_retrieval'),
 
-    path('api/<str:version>/namespaces/<str:namespace>/services/', api_views.ServiceCreationView.as_view(), name='service_creation'),
+    path('api/<str:version>/namespaces/<str:namespace>/services/', api_views.ServicesView.as_view(), name='services'),
     path('api/<str:version>/services/<str:uid>/', api_views.ServiceRetrievalView.as_view(), name='service_retrieval'),
 
-    path('api/<str:version>/namespaces/<str:namespace>/ingresses/', api_views.IngressCreationView.as_view(), name='ingress_creation'),
+    path('api/<str:version>/namespaces/<str:namespace>/ingresses/', api_views.IngressesView.as_view(), name='ingresses'),
     path('api/<str:version>/ingresses/<str:uid>/', api_views.IngressRetrievalView.as_view(), name='ingress_retrieval'),
 
     path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),

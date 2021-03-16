@@ -25,10 +25,17 @@ def test_namespace_deployments_list(api_client, admin_user):
     assert 200 == response.status_code
     response_data = json.loads(response.content)
     assert len(response_data) > 0
-    deployments = response_data['deployment_urls']
+    deployments_url = response_data['deployments_url']
+
+    # fetch list of deployments
+    response = api_client.get_absolute(deployments_url)
+    assert 200 == response.status_code
+    response_data = json.loads(response.content)
+    assert len(response_data) > 0
+    deployment_urls = response_data['deployment_urls']
 
     # fetch first deployment info
-    response = api_client.get_absolute(deployments[0])
+    response = api_client.get_absolute(deployment_urls[0])
     assert 200 == response.status_code
     deployment = json.loads(response.content)
     assert "coredns" in deployment['name']

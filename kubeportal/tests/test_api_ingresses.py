@@ -93,12 +93,18 @@ def test_user_ingresses_list(api_client, admin_user_with_k8s):
     response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/')
     assert 200 == response.status_code
     data = json.loads(response.content)
-    ingress_urls = data['ingress_urls']
     from urllib.parse import urlparse
-    ingress = urlparse(ingress_urls[0])
-    response = api_client.get(ingress.path)
+    ingresses_url = urlparse(data['ingresses_url'])
+
+    response = api_client.get(ingresses_url.path)
     assert 200 == response.status_code
     data = json.loads(response.content)
+    ingress_url = urlparse(data['ingress_urls'][0])
+
+    response = api_client.get(ingress_url.path)
+    assert 200 == response.status_code
+    data = json.loads(response.content)
+
     assert "test-ingress-1b" == data['name']
     assert data['tls'] is True
     assert "visbert" in data["rules"][0]["host"]

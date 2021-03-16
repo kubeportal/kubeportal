@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_serializer, OpenA
 from rest_framework import serializers, generics
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from kubeportal.k8s import kubernetes_api as api
 
@@ -38,6 +39,8 @@ class ServiceSerializer(serializers.Serializer):
     selector = SelectorSerializer()
     ports = serializers.ListField(child=PortSerializer())
 
+class ServiceListSerializer(serializers.Serializer):
+    service_urls = serializers.ListField(child=serializers.URLField())
 
 class ServiceRetrievalView(generics.RetrieveAPIView):
     serializer_class = ServiceSerializer
@@ -65,11 +68,34 @@ class ServiceRetrievalView(generics.RetrieveAPIView):
         return Response(instance.data)
 
 
-class ServiceCreationView(generics.CreateAPIView):
-    serializer_class = ServiceSerializer
+class ServicesView(generics.CreateAPIView, generics.RetrieveAPIView):
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ServiceListSerializer
+        if self.request.method == "POST":
+            return ServiceSerializer
+
 
     @extend_schema(
-        summary="Create service in a namespace."
+        summary="Get the list of services in a namespace.",
+        request=None,
+        responses=ServiceListSerializer
+    )
+    def get(self, request, version, namespace):
+        if request.user.has_namespace(namespace):
+            services = api.get_namespaced_services(namespace)
+            uids = [item.metadata.uid for item in services]
+            instance = ServiceListSerializer({
+                'service_urls': [reverse(viewname='service_retrieval', kwargs={'uid': uid}, request=request) for uid in uids]
+            })
+            return Response(instance.data)
+        else:
+            raise NotFound
+
+    @extend_schema(
+        summary="Create service in a namespace.",
+        request = ServiceSerializer,
+        responses = None
     )
     def post(self, request, version, namespace):
         if request.user.has_namespace(namespace):

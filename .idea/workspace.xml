@@ -3,29 +3,15 @@
   <component name="ChangeListManager">
     <list default="true" id="9f525e2b-06cc-4b3e-bd05-de80d9c4b9c7" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/bootstrapinfo.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/bootstrapinfo.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/api/views/deployments.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/deployments.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/info.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/info.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/ingresshosts.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/ingresshosts.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/login.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/login.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/api/views/namespaces.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/namespaces.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/news.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/news.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/api/views/pods.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/pods.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/serviceaccounts.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/serviceaccounts.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/api/views/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/users.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/k8s/kubernetes_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/k8s/kubernetes_api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/fixtures/ingress1.yml" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/fixtures/ingress1.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_deployments.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_deployments.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_ingresses.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_ingresses.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_news.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_news.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_pods.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_pods.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_security.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_security.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_services.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_services.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_users.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_users.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/urls.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -52,30 +38,30 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$/Makefile" />
     <property name="settings.editor.selected.configurable" value="preferences.keymap" />
   </component>
-  <component name="RunManager" selected="Python tests.pytest in test_front_unappr.py">
+  <component name="RunManager" selected="Python tests.pytest for kubeportal.tests.test_api_services.test_user_services_list">
     <configuration name="Prepare tests" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile">
       <makefile filename="$PROJECT_DIR$/Makefile" target="minikube-start" workingDirectory="" arguments="">
         <envs />
       </makefile>
       <method v="2" />
     </configuration>
-    <configuration name="pytest for tests.test_models.test_user_k8s_namespaces" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+    <configuration name="pytest for kubeportal.tests.test_api_ingresses.test_user_ingresses_list" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="kubeportal" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/kubeportal" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/kubeportal/tests" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_keywords" value="&quot;&quot;" />
       <option name="_new_parameters" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;tests.test_models.test_user_k8s_namespaces&quot;" />
+      <option name="_new_target" value="&quot;kubeportal.tests.test_api_ingresses.test_user_ingresses_list&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="pytest in test_api.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+    <configuration name="pytest for kubeportal.tests.test_api_pods.test_namespace_pods_list" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="kubeportal" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -87,11 +73,11 @@
       <option name="_new_keywords" value="&quot;&quot;" />
       <option name="_new_parameters" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/kubeportal/tests/test_api.py&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <option name="_new_target" value="&quot;kubeportal.tests.test_api_pods.test_namespace_pods_list&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="pytest in test_front_unappr.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+    <configuration name="pytest for kubeportal.tests.test_api_services.test_user_services_list" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="kubeportal" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -103,27 +89,11 @@
       <option name="_new_keywords" value="&quot;&quot;" />
       <option name="_new_parameters" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/kubeportal/tests/test_front_unappr.py&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <option name="_new_target" value="&quot;kubeportal.tests.test_api_services.test_user_services_list&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="pytest in test_models.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
-      <module name="kubeportal" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/kubeportal" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="_new_keywords" value="&quot;&quot;" />
-      <option name="_new_parameters" value="&quot;&quot;" />
-      <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/kubeportal/tests/test_models.py&quot;" />
-      <option name="_new_targetType" value="&quot;PATH&quot;" />
-      <method v="2" />
-    </configuration>
-    <configuration name="pytest in test_subauth.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+    <configuration name="pytest in test_api_ingresses.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
       <module name="kubeportal" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -135,26 +105,42 @@
       <option name="_new_keywords" value="&quot;&quot;" />
       <option name="_new_parameters" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;$PROJECT_DIR$/kubeportal/tests/test_subauth.py&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/kubeportal/tests/test_api_ingresses.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest in test_api_services.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="kubeportal" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/kubeportal/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/kubeportal/tests/test_api_services.py&quot;" />
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method v="2" />
     </configuration>
     <list>
       <item itemvalue="Makefile.Prepare tests" />
       <item itemvalue="Python tests.pytest in tests" />
-      <item itemvalue="Python tests.pytest in test_api.py" />
-      <item itemvalue="Python tests.pytest in test_subauth.py" />
-      <item itemvalue="Python tests.pytest in test_models.py" />
-      <item itemvalue="Python tests.pytest for tests.test_models.test_user_k8s_namespaces" />
-      <item itemvalue="Python tests.pytest in test_front_unappr.py" />
+      <item itemvalue="Python tests.pytest for kubeportal.tests.test_api_pods.test_namespace_pods_list" />
+      <item itemvalue="Python tests.pytest in test_api_ingresses.py" />
+      <item itemvalue="Python tests.pytest for kubeportal.tests.test_api_ingresses.test_user_ingresses_list" />
+      <item itemvalue="Python tests.pytest in test_api_services.py" />
+      <item itemvalue="Python tests.pytest for kubeportal.tests.test_api_services.test_user_services_list" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.pytest in test_front_unappr.py" />
-        <item itemvalue="Python tests.pytest for tests.test_models.test_user_k8s_namespaces" />
-        <item itemvalue="Python tests.pytest in test_models.py" />
-        <item itemvalue="Python tests.pytest in test_subauth.py" />
-        <item itemvalue="Python tests.pytest in test_api.py" />
+        <item itemvalue="Python tests.pytest for kubeportal.tests.test_api_services.test_user_services_list" />
+        <item itemvalue="Python tests.pytest in test_api_services.py" />
+        <item itemvalue="Python tests.pytest for kubeportal.tests.test_api_ingresses.test_user_ingresses_list" />
+        <item itemvalue="Python tests.pytest in test_api_ingresses.py" />
+        <item itemvalue="Python tests.pytest for kubeportal.tests.test_api_pods.test_namespace_pods_list" />
       </list>
     </recent_temporary>
   </component>
@@ -188,7 +174,35 @@
       <option name="project" value="LOCAL" />
       <updated>1614605045597</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Fix test suite, huge consistency fix">
+      <created>1615891579447</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1615891579447</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Fix methods for ingress creation">
+      <created>1615892410404</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1615892410404</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Unify naming in API">
+      <created>1615892432665</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1615892432665</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Fix test case">
+      <created>1615892607330</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1615892607330</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -207,7 +221,11 @@
     <MESSAGE value="PEP-8, fix tests" />
     <MESSAGE value="Hyperlinks for webapps" />
     <MESSAGE value="More API hyperlinks, add service accounts and namespaces as resources" />
-    <option name="LAST_COMMIT_MESSAGE" value="More API hyperlinks, add service accounts and namespaces as resources" />
+    <MESSAGE value="Fix test suite, huge consistency fix" />
+    <MESSAGE value="Fix methods for ingress creation" />
+    <MESSAGE value="Unify naming in API" />
+    <MESSAGE value="Fix test case" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix test case" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

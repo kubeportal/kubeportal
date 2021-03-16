@@ -28,6 +28,8 @@ class PodTemplateSerializer(serializers.Serializer):
     labels = serializers.ListField(child=LabelSerializer())
     containers = serializers.ListField(child=ContainerSerializer())
 
+class DeploymentListSerializer(serializers.Serializer):
+    deployment_urls = serializers.ListField(child=serializers.URLField(), read_only=True)
 
 class DeploymentSerializer(serializers.Serializer):
     """
@@ -71,11 +73,34 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
         return Response(instance.data)
 
 
-class DeploymentCreationView(generics.CreateAPIView):
-    serializer_class = DeploymentSerializer
+class DeploymentsView(generics.RetrieveAPIView, generics.CreateAPIView):
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return DeploymentSerializer
+        if self.request.method == "POST":
+            return DeploymentListSerializer
+
+    @extend_schema(
+        summary="Get the list of deployments in a namespace.",
+        request=None,
+        responses=DeploymentListSerializer
+    )
+    def get(self, request, version, namespace):
+        if request.user.has_namespace(namespace):
+            deployments = api.get_namespaced_deployments(namespace)
+            uids = [item.metadata.uid for item in deployments]
+            instance = DeploymentListSerializer({
+                'deployment_urls': [reverse(viewname='deployment_retrieval', kwargs={'uid': uid}, request=request) for uid in uids]\
+            })
+
+            return Response(instance.data)
+        else:
+            raise NotFound
 
     @extend_schema(
         summary="Create a deployment in a namespace.",
+        request=DeploymentSerializer,
+        responses=None
     )
     def post(self, request, version, namespace):
         if request.user.has_namespace(namespace):
@@ -87,3 +112,4 @@ class DeploymentCreationView(generics.CreateAPIView):
             return Response(status=201)
         else:
             raise NotFound
+
