@@ -5,9 +5,16 @@ from kubeportal.api.views.tools import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    portal_groups = serializers.HyperlinkedRelatedField(many=True, view_name='group', lookup_url_kwarg='group_id',
-                                                        read_only=True)
-    webapps = serializers.HyperlinkedRelatedField(many=True, view_name='webapplication', lookup_url_kwarg='webapp_id', read_only=True)
+    group_urls = serializers.HyperlinkedRelatedField(many=True,
+                                                     view_name='group',
+                                                     lookup_url_kwarg='group_id',
+                                                     read_only=True,
+                                                     source='portal_groups')
+    webapp_urls = serializers.HyperlinkedRelatedField(many=True,
+                                                      view_name='webapplication',
+                                                      lookup_url_kwarg='webapp_id',
+                                                      read_only=True,
+                                                      source='webapps')
     firstname = serializers.CharField(source='first_name')
     name = serializers.CharField(source='last_name')
     state = serializers.CharField(read_only=True)
@@ -16,15 +23,25 @@ class UserSerializer(serializers.ModelSerializer):
     primary_email = serializers.EmailField(source='email')
     admin = serializers.BooleanField(source='is_staff', read_only=True)
     all_emails = serializers.ListField(read_only=True)
-    k8s_accounts = serializers.HyperlinkedRelatedField(many=True, view_name='serviceaccount_retrieval', lookup_url_kwarg='uid', lookup_field='uid', read_only=True)
-    k8s_namespaces = serializers.HyperlinkedRelatedField(many=True, view_name='namespace', lookup_url_kwarg='namespace', lookup_field='name', read_only=True)
-    k8s_namespace_names = serializers.ListField(read_only=True)
+    serviceaccount_urls = serializers.HyperlinkedRelatedField(many=True,
+                                                              view_name='serviceaccount_retrieval',
+                                                              lookup_url_kwarg='uid',
+                                                              lookup_field='uid',
+                                                              read_only=True,
+                                                              source='k8s_accounts')
+    namespace_urls = serializers.HyperlinkedRelatedField(many=True,
+                                                         view_name='namespace',
+                                                         lookup_url_kwarg='namespace',
+                                                         lookup_field='name',
+                                                         read_only=True,
+                                                         source='k8s_namespaces')
+    namespace_names = serializers.ListField(read_only=True)
     k8s_token = serializers.CharField(source='token', read_only=True)
 
     class Meta:
         model = User
-        fields = ('portal_groups',
-                  'webapps',
+        fields = ('group_urls',
+                  'webapp_urls',
                   'firstname',
                   'name',
                   'username',
@@ -33,9 +50,9 @@ class UserSerializer(serializers.ModelSerializer):
                   'admin',
                   'state',
                   'all_emails',
-                  'k8s_accounts',
-                  'k8s_namespaces',
-                  'k8s_namespace_names',
+                  'serviceaccount_urls',
+                  'namespace_urls',
+                  'namespace_names',
                   'k8s_token')
 
 
