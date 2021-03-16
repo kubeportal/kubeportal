@@ -24,10 +24,10 @@ def test_user(api_client, admin_user_with_k8s_system):
         'primary_email',
         'all_emails',
         'admin',
-        'k8s_accounts',
+        'serviceaccount_urls',
         'k8s_token',
-        'webapps',
-        'portal_groups'
+        'webapp_urls',
+        'group_urls'
     ]
 
     response = api_client.get(f'/api/{settings.API_VERSION}/users/{admin_user_with_k8s_system.pk}/')
@@ -39,10 +39,11 @@ def test_user(api_client, admin_user_with_k8s_system):
     for key in user_attr_expected:
         assert key in data
 
-    assert len(data["portal_groups"]) > 0   # all users group, at least
-    assert "http://testserver/api/" in data["portal_groups"][0]
+    assert len(data["group_urls"]) > 0   # all users group, at least
+    assert len(data["serviceaccount_urls"]) > 0
     assert data['all_emails'] == ['admin@example.com']
-    assert data['k8s_accounts'][0].startswith("http://testserver")
+    assert data['serviceaccount_urls'][0].startswith("http://testserver")
+    assert data['group_urls'][0].startswith("http://testserver")
 
 
 def test_patch_user(api_client, admin_user):
