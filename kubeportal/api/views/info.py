@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
-
 from kubeportal.api.views.tools import get_user_count, get_kubeportal_version, get_cluster_name
 from kubeportal.k8s import kubernetes_api as api
 
@@ -75,6 +74,7 @@ class InfoDetailView(GenericAPIView):
         else:
             raise NotFound
 
+
 class InfoView(GenericAPIView):
 
     @extend_schema(
@@ -86,4 +86,3 @@ class InfoView(GenericAPIView):
         for info_slug in InfoDetailView.stats.keys():
             result[info_slug] = reverse(viewname='info_detail', kwargs={'info_slug': info_slug}, request=request)
         return Response({'info_urls': result})
-

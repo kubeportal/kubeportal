@@ -5,6 +5,9 @@ from rest_framework.response import Response
 
 from kubeportal.k8s import kubernetes_api as api
 
+import logging
+logger = logging.getLogger('KubePortal')
+
 
 class SelectorSerializer(serializers.Serializer):
     """
@@ -19,9 +22,9 @@ class PortSerializer(serializers.Serializer):
     The API serializer for a port definition.
     """
     port = serializers.IntegerField()
-    protocol = serializers.ChoiceField(
-        choices=("TCP", "UDP")
-    )
+    target_port = serializers.IntegerField(read_only=True)
+    protocol = serializers.ChoiceField(choices=("TCP", "UDP"))
+
 
 class ServiceSerializer(serializers.Serializer):
     """
@@ -38,6 +41,29 @@ class ServiceSerializer(serializers.Serializer):
 
 class ServiceRetrievalView(generics.RetrieveAPIView):
     serializer_class = ServiceSerializer
+
+    @extend_schema(
+        summary="Get service by its UID."
+    )
+    def get(self, request, version, uid):
+        service = api.get_service(uid)
+
+        if not request.user.has_namespace(service.metadata.namespace):
+            logger.warning(
+                f"User '{request.user}' has no access to the namespace '{service.metadata.namespace}' of service '{service.metadata.uid}'. Access denied.")
+            raise NotFound
+
+        instance = ServiceSerializer({
+            'name': service.metadata.name,
+            'creation_timestamp': service.metadata.creation_timestamp,
+            'type': service.spec.type,
+            'selector': {'key': list(service.spec.selector.keys())[0],
+                         'value': list(service.spec.selector.values())[0]},
+            'ports': [{'port': item.port, 'target_port': item.target_port, 'protocol': item.protocol} for item in
+                      service.spec.ports]
+        })
+        return Response(instance.data)
+
 
 class ServiceCreationView(generics.CreateAPIView):
     serializer_class = ServiceSerializer

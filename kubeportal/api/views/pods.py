@@ -7,6 +7,7 @@ from rest_framework.reverse import reverse
 from kubeportal.k8s import kubernetes_api as api
 
 import logging
+
 logger = logging.getLogger('KubePortal')
 
 
@@ -16,6 +17,7 @@ class ContainerSerializer(serializers.Serializer):
     """
     name = serializers.CharField()
     image = serializers.CharField()
+
 
 class PodSerializer(serializers.Serializer):
     """
@@ -54,7 +56,6 @@ class PodRetrievalView(generics.RetrieveAPIView):
         if request.user.has_namespace(pod.metadata.namespace):
             return Response(PodSerializer.to_json(pod))
         else:
-            logger.warning(f"User '{request.user}' has no access to the namespace '{pod.metadata.namespace}' of pod '{pod.metadata.uid}'. Access denied.")
+            logger.warning(
+                f"User '{request.user}' has no access to the namespace '{pod.metadata.namespace}' of pod '{pod.metadata.uid}'. Access denied.")
             raise NotFound
-
-

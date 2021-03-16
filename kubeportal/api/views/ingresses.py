@@ -5,6 +5,9 @@ from rest_framework.response import Response
 
 from kubeportal.k8s import kubernetes_api as api
 
+import logging
+logger = logging.getLogger('KubePortal')
+
 
 class AnnotationSerializer(serializers.Serializer):
     """
@@ -33,35 +36,46 @@ class IngressSerializer(serializers.Serializer):
     The API serializer for an ingress definition.
     """
     name = serializers.CharField()
-    annotations = serializers.ListField(child=AnnotationSerializer())
-    tls = serializers.BooleanField()
-    rules = serializers.ListField(child=IngressRuleSerializer())
     creation_timestamp = serializers.DateTimeField(read_only=True)
-
-
-class IngressListSerializer(serializers.Serializer):
-    """
-    The API serializer for a list of ingresses.
-    """
-    deployment_urls = serializers.ListField(read_only=True, child=serializers.URLField())
+    tls = serializers.BooleanField()
+    annotations = serializers.ListField(child=AnnotationSerializer())
+    rules = serializers.ListField(child=IngressRuleSerializer())
 
 
 class IngressRetrievalView(generics.RetrieveAPIView):
     serializer_class = IngressSerializer
 
-
-class IngressesView(generics.ListCreateAPIView):
-    serializer_class = IngressSerializer
-
     @extend_schema(
-        summary="Get ingresses in a namespace."
+        summary="Get ingress by its UID."
     )
-    def get(self, request, version, namespace):
-        if request.user.has_namespace(namespace):
-            return Response(api.get_namespaced_ingresses(namespace))
-        else:
-            # https://lockmedown.com/when-should-you-return-404-instead-of-403-http-status-code/
+    def get(self, request, version, uid):
+        ingress = api.get_ingress(uid)
+
+        if not request.user.has_namespace(ingress.metadata.namespace):
+            logger.warning(f"User '{request.user}' has no access to the namespace '{ingress.metadata.namespace}' of ingress '{ingress.metadata.uid}'. Access denied.")
             raise NotFound
+
+        result_rules = []
+        for k8s_rule in ingress.spec.rules:
+            result_rule = {'host': k8s_rule.host,
+                           'paths': [{'path': path.path,
+                                      'service_name': path.backend.service_name,
+                                      'service_port': path.backend.service_port}
+                                     for path in k8s_rule.http.paths]}
+            result_rules.append(result_rule)
+
+        instance = IngressSerializer({
+            'name': ingress.metadata.name,
+            'creation_timestamp': ingress.metadata.creation_timestamp,
+            'tls': True if ingress.spec.tls else False,
+            'annotations': [{'key': list(ingress.metadata.annotations.keys())[0], 'value': list(ingress.metadata.annotations.values())[0]}],
+            'rules': result_rules
+        })
+        return Response(instance.data)
+
+
+class IngressCreationView(generics.UpdateAPIView):
+    serializer_class = IngressSerializer
 
     @extend_schema(
         summary="Create an ingress in a namespace."

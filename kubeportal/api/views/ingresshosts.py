@@ -1,9 +1,9 @@
 from drf_spectacular.utils import extend_schema
+from rest_framework import serializers
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from kubeportal.k8s import kubernetes_api as api
-from rest_framework import serializers, generics
 
+from kubeportal.k8s import kubernetes_api as api
 
 
 class IngressHostListSerializer(serializers.Serializer):

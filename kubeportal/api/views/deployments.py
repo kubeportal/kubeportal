@@ -1,17 +1,15 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, generics
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
-
-from .pods import ContainerSerializer
 
 from kubeportal.k8s import kubernetes_api as api
+from .pods import ContainerSerializer
 
-import logging
 logger = logging.getLogger('KubePortal')
-
 
 
 class LabelSerializer(serializers.Serializer):
@@ -30,13 +28,6 @@ class PodTemplateSerializer(serializers.Serializer):
     labels = serializers.ListField(child=LabelSerializer())
     containers = serializers.ListField(child=ContainerSerializer())
 
-class DeploymentLinksSerializer(serializers.Serializer):
-    """
-    The API serializer for the resources a deployment links to.
-    """
-    pod_urls = serializers.ListField(read_only=True, child=serializers.URLField())
-    namespace_url = serializers.URLField()
-
 
 class DeploymentSerializer(serializers.Serializer):
     """
@@ -48,7 +39,8 @@ class DeploymentSerializer(serializers.Serializer):
     replicas = serializers.IntegerField()
     match_labels = serializers.ListField(write_only=True, child=LabelSerializer())
     pod_template = PodTemplateSerializer(write_only=True)
-    links = DeploymentLinksSerializer(read_only=True)
+    pod_urls = serializers.ListField(read_only=True, child=serializers.URLField())
+    namespace_url = serializers.URLField(read_only=True)
 
 
 class DeploymentRetrievalView(generics.RetrieveAPIView):
@@ -61,7 +53,8 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
         deployment = api.get_deployment(uid)
 
         if not request.user.has_namespace(deployment.metadata.namespace):
-            logger.warning(f"User '{request.user}' has no access to the namespace '{deployment.metadata.namespace}' of deployment '{deployment.metadata.uid}'. Access denied.")
+            logger.warning(
+                f"User '{request.user}' has no access to the namespace '{deployment.metadata.namespace}' of deployment '{deployment.metadata.uid}'. Access denied.")
             raise NotFound
 
         pod_list = api.get_deployment_pods(deployment)
@@ -70,8 +63,10 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
             'uid': deployment.metadata.uid,
             'creation_timestamp': deployment.metadata.creation_timestamp,
             'replicas': deployment.spec.replicas,
-            'pod_urls': [reverse(viewname='pod', kwargs={'uid': pod.metadata.uid}, request=request) for pod in pod_list],
-            'namespace_url': reverse(viewname='namespace', kwargs={'namespace': deployment.metadata.namespace}, request=request)
+            'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'uid': pod.metadata.uid}, request=request) for pod in
+                         pod_list],
+            'namespace_url': reverse(viewname='namespace', kwargs={'namespace': deployment.metadata.namespace},
+                                     request=request)
         })
         return Response(instance.data)
 
@@ -92,4 +87,3 @@ class DeploymentCreationView(generics.CreateAPIView):
             return Response(status=201)
         else:
             raise NotFound
-

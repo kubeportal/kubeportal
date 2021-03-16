@@ -66,7 +66,7 @@ urlpatterns = [
     path('api/<str:version>/namespaces/<str:namespace>/services/', api_views.ServiceCreationView.as_view(), name='service_creation'),
     path('api/<str:version>/services/<str:uid>/', api_views.ServiceRetrievalView.as_view(), name='service_retrieval'),
 
-    # path('api/<str:version>/namespaces/<str:namespace>/ingresses/', api_views.IngressCreationView.as_view(), name='ingress_creation'),
+    path('api/<str:version>/namespaces/<str:namespace>/ingresses/', api_views.IngressCreationView.as_view(), name='ingress_creation'),
     path('api/<str:version>/ingresses/<str:uid>/', api_views.IngressRetrievalView.as_view(), name='ingress_retrieval'),
 
     path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),

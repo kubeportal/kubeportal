@@ -104,5 +104,5 @@ def test_no_general_user_list(api_client):
 
 
 def test_user_services_list_no_k8s(api_client):
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/services/')
+    response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/default/services/')
     assert 404 == response.status_code

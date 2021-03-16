@@ -11,11 +11,10 @@ class NewsSerializer(serializers.ModelSerializer):
         model = News
         fields = ['title', 'content', 'author_url', 'created', 'modified', 'priority']
 
-    def to_representation(self, data):
-        data = super(NewsSerializer, self).to_representation(data)
+    def to_representation(self, instance):
         request = self.context['request']
-        author_url = reverse(viewname='user', kwargs={'user_id': data['author']}, request=request)
-        data['author_url'] = author_url
+        instance.author_url = reverse(viewname='user', kwargs={'user_id': instance.author.pk}, request=request)
+        data = super().to_representation(instance)
         return data
 
 

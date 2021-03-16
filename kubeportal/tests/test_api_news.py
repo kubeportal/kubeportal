@@ -14,4 +14,4 @@ def test_news_list(api_client, admin_user):
     data = json.loads(response.content)
     assert "<p>Hello World</p>" == data[0]["content"]
     assert "Foo" == data[0]["title"]
-    assert data[0]["author"].endswith(f"/{admin_user.pk}/")
+    assert data[0]["author_url"].endswith(f"/{admin_user.pk}/")

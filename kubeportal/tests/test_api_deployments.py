@@ -9,8 +9,8 @@ from kubeportal.tests.helpers import run_minikube_sync, minikube_unavailable
 
 
 @pytest.mark.django_db
-def test_deployments_denied(api_client_anon):
-    response = api_client_anon.get(f'/api/{settings.API_VERSION}/namespaces/default/deployments/')
+def test_deployment_create_denied(api_client_anon):
+    response = api_client_anon.post(f'/api/{settings.API_VERSION}/namespaces/default/deployments/')
     assert response.status_code == 401
 
 
@@ -21,13 +21,11 @@ def test_namespace_deployments_list(api_client, admin_user):
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/foobar/deployments/')
-    assert 404 == response.status_code
-
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/deployments/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/')
     assert 200 == response.status_code
-    deployments = json.loads(response.content)
-    assert len(deployments) > 0
+    response_data = json.loads(response.content)
+    assert len(response_data) > 0
+    deployments = response_data['deployment_urls']
 
     # fetch first deployment info
     response = api_client.get_absolute(deployments[0])
@@ -36,8 +34,8 @@ def test_namespace_deployments_list(api_client, admin_user):
     assert "coredns" in deployment['name']
 
     # fetch first pod info
-    assert len(deployment['pods']) > 0
-    response = api_client.get_absolute(deployment['pods'][0])
+    assert len(deployment['pod_urls']) > 0
+    response = api_client.get_absolute(deployment['pod_urls'][0])
     assert 200 == response.status_code
     pod = json.loads(response.content)
     assert "coredns" in pod['name']
@@ -76,12 +74,14 @@ def test_deployment(api_client, admin_user):
     data = json.loads(response.content)
     assert 'uid' in data.keys()
     assert 'name' in data.keys()
+    assert 'creation_timestamp' in data.keys()
     assert 'replicas' in data.keys()
-    assert 'pods' in data.keys()
+    assert 'pod_urls' in data.keys()
+    assert 'namespace_url' in data.keys()
 
 
 def test_user_deployments_list_no_k8s(api_client):
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/deployments/')
+    response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/default/deployments/')
     assert 404 == response.status_code
 
 
@@ -96,10 +96,10 @@ def test_user_deployments_create(api_client, admin_user):
         response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/deployments/',
                                    {'name': 'test-deployment',
                                     'replicas': 1,
-                                    'matchLabels': [
+                                    'match_labels': [
                                         {'key': 'app', 'value': 'webapp'},
                                     ],
-                                    'template': {
+                                    'pod_template': {
                                         'name': 'webapp',
                                         'labels': [
                                             {'key': 'app', 'value': 'webapp'},

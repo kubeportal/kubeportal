@@ -1,12 +1,9 @@
-from drf_spectacular.utils import OpenApiExample, extend_schema_serializer, extend_schema, extend_schema_field
+from dj_rest_auth.serializers import LoginSerializer as OriginalLoginSerializer
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiExample, extend_schema_serializer, extend_schema_field
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
-
-from dj_rest_auth.serializers import LoginSerializer as OriginalLoginSerializer
-from django.conf import settings
-from django.utils.module_loading import import_string
 
 @extend_schema_serializer(
     examples=[
@@ -20,13 +17,14 @@ from django.utils.module_loading import import_string
         ),
     ]
 )
-class LoginSerializer(OriginalLoginSerializer): # remove third optional field from library
+class LoginSerializer(OriginalLoginSerializer):  # remove third optional field from library
     """
     The API serializer for username / password login.
     """
     username = serializers.CharField()
     password = serializers.CharField()
     email = None
+
 
 class JWTSerializer(serializers.Serializer):
     """
@@ -53,4 +51,3 @@ class JWTSerializer(serializers.Serializer):
     def get_infos_url(self, obj):
         request = self.context['request']
         return reverse(viewname='info_overview', request=request)
-

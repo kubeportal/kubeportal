@@ -52,14 +52,21 @@ def test_user_services_list(api_client, admin_user):
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/xyz/services/')
-    assert 404 == response.status_code
-
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/services/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/')
     assert 200 == response.status_code
     data = json.loads(response.content)
-    assert "kube-dns" == data[0]['name']
-    assert "ClusterIP" == data[0]['type']
-    assert 53 == data[0]['ports'][0]['port']
-    assert 53 == data[0]['ports'][1]['port']
-    assert 'k8s-app' == data[0]['selector'][0]['key']
+    services = data["service_urls"]
+
+    # fetch details of DNS service
+    from urllib.parse import urlparse
+    service = urlparse(services[0])
+    response = api_client.get(service.path)
+    assert 200 == response.status_code
+    data = json.loads(response.content)
+    assert "kube-dns" == data['name']
+    assert "ClusterIP" == data['type']
+    assert 53 == data['ports'][0]['port']
+    assert 53 == data['ports'][0]['target_port']
+    assert 'UDP' == data['ports'][0]['protocol']
+    assert 53 == data['ports'][1]['port']
+    assert 'k8s-app' == data['selector']['key']

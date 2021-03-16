@@ -3,8 +3,30 @@
   <component name="ChangeListManager">
     <list default="true" id="9f525e2b-06cc-4b3e-bd05-de80d9c4b9c7" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/bootstrapinfo.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/bootstrapinfo.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/deployments.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/deployments.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/info.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/info.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/ingresses.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/ingresshosts.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/ingresshosts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/login.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/login.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/namespaces.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/namespaces.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/news.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/news.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/pods.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/pods.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/serviceaccounts.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/serviceaccounts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/api/views/services.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/services.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/kubeportal/api/views/users.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/api/views/users.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/kubeportal/models/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/models/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/k8s/kubernetes_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/k8s/kubernetes_api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/fixtures/ingress1.yml" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/fixtures/ingress1.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_deployments.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_deployments.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_ingresses.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_ingresses.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_news.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_news.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_pods.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_pods.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_security.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_security.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_services.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_services.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/tests/test_api_users.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/tests/test_api_users.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kubeportal/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/kubeportal/urls.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -179,6 +201,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="PEP-8, fix tests" />

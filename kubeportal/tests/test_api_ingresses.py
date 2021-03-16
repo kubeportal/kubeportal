@@ -11,7 +11,7 @@ from kubeportal.tests.test_api import BASE_DIR
 
 @pytest.mark.django_db
 def test_ingresses_denied(api_client_anon):
-    response = api_client_anon.get(f'/api/{settings.API_VERSION}/namespaces/default/ingresses/')
+    response = api_client_anon.post(f'/api/{settings.API_VERSION}/namespaces/default/ingresses/')
     assert response.status_code == 401
 
 
@@ -88,41 +88,20 @@ def test_user_ingresses_create_wrong_ns(api_client):
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_user_ingresses_list(api_client, admin_user_with_k8s):
     apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
-
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/ingresses/')
-    assert 200 == response.status_code
-    data = json.loads(response.content)
-    assert "test-ingress-1" == data[0]['name']
-
-
-@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
-def test_user_ingresses_list_no_k8s(api_client):
-    apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
-
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/ingresses/')
-    assert 404 == response.status_code
-
-
-@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
-def test_ingress_list(api_client, admin_user_with_k8s):
-    apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
     apply_k8s_yml(BASE_DIR + "fixtures/ingress2.yml")
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/ingresses/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/')
     assert 200 == response.status_code
     data = json.loads(response.content)
-    host_names = [list(el["rules"].keys()) for el in data]
-    assert [["visbert.demo.datexis.com"], ["tasty.demo.datexis.com"]] == host_names
-
-
-@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
-def test_ingress_list_illegal_ns(api_client, admin_user_with_k8s):
-    apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
-    apply_k8s_yml(BASE_DIR + "fixtures/ingress2.yml")
-
-    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/foobar/ingresses/')
-    assert 404 == response.status_code
-
+    ingress_urls = data['ingress_urls']
+    from urllib.parse import urlparse
+    ingress = urlparse(ingress_urls[0])
+    response = api_client.get(ingress.path)
+    assert 200 == response.status_code
+    data = json.loads(response.content)
+    assert "test-ingress-1b" == data['name']
+    assert data['tls'] is True
+    assert "visbert" in data["rules"][0]["host"]
 
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_ingresshosts_list(api_client, admin_user_with_k8s):
@@ -133,4 +112,4 @@ def test_ingresshosts_list(api_client, admin_user_with_k8s):
     assert 200 == response.status_code
     data = json.loads(response.content)
     for check_host in ["visbert.demo.datexis.com", "tasty.demo.datexis.com"]:
-        assert check_host in data
+        assert check_host in data["hosts"]
