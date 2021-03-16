@@ -80,5 +80,6 @@ minikube-check:
 	@test -f /usr/local/bin/minikube \
 	|| test -f /usr/bin/minikube \
 	|| test -f /bin/minikube \
+        || test -f /opt/homebrew/bin/minikube \
 	|| (echo ERROR: Minikube installation is missing on your machine. && exit 1)
 
