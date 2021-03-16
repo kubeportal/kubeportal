@@ -9,10 +9,11 @@ class NamespaceSerializer(serializers.ModelSerializer):
     pods_url = serializers.URLField(read_only=True)
     ingresses_url = serializers.URLField(read_only=True)
     services_url = serializers.URLField(read_only=True)
+    persistentvolumeclaims_url = serializers.URLField(read_only=True)
 
     class Meta:
         model = KubernetesNamespace
-        fields = ['name', 'deployments_url', 'pods_url', 'ingresses_url', 'services_url']
+        fields = ['name', 'deployments_url', 'pods_url', 'ingresses_url', 'services_url', 'persistentvolumeclaims_url']
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
@@ -21,6 +22,7 @@ class NamespaceSerializer(serializers.ModelSerializer):
         ret['pods_url'] = reverse(viewname='pods', kwargs={'namespace': instance.name}, request=request)
         ret['ingresses_url'] = reverse(viewname='ingresses', kwargs={'namespace': instance.name}, request=request)
         ret['services_url'] = reverse(viewname='services', kwargs={'namespace': instance.name}, request=request)
+        ret['persistentvolumeclaims_url'] = reverse(viewname='pvcs', kwargs={'namespace': instance.name}, request=request)
         return ret
 
 

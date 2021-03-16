@@ -322,6 +322,42 @@ def get_namespaced_services(namespace):
         return None
 
 
+def get_namespaced_pvcs(namespace):
+    """
+    Get all pvcs for a specific Kubernetes namespace in the cluster.
+    """
+    try:
+        return core_v1.list_namespaced_persistent_volume_claim(namespace).items
+    except Exception as e:
+        logger.exception(f"Error while fetching persistent volume claims of namespace {namespace}")
+        return None
+
+def get_pvcs():
+    """
+    Returns the list of pvcs in the cluster, or None on error.
+    """
+    try:
+        return core_v1.list_persistent_volume_claim_for_all_namespaces().items
+    except Exception as e:
+        logger.exception("Error while fetching list of all pvcs from Kubernetes")
+        return None
+
+def get_pvc(uid):
+    """
+    Get pvc in the cluster by its uid.
+    """
+    try:
+        pvcs = get_pvcs()
+        for pvc in pvcs:
+            if pvc.metadata.uid == uid:
+                return pvc
+        return None
+    except Exception as e:
+        logger.exception(f"Error while fetching persistent volume claim with uid {uid}")
+        return None
+
+
+
 def get_namespaced_services_json(namespace):
     """
     Get all services for a specific Kubernetes namespace in the cluster.

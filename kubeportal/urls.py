@@ -70,7 +70,7 @@ urlpatterns = [
     path('api/<str:version>/ingresses/<str:uid>/', api_views.IngressRetrievalView.as_view(), name='ingress_retrieval'),
 
     path('api/<str:version>/namespaces/<str:namespace>/persistentvolumeclaims/', api_views.PersistentVolumeClaimsView.as_view(), name='pvcs'),
-    path('api/<str:version>/persistentvolumeclaims/<str:uid>/', api_views.PersistentVolumeClaimsRetrievalView.as_view(), name='pvc_retrieval'),
+    path('api/<str:version>/persistentvolumeclaims/<str:uid>/', api_views.PersistentVolumeClaimRetrievalView.as_view(), name='pvc_retrieval'),
 
 
     path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
