@@ -56,12 +56,17 @@ class ServiceRetrievalView(generics.RetrieveAPIView):
                 f"User '{request.user}' has no access to the namespace '{service.metadata.namespace}' of service '{service.metadata.uid}'. Access denied.")
             raise NotFound
 
+        if service.spec.selector:
+            selector = {'key': list(service.spec.selector.keys())[0],
+                        'value': list(service.spec.selector.values())[0]} 
+        else:
+            selector = None
+
         instance = ServiceSerializer({
             'name': service.metadata.name,
             'creation_timestamp': service.metadata.creation_timestamp,
             'type': service.spec.type,
-            'selector': {'key': list(service.spec.selector.keys())[0],
-                         'value': list(service.spec.selector.values())[0]},
+            'selector': selector,
             'ports': [{'port': item.port, 'target_port': item.target_port, 'protocol': item.protocol} for item in
                       service.spec.ports]
         })
