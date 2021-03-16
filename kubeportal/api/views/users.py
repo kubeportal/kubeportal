@@ -35,7 +35,9 @@ class UserSerializer(serializers.ModelSerializer):
                                                          lookup_field='name',
                                                          read_only=True,
                                                          source='k8s_namespaces')
-    namespace_names = serializers.ListField(read_only=True)
+    namespace_names = serializers.ListField(read_only=True, 
+                                            child=serializers.CharField(),
+                                            source='k8s_namespace_names')
     k8s_token = serializers.CharField(source='token', read_only=True)
 
     class Meta:
