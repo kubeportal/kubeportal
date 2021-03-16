@@ -25,7 +25,7 @@ jobs:
         run: |
           pip install pytest-cov
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.3.0
+        uses: manusa/actions-setup-minikube@v2.3.1
         with:
           minikube version: 'v1.18.1'
           kubernetes version: ${{ matrix.k8sversion }}
