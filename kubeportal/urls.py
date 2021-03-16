@@ -69,6 +69,10 @@ urlpatterns = [
     path('api/<str:version>/namespaces/<str:namespace>/ingresses/', api_views.IngressesView.as_view(), name='ingresses'),
     path('api/<str:version>/ingresses/<str:uid>/', api_views.IngressRetrievalView.as_view(), name='ingress_retrieval'),
 
+    path('api/<str:version>/namespaces/<str:namespace>/persistentvolumeclaims/', api_views.PersistentVolumeClaimsView.as_view(), name='pvcs'),
+    path('api/<str:version>/persistentvolumeclaims/<str:uid>/', api_views.PersistentVolumeClaimsRetrievalView.as_view(), name='pvc_retrieval'),
+
+
     path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
