@@ -74,7 +74,7 @@ class IngressRetrievalView(generics.RetrieveAPIView):
         return Response(instance.data)
 
 
-class IngressCreationView(generics.UpdateAPIView):
+class IngressCreationView(generics.CreateAPIView):
     serializer_class = IngressSerializer
 
     @extend_schema(
