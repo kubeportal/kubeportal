@@ -1,16 +1,20 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: test-ingress-1
+  name: test-ingress-1b
   namespace: default
+  annotations:
+    foo: bar
 spec:
-   rules:
-   - host: "visbert.demo.datexis.com"
-     http:
-       paths:
-       - path:
-         backend:
-           serviceName: visbert
-           servicePort: 1337
-
-
+  tls:
+  - secretName: "visbert-demo-subdomain-tls"
+    hosts:
+    - "visbert.demo.datexis.com"
+  rules:
+  - host: "visbert.demo.datexis.com"
+    http:
+      paths:
+      - path:
+        backend:
+          serviceName: visbert
+          servicePort: 1337

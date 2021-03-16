@@ -5,22 +5,23 @@ from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 
 
 class NamespaceSerializer(serializers.ModelSerializer):
-    pods = serializers.SerializerMethodField()
-    deployments = serializers.SerializerMethodField()
+    deployments_url = serializers.URLField(read_only=True)
+    pods_url = serializers.URLField(read_only=True)
+    ingresses_url = serializers.URLField(read_only=True)
+    services_url = serializers.URLField(read_only=True)
 
     class Meta:
         model = KubernetesNamespace
-        fields = ['name', 'pods', 'deployments']
+        fields = ['name', 'deployments_url', 'pods_url', 'ingresses_url', 'services_url']
 
-    def get_pods(self, obj):        
-        uids = obj.get_pod_uids()
-        request = self.context['request']        
-        return [reverse(viewname='pod', kwargs={'uid': uid}, request=request) for uid in uids]
-
-    def get_deployments(self, obj):        
-        uids = obj.get_deployment_uids()
-        request = self.context['request']        
-        return [reverse(viewname='deployment', kwargs={'uid': uid}, request=request) for uid in uids]
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        request = self.context['request']
+        ret['deployments_url'] = reverse(viewname='deployments', kwargs={'namespace': instance.name}, request=request)
+        ret['pods_url'] = reverse(viewname='pods', kwargs={'namespace': instance.name}, request=request)
+        ret['ingresses_url'] = reverse(viewname='ingresses', kwargs={'namespace': instance.name}, request=request)
+        ret['services_url'] = reverse(viewname='services', kwargs={'namespace': instance.name}, request=request)
+        return ret
 
 
 class NamespaceView(generics.RetrieveAPIView):

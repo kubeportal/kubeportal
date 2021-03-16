@@ -65,6 +65,7 @@ def create_k8s_ns(name: str):
             raise e
     return core_v1.read_namespace(name=name)
 
+
 def create_k8s_svca(namespace: str, name: str):
     """
     Create a Kubernetes service account in a namespace in the cluster.
@@ -80,7 +81,8 @@ def create_k8s_svca(namespace: str, name: str):
     except client.rest.ApiException as e:
         # Race condition or earlier sync error - the K8S namespace is already there
         if e.status == 409:
-            logger.warning(f"Tried to create already existing Kubernetes service account '{namespace}:{name}'. Skipping the creation and using the existing one.")
+            logger.warning(
+                f"Tried to create already existing Kubernetes service account '{namespace}:{name}'. Skipping the creation and using the existing one.")
         else:
             raise e
     return core_v1.read_namespaced_service_account(namespace=namespace, name=name)
@@ -94,12 +96,12 @@ def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels
     """
     logger.info(f"Creating Kubernetes deployment '{name}'")
     k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in template["containers"]]
-    k8s_labels = {item['key']:item['value'] for item in template['labels']}
+    k8s_labels = {item['key']: item['value'] for item in template['labels']}
     k8s_pod_template = client.V1PodTemplateSpec(
         metadata=client.V1ObjectMeta(name=template['name'], labels=k8s_labels),
         spec=client.V1PodSpec(containers=k8s_containers)
     )
-    k8s_match_labels = {item['key']:item['value'] for item in match_labels}
+    k8s_match_labels = {item['key']: item['value'] for item in match_labels}
     k8s_deployment = client.V1Deployment(
         metadata=client.V1ObjectMeta(name=name),
         spec=client.V1DeploymentSpec(replicas=replicas,
@@ -121,7 +123,6 @@ def delete_k8s_ns(name):
         logger.error("K8S namespace deletion not allowed in production clusters")
 
 
-
 def delete_k8s_svca(name, namespace):
     """
     Delete the given service account in the given namespace in the cluster, but only when its Minikube.
@@ -131,7 +132,6 @@ def delete_k8s_svca(name, namespace):
         core_v1.delete_namespaced_service_account(name=name, namespace=namespace)
     else:
         logger.error("K8S service account deletion not allowed in production clusters")
-
 
 
 def get_namespaces():
@@ -181,6 +181,7 @@ def get_pods():
         logger.exception("Error while fetching list of all pods from Kubernetes")
         return None
 
+
 def get_pod(uid):
     """
     Get pod in the cluster by its uid.
@@ -189,11 +190,38 @@ def get_pod(uid):
         pods = get_pods()
         for pod in pods:
             if pod.metadata.uid == uid:
-                return pod 
+                return pod
         return None
     except Exception as e:
         logger.exception(f"Error while fetching pod with uid {uid}")
         return None
+
+
+def get_ingresses():
+    """
+    Returns the list of ingresses in the cluster, or None on error.
+    """
+    try:
+        return net_v1.list_ingress_for_all_namespaces().items
+    except Exception as e:
+        logger.exception("Error while fetching list of all ingresses from Kubernetes")
+        return None
+
+
+def get_ingress(uid):
+    """
+    Get ingress in the cluster by its uid.
+    """
+    try:
+        ingresses = get_ingresses()
+        for ingress in ingresses:
+            if ingress.metadata.uid == uid:
+                return ingress
+        return None
+    except Exception as e:
+        logger.exception(f"Error while fetching ingress with uid {uid}")
+        return None
+
 
 def get_namespaced_pods(namespace):
     """
@@ -222,8 +250,8 @@ def get_deployment_pods(deployment):
     Gets a list of pod API objects belonging to a deployment API object.
     """
     ns = deployment.metadata.namespace
-    selector = deployment.spec.selector # V1LabelSelector
-    selector_str = ",".join([k+'='+v for k,v in selector.match_labels.items()])
+    selector = deployment.spec.selector  # V1LabelSelector
+    selector_str = ",".join([k + '=' + v for k, v in selector.match_labels.items()])
     try:
         return core_v1.list_namespaced_pod(namespace=ns, label_selector=selector_str).items
     except Exception as e:
@@ -241,6 +269,7 @@ def get_deployments():
         logger.exception("Error while fetching list of all deployments from Kubernetes")
         return None
 
+
 def get_deployment(uid):
     """
     Get deployment in the cluster by its uid.
@@ -249,10 +278,36 @@ def get_deployment(uid):
         deployments = get_deployments()
         for deployment in deployments:
             if deployment.metadata.uid == uid:
-                return deployment 
+                return deployment
         return None
     except Exception as e:
         logger.exception(f"Error while fetching deployment with uid {uid}")
+        return None
+
+
+def get_services():
+    """
+    Returns the list of services in the cluster, or None on error.
+    """
+    try:
+        return core_v1.list_service_for_all_namespaces().items
+    except Exception as e:
+        logger.exception("Error while fetching list of all deployments from Kubernetes")
+        return None
+
+
+def get_service(uid):
+    """
+    Get service in the cluster by its uid.
+    """
+    try:
+        services = get_services()
+        for service in services:
+            if service.metadata.uid == uid:
+                return service
+        return None
+    except Exception as e:
+        logger.exception(f"Error while fetching service with uid {uid}")
         return None
 
 
@@ -261,13 +316,24 @@ def get_namespaced_services(namespace):
     Get all services for a specific Kubernetes namespace in the cluster.
     """
     try:
+        return core_v1.list_namespaced_service(namespace).items
+    except Exception as e:
+        logger.exception(f"Error while fetching services of namespace {namespace}")
+        return None
+
+
+def get_namespaced_services_json(namespace):
+    """
+    Get all services for a specific Kubernetes namespace in the cluster.
+    """
+    try:
         services = core_v1.list_namespaced_service(namespace)
         stripped_services = []
         for svc in services.items:
             if svc.spec.selector:
-                selector = [{'key': k, 'value': v} for k,v in svc.spec.selector.items()]
+                selector = [{'key': k, 'value': v} for k, v in svc.spec.selector.items()]
             else:
-                selector = None 
+                selector = None
             stripped_svc = {'name': svc.metadata.name,
                             'type': svc.spec.type,
                             'selector': selector,
@@ -316,7 +382,7 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
     k8s_annotations = {item['key']: item['value'] for item in annotations}
 
     k8s_ing = NetworkingV1beta1Ingress(
-              metadata=client.V1ObjectMeta(name=name, annotations=k8s_annotations)
+        metadata=client.V1ObjectMeta(name=name, annotations=k8s_annotations)
     )
 
     k8s_rules = []
@@ -350,6 +416,17 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
 
 
 def get_namespaced_ingresses(namespace):
+    """
+    Get all ingresses for a specific Kubernetes namespace in the cluster.
+    """
+    try:
+        return net_v1.list_namespaced_ingress(namespace).items
+    except Exception as e:
+        logger.exception(f"Error while fetching ingresses of namespace {namespace}")
+        return None
+
+
+def get_namespaced_ingresses_json(namespace):
     """
     Get all ingress for a specific Kubernetes namespace in the cluster.
     Error handling is supposed to happen on the caller side.
@@ -462,6 +539,7 @@ def check_role_bindings(ns):
 
     return True
 
+
 def create_role_binding(ns, clusterrole):
     """
     Create a role binding to the given cluster role for the given namespace in the cluster.
@@ -470,7 +548,8 @@ def create_role_binding(ns, clusterrole):
         role_ref = client.V1RoleRef(name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
 
         # Subject for the cluster role are all service accounts in the namespace
-        subject = client.V1Subject(name="system:serviceaccounts:" + ns.name, kind="Group", api_group="rbac.authorization.k8s.io")
+        subject = client.V1Subject(name="system:serviceaccounts:" + ns.name, kind="Group",
+                                   api_group="rbac.authorization.k8s.io")
         metadata = client.V1ObjectMeta(name=clusterrole)
         new_rolebinding = client.V1RoleBinding(role_ref=role_ref, metadata=metadata, subjects=[subject, ])
 

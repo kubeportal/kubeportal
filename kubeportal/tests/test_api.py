@@ -26,12 +26,13 @@ def test_api_bootstrap(api_client_anon):
     response = api_client_anon.get(f'/api/{settings.API_VERSION}/')
     assert response.status_code == 200
     data = response.json()
-    assert 2 == len(data)
     assert 'csrf_token' in data
-    assert 'links' in data
+    assert 'login_url' in data
+    assert 'logout_url' in data
+    assert 'login_google_url' in data
     # check if given login route makes sense
     # login path response tells us to use something else than GET
-    response = api_client_anon.get_absolute(data['links']['login'])
+    response = api_client_anon.get_absolute(data['login_url'])
     assert response.status_code == 405
 
 

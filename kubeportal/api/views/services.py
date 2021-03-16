@@ -2,74 +2,105 @@ from drf_spectacular.utils import extend_schema, extend_schema_serializer, OpenA
 from rest_framework import serializers, generics
 from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from kubeportal.k8s import kubernetes_api as api
 
+import logging
+logger = logging.getLogger('KubePortal')
 
-@extend_schema_serializer(
-    examples=[
-        OpenApiExample(
-            'NodePort example',
-            value={
-                'name': 'my-service',
-                'type': 'NodePort',
-                'selector': {'key': 'app', 'value': 'kubeportal'},
-                'ports': [{'port': 8000, 'protocol': 'TCP'}]
-            },
-        ),
-        OpenApiExample(
-            'ClusterIP example',
-            value={
-                'name': 'my-service',
-                'type': 'ClusterIP',
-                'selector': {'key': 'app', 'value': 'kubeportal'},
-                'ports': [{'port': 8000, 'protocol': 'TCP'}]
-            },
-        ),
-        OpenApiExample(
-            'LoadBalancer example',
-            value={
-                'name': 'my-service',
-                'type': 'LoadBalancer',
-                'selector': {'key': 'app', 'value': 'kubeportal'},
-                'ports': [{'port': 8000, 'protocol': 'TCP'}]
-            },
-        ),
-    ]
-)
+
+class SelectorSerializer(serializers.Serializer):
+    """
+    The API serializer for a label selector.
+    """
+    key = serializers.CharField()
+    value = serializers.CharField()
+
+
+class PortSerializer(serializers.Serializer):
+    """
+    The API serializer for a port definition.
+    """
+    port = serializers.IntegerField()
+    target_port = serializers.IntegerField(read_only=True)
+    protocol = serializers.ChoiceField(choices=("TCP", "UDP"))
+
+
 class ServiceSerializer(serializers.Serializer):
+    """
+    The API serializer for a service defition.
+    """
     name = serializers.CharField()
+    creation_timestamp = serializers.DateTimeField(read_only=True)
     type = serializers.ChoiceField(
         choices=("NodePort", "ClusterIP", "LoadBalancer")
     )
-    selector = serializers.DictField(
-        allow_empty=False
-    )
-    ports = serializers.ListField(
-        child=serializers.DictField(
-            allow_empty=False
-        ),
-        allow_empty=False)
-    creation_timestamp = serializers.DateTimeField(read_only=True)
+    selector = SelectorSerializer()
+    ports = serializers.ListField(child=PortSerializer())
 
+class ServiceListSerializer(serializers.Serializer):
+    service_urls = serializers.ListField(child=serializers.URLField())
 
-class ServiceView(generics.RetrieveAPIView):
-    serializer_class = ServiceSerializer
-
-class ServicesView(generics.ListCreateAPIView):
+class ServiceRetrievalView(generics.RetrieveAPIView):
     serializer_class = ServiceSerializer
 
     @extend_schema(
-        summary="Get services in a namespace."
+        summary="Get service by its UID."
+    )
+    def get(self, request, version, uid):
+        service = api.get_service(uid)
+
+        if not request.user.has_namespace(service.metadata.namespace):
+            logger.warning(
+                f"User '{request.user}' has no access to the namespace '{service.metadata.namespace}' of service '{service.metadata.uid}'. Access denied.")
+            raise NotFound
+
+        if service.spec.selector:
+            selector = {'key': list(service.spec.selector.keys())[0],
+                        'value': list(service.spec.selector.values())[0]} 
+        else:
+            selector = None
+
+        instance = ServiceSerializer({
+            'name': service.metadata.name,
+            'creation_timestamp': service.metadata.creation_timestamp,
+            'type': service.spec.type,
+            'selector': selector,
+            'ports': [{'port': item.port, 'target_port': item.target_port, 'protocol': item.protocol} for item in
+                      service.spec.ports]
+        })
+        return Response(instance.data)
+
+
+class ServicesView(generics.CreateAPIView, generics.RetrieveAPIView):
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ServiceListSerializer
+        if self.request.method == "POST":
+            return ServiceSerializer
+
+
+    @extend_schema(
+        summary="Get the list of services in a namespace.",
+        request=None,
+        responses=ServiceListSerializer
     )
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
-            return Response(api.get_namespaced_services(namespace))
+            services = api.get_namespaced_services(namespace)
+            uids = [item.metadata.uid for item in services]
+            instance = ServiceListSerializer({
+                'service_urls': [reverse(viewname='service_retrieval', kwargs={'uid': uid}, request=request) for uid in uids]
+            })
+            return Response(instance.data)
         else:
             raise NotFound
 
     @extend_schema(
-        summary="Create service in a namespace."
+        summary="Create service in a namespace.",
+        request = ServiceSerializer,
+        responses = None
     )
     def post(self, request, version, namespace):
         if request.user.has_namespace(namespace):

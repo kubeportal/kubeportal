@@ -7,15 +7,26 @@ from rest_framework.reverse import reverse
 from kubeportal.k8s import kubernetes_api as api
 
 import logging
+
 logger = logging.getLogger('KubePortal')
 
 
-class PodSerializer(serializers.Serializer):
+class ContainerSerializer(serializers.Serializer):
+    """
+    The API serializer for a container.
+    """
     name = serializers.CharField()
-    uid = serializers.CharField()
-    creation_timestamp = serializers.DateTimeField(read_only=True)
-    containers = serializers.ListField(child=serializers.DictField())
+    image = serializers.CharField()
 
+
+class PodSerializer(serializers.Serializer):
+    """
+    The API serializer for a pod.
+    """
+    name = serializers.CharField()
+    uid = serializers.CharField(read_only=True)
+    creation_timestamp = serializers.DateTimeField(read_only=True)
+    containers = serializers.ListField(child=ContainerSerializer())
 
     @classmethod
     def to_json(cls, pod):
@@ -33,8 +44,10 @@ class PodSerializer(serializers.Serializer):
         stripped_pod['containers'] = stripped_containers
         return stripped_pod
 
+class PodListSerializer(serializers.Serializer):
+    pod_urls = serializers.ListField(read_only=True, child=serializers.URLField())
 
-class PodView(generics.RetrieveAPIView):
+class PodRetrievalView(generics.RetrieveAPIView):
     serializer_class = PodSerializer
 
     @extend_schema(
@@ -45,20 +58,32 @@ class PodView(generics.RetrieveAPIView):
         if request.user.has_namespace(pod.metadata.namespace):
             return Response(PodSerializer.to_json(pod))
         else:
-            logger.warning(f"User '{request.user}' has no access to the namespace '{pod.metadata.namespace}' of pod '{pod.metadata.uid}'. Access denied.")
+            logger.warning(
+                f"User '{request.user}' has no access to the namespace '{pod.metadata.namespace}' of pod '{pod.metadata.uid}'. Access denied.")
             raise NotFound
 
-
-class PodsView(generics.ListAPIView):
-    serializer_class = PodSerializer
+class PodsView(generics.RetrieveAPIView):
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return PodListSerializer
 
     @extend_schema(
-        summary="Get list of all pods in a namespace."
+        summary="Get the list of pods in a namespace.",
+        request=None,
+        responses=PodListSerializer
     )
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
-            pod_list = api.get_namespaced_pods(namespace)
-            return Response([reverse(viewname='pod', kwargs={'uid': pod.metadata.uid}, request=request) for pod in pod_list])
+            pods = api.get_namespaced_pods(namespace)
+            uids = [item.metadata.uid for item in pods]
+
+            instance = PodListSerializer({
+                'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'uid': uid}, request=request) for uid in uids]\
+            })
+            return Response(instance.data)
         else:
-            logger.warning(f"User '{request.user}' has no access to pods of the namespace '{namespace}'. Access denied.")
             raise NotFound
+
+
+
+
