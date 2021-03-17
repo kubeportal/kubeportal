@@ -32,6 +32,7 @@ class Command(BaseCommand):
 
         print("Superuser password is '{0}'.".format(pw))
 
-        admin_group = PortalGroup.objects.get(name="Admin users") # auto-created by migration
-        admin_group.members.add(user)
-        admin_group.save()
+        admin_groups = PortalGroup.objects.filter(can_admin=True) # auto-created by migration
+        for g in admin_groups:
+            g.members.add(user)
+            g.save()

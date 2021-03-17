@@ -11,6 +11,7 @@ dev-run: minikube-start web-run
 # This allows you to work against another cluster.
 # Configuration: Debug
 web-run: venv
+	./venv/bin/python ./manage.py integrity_check --configuration=Development
 	./venv/bin/python ./manage.py migrate --configuration=Development
 	./venv/bin/python ./manage.py ensure_root --configuration=Development
 	set -o allexport; source .env; set +o allexport; \
