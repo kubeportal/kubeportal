@@ -23,8 +23,11 @@ try:
     # Production mode
     config.load_incluster_config()
 except Exception:
-    # Dev mode
-    config.load_kube_config()
+    try:
+        # Dev mode
+        config.load_kube_config()
+    except Exception:
+        logger.error("Could not load Kubernetes config.")
 
 api_client = client.ApiClient()
 core_v1 = client.CoreV1Api()
