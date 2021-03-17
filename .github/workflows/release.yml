@@ -18,3 +18,4 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: troeger/kubeportal
           tag_with_ref: true
+          tags: latest
