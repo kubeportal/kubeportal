@@ -90,6 +90,35 @@ def create_k8s_svca(namespace: str, name: str):
             raise e
     return core_v1.read_namespaced_service_account(namespace=namespace, name=name)
 
+def create_k8s_pvc(namespace: str, name: str, access_modes: tuple, storage_class_name: str, size: str):
+    """
+    Create a Kubernetes persistent volume claim in a namespace in the cluster.
+    An existing pvc with this name in this namespace leads to a no-op.
+
+    Returns the new pvc.
+    """
+    try:
+        k8s_spec = client.V1PersistentVolumeClaimSpec(
+            access_modes = access_modes,
+            storage_class_name = storage_class_name,
+            resources = client.V1ResourceRequirements(requests= {'storage': size})
+        )
+        k8s_pvc = client.V1PersistentVolumeClaim(
+            api_version="v1",
+            kind="PersistentVolumeClaim",
+            metadata=client.V1ObjectMeta(name=name),
+            spec=k8s_spec)
+        core_v1.create_namespaced_persistent_volume_claim(namespace=namespace, body=k8s_pvc)
+        logger.info(f"Created Kubernetes pvc '{namespace}:{name}'")
+    except client.rest.ApiException as e:
+        if e.status == 409:
+            logger.warning(
+                f"Tried to create already existing Kubernetes pvc '{namespace}:{name}'. Skipping the creation and using the existing one.")
+        else:
+            raise e
+    return core_v1.read_namespaced_persistent_volume_claim(namespace=namespace, name=name)
+
+
 
 def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, template: dict):
     """
@@ -135,6 +164,17 @@ def delete_k8s_svca(name, namespace):
         core_v1.delete_namespaced_service_account(name=name, namespace=namespace)
     else:
         logger.error("K8S service account deletion not allowed in production clusters")
+
+
+def delete_k8s_pvc(name, namespace):
+    """
+    Delete the given pvc in the given namespace in the cluster, but only when its Minikube.
+    """
+    if is_minikube():
+        logger.info(f"Deleting Kubernetes pvc '{namespace}:{name}'")
+        core_v1.delete_namespaced_persistent_volume_claim(name=name, namespace=namespace)
+    else:
+        logger.error("K8S pvc deletion not allowed in production clusters")
 
 
 def get_namespaces():
@@ -323,6 +363,42 @@ def get_namespaced_services(namespace):
     except Exception as e:
         logger.exception(f"Error while fetching services of namespace {namespace}")
         return None
+
+
+def get_namespaced_pvcs(namespace):
+    """
+    Get all pvcs for a specific Kubernetes namespace in the cluster.
+    """
+    try:
+        return core_v1.list_namespaced_persistent_volume_claim(namespace).items
+    except Exception as e:
+        logger.exception(f"Error while fetching persistent volume claims of namespace {namespace}")
+        return None
+
+def get_pvcs():
+    """
+    Returns the list of pvcs in the cluster, or None on error.
+    """
+    try:
+        return core_v1.list_persistent_volume_claim_for_all_namespaces().items
+    except Exception as e:
+        logger.exception("Error while fetching list of all pvcs from Kubernetes")
+        return None
+
+def get_pvc(uid):
+    """
+    Get pvc in the cluster by its uid.
+    """
+    try:
+        pvcs = get_pvcs()
+        for pvc in pvcs:
+            if pvc.metadata.uid == uid:
+                return pvc
+        return None
+    except Exception as e:
+        logger.exception(f"Error while fetching persistent volume claim with uid {uid}")
+        return None
+
 
 
 def get_namespaced_services_json(namespace):
