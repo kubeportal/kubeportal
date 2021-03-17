@@ -27,8 +27,8 @@ class PersistentVolumeClaimSerializer(serializers.Serializer):
                         choices=("ReadWriteOnce", "ReadOnlyMany", "ReadWriteMany")))
     storage_class_name = serializers.CharField()
     volume_name = serializers.CharField(read_only=True)
-    size = serializers.IntegerField(write_only=True)
-
+    size = serializers.CharField()
+    phase = serializers.CharField(read_only=True)
 
 class PersistentVolumeClaimRetrievalView(generics.RetrieveAPIView):
     serializer_class = PersistentVolumeClaimSerializer
@@ -44,13 +44,25 @@ class PersistentVolumeClaimRetrievalView(generics.RetrieveAPIView):
                 f"User '{request.user}' has no access to the namespace '{deployment.metadata.namespace}' of pvc '{pvc.metadata.uid}'. Access denied.")
             raise NotFound
 
+        if pvc.status.capacity:
+            capacity = pvc.status.capacity['storage']
+        else:
+            capacity = None
+
+        if pvc.status.access_modes:
+            access_modes = pvc.status.access_modes
+        else:
+            access_modes = pvc.spec.access_modes
+
         instance = PersistentVolumeClaimSerializer({
             'name': pvc.metadata.name,
             'uid': pvc.metadata.uid,
             'creation_timestamp': pvc.metadata.creation_timestamp,
-            'access_modes': pvc.spec.access_modes,
+            'access_modes': access_modes,
             'storage_class_name': pvc.spec.storage_class_name,
-            'volume_name': pvc.spec.volume_name
+            'volume_name': pvc.spec.volume_name,
+            'size': capacity,
+            'phase': pvc.status.phase
         })
         return Response(instance.data)
 
@@ -89,8 +101,8 @@ class PersistentVolumeClaimsView(generics.RetrieveAPIView, generics.CreateAPIVie
             api.create_k8s_pvc(namespace,
                                request.data["name"],
                                request.data["access_modes"],
-                               request.data["storage_class_name"],
-                               request.data["volume_name"])
+                               request.data.get("storage_class_name", None),
+                               request.data["size"])
             return Response(status=201)
         else:
             raise NotFound
