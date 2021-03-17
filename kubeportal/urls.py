@@ -76,7 +76,9 @@ urlpatterns = [
     # frontend web auth views
     path('accounts/', include('allauth.urls')),
 
-    path('silk/', include('silk.urls', namespace='silk'))
+    # for emergency analysis on production systens, enable this on the live system
+    # Warning: This is a security hole
+    # path('silk/', include('silk.urls', namespace='silk'))
 ]
 
 

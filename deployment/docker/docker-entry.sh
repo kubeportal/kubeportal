@@ -4,6 +4,7 @@ ip addr | grep inet | grep brd | sed 's/  //g'
 
 /code/manage.py integrity_check --configuration=Production
 /code/manage.py migrate --configuration=Production
+/code/manage.py silk_clear_request_log --configuration=Production
 /code/manage.py creatersakey --configuration=Production
 /code/manage.py ensure_root --configuration=Production
 /code/manage.py drf_create_token root --configuration=Production
