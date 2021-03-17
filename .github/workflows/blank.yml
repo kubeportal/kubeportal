@@ -1,4 +1,4 @@
-name: kubeportal-backend
+name: Running tests
 
 on:
   push:
