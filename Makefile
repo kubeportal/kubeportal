@@ -46,15 +46,13 @@ coverage: venv
 release-bumpversion:
 	./venv/bin/bumpversion --verbose patch
 
-release: release-build release-push
+release: release-bumpversion
+	# bumpversion creates a git tag, which triggers the
+	# Docker image build and push on Github
+	git push --follow-tags
 
 ### Support functions, typically not for direct usage
 
-# Build the official Kuberportal docker image
-release-build:
-	docker build -t troeger/kubeportal:$(VERSION) .
-
-# Upload the official Kuberportal image to Docker hub
 release-push:
 	docker login --username=troeger
 	docker push troeger/kubeportal:$(VERSION)
