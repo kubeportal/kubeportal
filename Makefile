@@ -53,10 +53,6 @@ release: release-bumpversion
 
 ### Support functions, typically not for direct usage
 
-release-push:
-	docker login --username=troeger
-	docker push troeger/kubeportal:$(VERSION)
-
 # Checks if a virtualenv exists, and creates it in case
 venv:
 	test -d venv || python3 -m venv venv
