@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
-from kubeportal.api.views.tools import get_user_count, get_kubeportal_version, get_cluster_name
+from kubeportal.api.views.tools import get_user_count, get_kubeportal_version, get_branding
 from kubeportal.k8s import kubernetes_api as api
 
 
@@ -25,8 +25,7 @@ class InfoDetailView(GenericAPIView):
              'k8s_pod_count': api.get_number_of_pods,
              'k8s_volume_count': api.get_number_of_volumes,
              'portal_user_count': get_user_count,
-             'portal_version': get_kubeportal_version,
-             'k8s_cluster_name': get_cluster_name,
+             'portal_version': get_kubeportal_version
              }
 
     @extend_schema(
@@ -51,7 +50,6 @@ class InfoDetailView(GenericAPIView):
                         "k8s_pod_count",  # Number of Kubernetes pods
                         "k8s_volume_count",  # Number of Kubernetes volumes
                         "k8s_apiserver_url",  # URL of the API server
-                        "k8s_cluster_name"  # Human-readable name of the cluster
                     ]
                 }
             }],

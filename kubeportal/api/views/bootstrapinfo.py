@@ -5,12 +5,15 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 
+from kubeportal.api.views.tools import get_branding
+
 
 class BootstrapInfoSerializer(serializers.Serializer):
     csrf_token = serializers.CharField()
     login_url = serializers.URLField()
     logout_url = serializers.URLField()
     login_google_url = serializers.URLField()
+    branding = serializers.CharField()
 
 
 class BootstrapInfoView(generics.RetrieveAPIView):
@@ -25,6 +28,7 @@ class BootstrapInfoView(generics.RetrieveAPIView):
             "csrf_token": csrf.get_token(request),
             "login_url": reverse(viewname='rest_login', request=request),
             "logout_url": reverse(viewname='rest_logout', request=request),
-            "login_google_url": reverse(viewname='api_google_login', request=request)
+            "login_google_url": reverse(viewname='api_google_login', request=request),
+            'branding': get_branding()
         })
         return Response(instance.data)
