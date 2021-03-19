@@ -255,15 +255,11 @@ def get_ingress(uid):
     """
     Get ingress in the cluster by its uid.
     """
-    try:
-        ingresses = get_ingresses()
-        for ingress in ingresses:
-            if ingress.metadata.uid == uid:
-                return ingress
-        return None
-    except Exception as e:
-        logger.exception(f"Error while fetching ingress with uid {uid}")
-        return None
+    ingresses = get_ingresses()
+    for ingress in ingresses:
+        if ingress.metadata.uid == uid:
+            return ingress
+    return None
 
 
 def get_namespaced_pods(namespace):

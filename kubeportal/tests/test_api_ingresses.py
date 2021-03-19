@@ -141,3 +141,24 @@ def test_empty_user_ingresses_list(api_client, admin_user_with_k8s):
     assert 200 == response.status_code
     data = json.loads(response.content)
     assert len(data['ingress_urls']) == 0
+
+def test_broken_k8s_single_ingress(api_client, admin_user_with_k8s, mocker):
+    mocker.patch('kubeportal.k8s.kubernetes_api.get_ingress', side_effect=Exception())
+    apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
+
+    try:
+        response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/')
+        assert 200 == response.status_code
+        data = json.loads(response.content)
+        from urllib.parse import urlparse
+        ingresses_url = urlparse(data['ingresses_url'])
+
+        response = api_client.get(ingresses_url.path)
+        assert 200 == response.status_code
+        data = json.loads(response.content)
+        ingress_url = urlparse(data['ingress_urls'][0])
+
+        response = api_client.get(ingress_url.path)
+        assert response.status_code == 504
+    finally:
+        api.net_v1.delete_namespaced_ingress("test-ingress-1", "default")

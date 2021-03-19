@@ -53,7 +53,11 @@ class IngressRetrievalView(generics.RetrieveAPIView):
         summary="Get ingress by its UID."
     )
     def get(self, request, version, uid):
-        ingress = api.get_ingress(uid)
+        try:
+            ingress = api.get_ingress(uid)
+        except Exception:
+            logger.exception("Problem while fetching ingress information from Kubernetes.")
+            return Response(status=504)
 
         if not request.user.has_namespace(ingress.metadata.namespace):
             logger.warning(f"User '{request.user}' has no access to the namespace '{ingress.metadata.namespace}' of ingress '{ingress.metadata.uid}'. Access denied.")
