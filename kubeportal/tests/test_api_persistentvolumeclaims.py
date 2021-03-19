@@ -68,3 +68,17 @@ def test_pvc_create(api_client, admin_user):
         assert len(pvcs) > 0
     finally:
         api.core_v1.delete_namespaced_persistent_volume_claim(name="test-pvc", namespace="default")
+
+
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
+def test_empty_pvc_list(api_client, admin_user_with_k8s):
+    response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/default/')
+    assert 200 == response.status_code
+    data = json.loads(response.content)
+    from urllib.parse import urlparse
+    pvcs_url = urlparse(data['persistentvolumeclaims_url'])
+
+    response = api_client.get(pvcs_url.path)
+    assert 200 == response.status_code
+    data = json.loads(response.content)
+    assert len(data['persistentvolumeclaim_urls']) == 0
