@@ -4,14 +4,20 @@ metadata:
   name: kubeportal-api-access
 rules:
 - apiGroups: [""]
-  resources: ["secrets","serviceaccounts","namespaces"]
+  resources: ["namespaces","persistentvolumeclaims", "pods", "deployments", "services"]
   verbs: ["get","list","watch","create"]
+- apiGroups: [""]
+  resources: ["secrets","serviceaccounts"]
+  verbs: ["get","list","watch"]
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources: ["rolebindings"]
   verbs: ["get","list","watch","create"]
 - apiGroups: ["rbac.authorization.k8s.io"]
   resources: ["clusterroles"]
   verbs: ["bind"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get","list","watch","create"]
 ---
 # This must be a CLusterRoleBinding, so that all namespaces
 # can be modified
