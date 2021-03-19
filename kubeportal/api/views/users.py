@@ -125,7 +125,7 @@ class UserApprovalView(generics.RetrieveAPIView, generics.CreateAPIView):
             })
             return Response(instance.data)
         else:
-            logger.error(f"User {request.user} is not allowed to fetch the approval status fpr user id {user_id}.")
+            logger.error(f"User {request.user} is not allowed to fetch the approval status for user id {user_id}.")
             raise NotFound
 
     @extend_schema(
