@@ -96,8 +96,12 @@ def test_user_invalid_id(api_client):
 
 def test_get_user_not_himself(api_client, second_user):
     response = api_client.get(f'/api/{settings.API_VERSION}/users/{second_user.pk}/')
-    assert response.status_code == 404
-
+    assert response.status_code == 200
+    data = json.loads(response.text)
+    assert len(data.keys()) == 3
+    assert 'k8s_token' not in data.keys()
+    assert 'firstname' in data.keys()
+    assert data['firstname'] == second_user.first_name
 
 def test_no_general_user_list(api_client):
     response = api_client.get(f'/api/{settings.API_VERSION}/users/')

@@ -1,7 +1,24 @@
 from drf_spectacular.utils import extend_schema_view, extend_schema
+from requests import Response
 from rest_framework import serializers, generics
+from rest_framework.exceptions import NotFound
+import logging
+
+logger = logging.getLogger('KubePortal')
 
 from kubeportal.api.views.tools import User
+
+
+class RestrictedUserSerializer(serializers.ModelSerializer):
+    firstname = serializers.CharField(read_only=True, source='first_name')
+    name = serializers.CharField(read_only=True, source='last_name')
+    user_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('firstname',
+                  'name',
+                  'user_id')
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -65,8 +82,44 @@ class UserSerializer(serializers.ModelSerializer):
 )
 class UserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
+    queryset = User.objects.all()
     lookup_url_kwarg = 'user_id'
 
-    def get_queryset(self):
-        # Clients can only request details of the user that they used for login.
-        return User.objects.filter(pk=self.request.user.pk)
+    def get_serializer_class(self):
+        if self.request.user.pk == self.kwargs['user_id']:
+            # User requests her own information, gets full access
+            return UserSerializer
+        else:
+            if self.request.method == "GET":
+                # user requests information for somebody else (news, approval admins, ...), only gets names
+                return RestrictedUserSerializer
+            else:
+                # Anything but GET for another user is not allowed
+                raise NotFound
+
+
+class UserApprovalSerializer(serializers.Serializer):
+    state = serializers.ChoiceField(read_only=True, choices=("NEW", "ACCESS_REQUESTED", "ACCESS_REJECTED", "ACCESS_APPROVED"))
+
+
+class UserApprovalView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserApprovalSerializer
+
+    @extend_schema(
+        summary="Get the approval status of a user."
+    )
+    def get(self, request, version, user_id):
+        if request.user.pk == user_id:
+            instance = UserApprovalSerializer({
+                'state': request.user.state
+            })
+            return Response(instance.data)
+        else:
+            logger.error(f"User {request.user} is not allowed to fetch the approval status fpr user id {user_id}.")
+            raise NotFound
+
+    @extend_schema(
+        summary="Request approval for this user.",
+    )
+    def post(self, request, version, user_id):
+        pass
