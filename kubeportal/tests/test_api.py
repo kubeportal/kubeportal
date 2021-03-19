@@ -30,6 +30,7 @@ def test_api_bootstrap(api_client_anon):
     assert 'login_url' in data
     assert 'logout_url' in data
     assert 'login_google_url' in data
+    assert data['branding'] == 'KubePortal'
     # check if given login route makes sense
     # login path response tells us to use something else than GET
     response = api_client_anon.get_absolute(data['login_url'])

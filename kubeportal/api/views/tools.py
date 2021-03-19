@@ -12,5 +12,5 @@ def get_user_count():
     return User.objects.count()
 
 
-def get_cluster_name():
+def get_branding():
     return settings.BRANDING
