@@ -64,4 +64,4 @@ deployment/k8s/dashboard/ingress.yml
 db.sqlite3
 kubeportal/secret_key.txt
 devinit.sh
-.idea/workspace.xml
+workspace.xml

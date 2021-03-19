@@ -53,6 +53,7 @@ urlpatterns = [
     path('api/<str:version>/serviceaccounts/<str:uid>/', api_views.ServiceAccountRetrievalView.as_view(), name='serviceaccount_retrieval'),
 
     path('api/<str:version>/users/<int:user_id>/', api_views.UserView.as_view(), name='user'),
+    path('api/<str:version>/users/<int:user_id>/approval/', api_views.UserApprovalView.as_view(), name='user_approval'),
     path('api/<str:version>/groups/<int:group_id>/', api_views.GroupView.as_view(), name='group'),
     path('api/<str:version>/webapps/<int:webapp_id>/', api_views.WebAppView.as_view(), name='webapplication'),
     path('api/<str:version>/infos/', api_views.InfoView.as_view(), name='info_overview'),
