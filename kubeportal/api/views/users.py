@@ -1,8 +1,13 @@
+import urllib
+
+from django.urls import resolve
 from drf_spectacular.utils import extend_schema_view, extend_schema
-from requests import Response
 from rest_framework import serializers, generics
 from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
 import logging
+
+from rest_framework.reverse import reverse
 
 logger = logging.getLogger('KubePortal')
 
@@ -81,11 +86,13 @@ class UserSerializer(serializers.ModelSerializer):
     partial_update=extend_schema(summary='Modify single attributes of this user.')
 )
 class UserView(generics.RetrieveUpdateAPIView):
-    serializer_class = UserSerializer
     queryset = User.objects.all()
     lookup_url_kwarg = 'user_id'
 
     def get_serializer_class(self):
+        if 'user_id' not in self.kwargs:
+            # Generic question for the serializer by the Swagger docs page.
+            return UserSerializer
         if self.request.user.pk == self.kwargs['user_id']:
             # User requests her own information, gets full access
             return UserSerializer
@@ -100,9 +107,11 @@ class UserView(generics.RetrieveUpdateAPIView):
 
 class UserApprovalSerializer(serializers.Serializer):
     state = serializers.ChoiceField(read_only=True, choices=("NEW", "ACCESS_REQUESTED", "ACCESS_REJECTED", "ACCESS_APPROVED"))
+    approving_admin_urls = serializers.ListField(read_only=True, child=serializers.URLField())
+    approving_admin_url = serializers.URLField(write_only=True)
 
 
-class UserApprovalView(generics.RetrieveUpdateAPIView):
+class UserApprovalView(generics.RetrieveAPIView, generics.CreateAPIView):
     serializer_class = UserApprovalSerializer
 
     @extend_schema(
@@ -111,7 +120,8 @@ class UserApprovalView(generics.RetrieveUpdateAPIView):
     def get(self, request, version, user_id):
         if request.user.pk == user_id:
             instance = UserApprovalSerializer({
-                'state': request.user.state
+                'state': request.user.state,
+                'approving_admin_urls': [reverse(viewname='user', kwargs={'user_id': u.pk}, request=request) for u in User.objects.filter(is_superuser=True)]
             })
             return Response(instance.data)
         else:
@@ -122,4 +132,11 @@ class UserApprovalView(generics.RetrieveUpdateAPIView):
         summary="Request approval for this user.",
     )
     def post(self, request, version, user_id):
-        pass
+        admin_url = request.data["approving_admin_url"]
+        path = urllib.parse.urlparse(admin_url).path
+        resolved_func, unused_args, resolved_kwargs = resolve(path)
+        admin_user = resolved_func.cls().get_queryset().get(pk=resolved_kwargs['user_id'])
+        if request.user.send_access_request(request, administrator=admin_user):
+            return Response(status=202)
+        else:
+            return Response(status=500)

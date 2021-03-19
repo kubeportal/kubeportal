@@ -111,3 +111,29 @@ def test_no_general_user_list(api_client):
 def test_user_services_list_no_k8s(api_client):
     response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/default/services/')
     assert 404 == response.status_code
+
+
+def test_get_approval_information(api_client, admin_user):
+    response = api_client.get(f'/api/{settings.API_VERSION}/users/{admin_user.pk}/approval/')
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data['state'] == admin_user.state
+    assert data['approving_admin_urls'][0].endswith(f"{admin_user.pk}/")
+
+
+def test_apply_for_approval(api_client, admin_user):
+    assert admin_user.state == "NEW"
+    response = api_client.get(f'/api/{settings.API_VERSION}/users/{admin_user.pk}/approval/')
+    assert response.status_code == 200
+    data = response.json()
+    admin_url = data['approving_admin_urls'][0]
+
+    # Admin tries to approve himself
+    response = api_client.post(f'/api/{settings.API_VERSION}/users/{admin_user.pk}/approval/', {'approving_admin_url': admin_url })
+
+    assert response.status_code == 202
+
+    admin_user.refresh_from_db()
+
+    assert admin_user.state == "ACCESS_REQUESTED"
