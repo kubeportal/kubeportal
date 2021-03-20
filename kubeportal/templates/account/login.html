@@ -34,7 +34,8 @@
           <label for="password">Password</label>
         </div>
       </div>
-      <input type="submit" value="Sign In" class="btn btn-primary btn-block"/>
+      <input type="submit" value="Sign In" class="btn btn-primary btn-block" onClick="this.value='Sending…';this.form.submit(); this.disabled=true;">
+      </input>
       </form>
 
     {% if auth_google_key %}
