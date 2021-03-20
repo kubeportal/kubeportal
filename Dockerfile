@@ -2,9 +2,12 @@ FROM python:3.8-buster
 
 COPY requirements-prod.txt /tmp/
 
+# Install psycopg2 only in Docker image
+# to support developers with ARM CPU
 RUN apt-get update && \
-    apt-get install -y sqlite3 postgresql-client gcc make libc-dev musl-dev libffi-dev libssl-dev libpcre3-dev && \
+    apt-get install -y vim sqlite3 postgresql-client gcc make libc-dev musl-dev libffi-dev libssl-dev libpcre3-dev && \
     pip install --no-cache-dir -r /tmp/requirements-prod.txt uwsgi && \
+    pip install --no-cache-dir psycopg2 && \   
     mkdir /code/ && \
     mkdir /data/
 
