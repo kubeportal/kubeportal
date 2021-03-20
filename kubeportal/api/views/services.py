@@ -32,6 +32,7 @@ class ServiceSerializer(serializers.Serializer):
     The API serializer for a service defition.
     """
     name = serializers.CharField()
+    puid = serializers.CharField(read_only=True)
     creation_timestamp = serializers.DateTimeField(read_only=True)
     type = serializers.ChoiceField(
         choices=("NodePort", "ClusterIP", "LoadBalancer")
@@ -48,8 +49,9 @@ class ServiceRetrievalView(generics.RetrieveAPIView):
     @extend_schema(
         summary="Get service by its UID."
     )
-    def get(self, request, version, uid):
-        service = api.get_service(uid)
+    def get(self, request, version, puid):
+        namespace, name = puid.split('_')
+        service = api.get_namespaced_service(namespace, name)
 
         if not request.user.has_namespace(service.metadata.namespace):
             logger.warning(
@@ -64,6 +66,7 @@ class ServiceRetrievalView(generics.RetrieveAPIView):
 
         instance = ServiceSerializer({
             'name': service.metadata.name,
+            'puid': service.metadata.namespace + '_' + service.metadata.name,
             'creation_timestamp': service.metadata.creation_timestamp,
             'type': service.spec.type,
             'selector': selector,
@@ -89,9 +92,9 @@ class ServicesView(generics.CreateAPIView, generics.RetrieveAPIView):
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
             services = api.get_namespaced_services(namespace)
-            uids = [item.metadata.uid for item in services]
+            puids = [item.metadata.namespace + '_' + item.metadata.name for item in services]
             instance = ServiceListSerializer({
-                'service_urls': [reverse(viewname='service_retrieval', kwargs={'uid': uid}, request=request) for uid in uids]
+                'service_urls': [reverse(viewname='service_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]
             })
             return Response(instance.data)
         else:

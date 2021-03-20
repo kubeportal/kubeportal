@@ -58,12 +58,12 @@ def test_get_illegal_deployment(api_client, admin_user):
 
     admin_user.service_account = default_namespace.service_accounts.all()[0]
     admin_user.save()
-    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.uid}/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.namespace}_{deployment.metadata.name}/')
     assert 404 == response.status_code
 
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
-    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.uid}/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.namespace}_{deployment.metadata.name}/')
     assert 200 == response.status_code
 
 
@@ -76,10 +76,10 @@ def test_deployment(api_client, admin_user):
 
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
-    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.uid}/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/deployments/{deployment.metadata.namespace}_{deployment.metadata.name}/')
     assert 200 == response.status_code
     data = json.loads(response.content)
-    assert 'uid' in data.keys()
+    assert 'puid' in data.keys()
     assert 'name' in data.keys()
     assert 'creation_timestamp' in data.keys()
     assert 'replicas' in data.keys()

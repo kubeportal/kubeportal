@@ -48,7 +48,7 @@ def test_get_pod(api_client, admin_user):
 
     pod = api.core_v1.read_namespaced_pod(test_pod_name, 'kube-system')
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/pods/{pod.metadata.uid}/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/pods/{pod.metadata.namespace}_{pod.metadata.name}/')
     assert 200 == response.status_code
     data = json.loads(response.content)
     assert data['name'] == test_pod_name
@@ -75,7 +75,7 @@ def test_get_illegal_pod(api_client, admin_user):
 
     pod = api.core_v1.read_namespaced_pod(test_pod_name, 'kube-system')
 
-    response = api_client.get(f'/api/{settings.API_VERSION}/pods/{pod.metadata.uid}/')
+    response = api_client.get(f'/api/{settings.API_VERSION}/pods/{pod.metadata.namespace}_{pod.metadata.name}/')
     assert 404 == response.status_code
 
 

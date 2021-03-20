@@ -24,7 +24,7 @@ class PodSerializer(serializers.Serializer):
     The API serializer for a pod.
     """
     name = serializers.CharField()
-    uid = serializers.CharField(read_only=True)
+    puid = serializers.CharField(read_only=True)
     creation_timestamp = serializers.DateTimeField(read_only=True)
     containers = serializers.ListField(child=ContainerSerializer())
 
@@ -34,7 +34,7 @@ class PodSerializer(serializers.Serializer):
         Get our stripped JSON representation of pod details.
         """
         stripped_pod = {'name': pod.metadata.name,
-                        'uid': pod.metadata.uid,
+                        'puid': pod.metadata.namespace + "_" + pod.metadata.name,
                         'creation_timestamp': pod.metadata.creation_timestamp}
         stripped_containers = []
         for container in pod.spec.containers:
@@ -51,11 +51,15 @@ class PodRetrievalView(generics.RetrieveAPIView):
     serializer_class = PodSerializer
 
     @extend_schema(
-        summary="Get pod by its UID."
+        summary="Get pod by its PUID."
     )
-    def get(self, request, version, uid):
-        pod = api.get_pod(uid)
-        if request.user.has_namespace(pod.metadata.namespace):
+    def get(self, request, version, puid):
+        namespace, pod_name = puid.split('_')
+        pod = api.get_namespaced_pod(namespace, pod_name)
+        if not pod:
+            logger.error(f"Pod {pod_name} in namespace {namespace} not found.")
+            raise NotFound
+        if request.user.has_namespace(namespace):
             return Response(PodSerializer.to_json(pod))
         else:
             logger.warning(
@@ -75,10 +79,10 @@ class PodsView(generics.RetrieveAPIView):
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
             pods = api.get_namespaced_pods(namespace)
-            uids = [item.metadata.uid for item in pods]
+            puids = [item.metadata.namespace + "_" + item.metadata.name for item in pods]
 
             instance = PodListSerializer({
-                'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'uid': uid}, request=request) for uid in uids]\
+                'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]\
             })
             return Response(instance.data)
         else:

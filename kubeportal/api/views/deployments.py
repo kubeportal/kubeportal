@@ -36,7 +36,7 @@ class DeploymentSerializer(serializers.Serializer):
     The API serializer for a single deployment.
     """
     name = serializers.CharField()
-    uid = serializers.CharField(read_only=True)
+    puid = serializers.CharField(read_only=True)
     creation_timestamp = serializers.DateTimeField(read_only=True)
     replicas = serializers.IntegerField()
     match_labels = serializers.ListField(write_only=True, child=LabelSerializer())
@@ -51,8 +51,9 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
     @extend_schema(
         summary="Get deployment by its UID."
     )
-    def get(self, request, version, uid):
-        deployment = api.get_deployment(uid)
+    def get(self, request, version, puid):
+        namespace, name = puid.split('_')
+        deployment = api.get_namespaced_deployment(namespace, name)
 
         if not request.user.has_namespace(deployment.metadata.namespace):
             logger.warning(
@@ -62,10 +63,10 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
         pod_list = api.get_deployment_pods(deployment)
         instance = DeploymentSerializer({
             'name': deployment.metadata.name,
-            'uid': deployment.metadata.uid,
+            'puid': deployment.metadata.namespace + '_' + deployment.metadata.name,
             'creation_timestamp': deployment.metadata.creation_timestamp,
             'replicas': deployment.spec.replicas,
-            'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'uid': pod.metadata.uid}, request=request) for pod in
+            'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'puid': pod.metadata.namespace + '_' + pod.metadata.name}, request=request) for pod in
                          pod_list],
             'namespace_url': reverse(viewname='namespace', kwargs={'namespace': deployment.metadata.namespace},
                                      request=request)
@@ -88,9 +89,9 @@ class DeploymentsView(generics.RetrieveAPIView, generics.CreateAPIView):
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
             deployments = api.get_namespaced_deployments(namespace)
-            uids = [item.metadata.uid for item in deployments]
+            puids = [item.metadata.namespace + '_' + item.metadata.name for item in deployments]
             instance = DeploymentListSerializer({
-                'deployment_urls': [reverse(viewname='deployment_retrieval', kwargs={'uid': uid}, request=request) for uid in uids]\
+                'deployment_urls': [reverse(viewname='deployment_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]\
             })
 
             return Response(instance.data)

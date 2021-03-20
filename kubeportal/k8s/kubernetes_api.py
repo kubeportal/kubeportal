@@ -225,19 +225,22 @@ def get_pods():
         return None
 
 
-def get_pod(uid):
+def get_namespaced_pod(namespace, name):
+    try:
+        return core_v1.read_namespaced_pod(name, namespace)
+    except Exception as e:
+        logger.exception(f"Error while fetching pod {namespace}:{name}")
+        return None
+
+def get_namespaced_pods(namespace):
     """
-    Get pod in the cluster by its uid.
+    Get all pods for a specific Kubernetes namespace in the cluster.
     """
     try:
-        pods = get_pods()
-        for pod in pods:
-            if pod.metadata.uid == uid:
-                return pod
-        return None
+        return core_v1.list_namespaced_pod(namespace).items
     except Exception as e:
-        logger.exception(f"Error while fetching pod with uid {uid}")
-        return None
+        logger.exception(f"Error while fetching pods of namespace {namespace}")
+        return []
 
 
 def get_ingresses():
@@ -251,26 +254,11 @@ def get_ingresses():
         return None
 
 
-def get_ingress(uid):
+def get_namespaced_ingress(namespace, name):
     """
-    Get ingress in the cluster by its uid.
+    Get ingress in the cluster.
     """
-    ingresses = get_ingresses()
-    for ingress in ingresses:
-        if ingress.metadata.uid == uid:
-            return ingress
-    return None
-
-
-def get_namespaced_pods(namespace):
-    """
-    Get all pods for a specific Kubernetes namespace in the cluster.
-    """
-    try:
-        return core_v1.list_namespaced_pod(namespace).items
-    except Exception as e:
-        logger.exception(f"Error while fetching pods of namespace {namespace}")
-        return []
+    return net_v1.read_namespaced_ingress(name, namespace)
 
 
 def get_namespaced_deployments(namespace):
@@ -309,16 +297,12 @@ def get_deployments():
         return None
 
 
-def get_deployment(uid):
+def get_namespaced_deployment(namespace, name):
     """
-    Get deployment in the cluster by its uid.
+    Get deployment in the cluster by its namespace and name.
     """
     try:
-        deployments = get_deployments()
-        for deployment in deployments:
-            if deployment.metadata.uid == uid:
-                return deployment
-        return None
+        return apps_v1.read_namespaced_deployment(name, namespace)
     except Exception as e:
         logger.exception(f"Error while fetching deployment with uid {uid}")
         return None
@@ -335,18 +319,14 @@ def get_services():
         return None
 
 
-def get_service(uid):
+def get_namespaced_service(namespace, name):
     """
-    Get service in the cluster by its uid.
+    Get service in the cluster.
     """
     try:
-        services = get_services()
-        for service in services:
-            if service.metadata.uid == uid:
-                return service
-        return None
+        return core_v1.read_namespaced_service(name, namespace)
     except Exception as e:
-        logger.exception(f"Error while fetching service with uid {uid}")
+        logger.exception(f"Error while fetching service.")
         return None
 
 
@@ -381,18 +361,14 @@ def get_pvcs():
         logger.exception("Error while fetching list of all pvcs from Kubernetes")
         return None
 
-def get_pvc(uid):
+def get_namespaced_pvc(namespace, name):
     """
-    Get pvc in the cluster by its uid.
+    Get pvc in the cluster.
     """
     try:
-        pvcs = get_pvcs()
-        for pvc in pvcs:
-            if pvc.metadata.uid == uid:
-                return pvc
-        return None
+        return core_v1.read_namespaced_persistent_volume_claim(name, namespace)
     except Exception as e:
-        logger.exception(f"Error while fetching persistent volume claim with uid {uid}")
+        logger.exception(f"Error while fetching persistent volume claim.")
         return None
 
 
