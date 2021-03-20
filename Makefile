@@ -1,5 +1,5 @@
 SHELL=/bin/bash
-VERSION=0.6.4
+VERSION=0.6.5
 
 .PHONY: docs
 
