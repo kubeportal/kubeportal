@@ -66,17 +66,22 @@ class IngressRetrievalView(generics.RetrieveAPIView):
         result_rules = []
         for k8s_rule in ingress.spec.rules:
             result_rule = {'host': k8s_rule.host,
-                           'paths': [{'path': path.path,
+                           'paths': [{'path': path.path if path.path is not None else '',
                                       'service_name': path.backend.service_name,
                                       'service_port': path.backend.service_port}
                                      for path in k8s_rule.http.paths]}
             result_rules.append(result_rule)
 
+        annotations = []
+        if ingress.metadata.annotations:
+            for k,v in ingress.metadata.annotations.items():
+                annotations.append({'key': k, 'value': v})
+
         instance = IngressSerializer({
             'name': ingress.metadata.name,
             'creation_timestamp': ingress.metadata.creation_timestamp,
             'tls': True if ingress.spec.tls else False,
-            'annotations': [{'key': list(ingress.metadata.annotations.keys())[0], 'value': list(ingress.metadata.annotations.values())[0]}],
+            'annotations': annotations,
             'rules': result_rules
         })
         return Response(instance.data)
@@ -114,9 +119,9 @@ class IngressesView(generics.CreateAPIView, generics.RetrieveAPIView):
         if request.user.has_namespace(namespace):
             api.create_k8s_ingress(namespace,
                                    request.data["name"],
-                                   request.data["annotations"],
-                                   request.data["tls"],
-                                   request.data["rules"]
+                                   request.data.get("annotations", {}),
+                                   request.data.get("tls", False),
+                                   request.data.get("rules", [])
                                    )
             return Response(status=201)
         else:

@@ -5,6 +5,7 @@ metadata:
   namespace: default
   annotations:
     foo: bar
+    x: y
 spec:
   tls:
   - secretName: "visbert-demo-subdomain-tls"

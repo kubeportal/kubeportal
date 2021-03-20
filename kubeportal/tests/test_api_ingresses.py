@@ -59,6 +59,58 @@ def test_user_ingresses_create(api_client, admin_user):
         api.net_v1.delete_namespaced_ingress(name="my-ingress", namespace="kube-system")
 
 
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
+def test_user_ingresses_create_empty_path(api_client, admin_user):
+    run_minikube_sync()
+    system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+    admin_user.service_account = system_namespace.service_accounts.all()[0]
+    admin_user.save()
+    try:
+        response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/ingresses/',
+                                   {
+                                       'name': 'my-ingress',
+                                       'rules': [
+                                           {'host': 'www.example.com',
+                                            'paths': [
+                                                {'service_name': 'my-svc1',
+                                                 'service_port': 8000
+                                                 },
+                                                {'path': '',
+                                                 'service_name': 'my-svc2',
+                                                 'service_port': 5000
+                                                 },
+                                                {'path': '/',
+                                                 'service_name': 'my-svc3',
+                                                 'service_port': 5000
+                                                 }
+                                            ]
+                                            }
+                                       ]
+                                   })
+        assert 201 == response.status_code
+
+        response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/')
+        assert 200 == response.status_code
+        data = json.loads(response.content)
+        from urllib.parse import urlparse
+        ingresses_url = urlparse(data['ingresses_url'])
+
+        response = api_client.get(ingresses_url.path)
+        assert 200 == response.status_code
+        data = json.loads(response.content)
+        ingress_url = urlparse(data['ingress_urls'][0])
+
+        response = api_client.get(ingress_url.path)
+        assert 200 == response.status_code
+        data = json.loads(response.content)
+
+        assert data['rules'][0]['paths'][0]['path'] == ''
+        assert data['rules'][0]['paths'][1]['path'] == ''
+        assert data['rules'][0]['paths'][2]['path'] == '/'
+    finally:
+        api.net_v1.delete_namespaced_ingress(name="my-ingress", namespace="kube-system")
+
+
 def test_user_ingresses_create_wrong_ns(api_client):
     response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/xyz/ingresses/',
                                {
@@ -109,6 +161,11 @@ def test_user_ingresses_list(api_client, admin_user_with_k8s):
         assert "test-ingress-1" == data['name']
         assert data['tls'] is True
         assert "visbert" in data["rules"][0]["host"]
+        for entry in data['annotations']:
+            if entry['key'] == 'foo':
+                assert entry['value'] == 'bar'
+            if entry['key'] == 'x':
+                assert entry['value'] == 'y'
     finally:
         api.net_v1.delete_namespaced_ingress("test-ingress-1", "default")
         api.net_v1.delete_namespaced_ingress("test-ingress-2", "default")

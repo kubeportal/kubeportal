@@ -473,7 +473,7 @@ def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, 
                 service_name=path_config['service_name'],
                 service_port=path_config['service_port']
             )
-            k8s_paths.append(NetworkingV1beta1HTTPIngressPath(path=path_config["path"], backend=k8s_backend))
+            k8s_paths.append(NetworkingV1beta1HTTPIngressPath(path=path_config.get("path", None), backend=k8s_backend))
         k8s_http = NetworkingV1beta1HTTPIngressRuleValue(
             paths=k8s_paths
         )
