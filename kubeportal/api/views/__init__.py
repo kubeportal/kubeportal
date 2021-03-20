@@ -14,6 +14,13 @@ General design principles:
 - Data structures are always described as DRF serializers, even when
   they are not really used in their original sense. This again enables
   the correct work of drf-spectacular for the API doc generation.
+- For uncached Kubernetes resources, we do not use the native UIDs,
+  but a self-created portal identifier ("puid"),
+  which is a concatenation of namespace and
+  resource name with an illegal character in K8S, but not in URL world.
+  This allows us to fetch a single pod / deployment / ... in the most
+  efficient manner, since field selectors for the K8S metadata UID are
+  not supported in the K8S API.
 """
 
 from .bootstrapinfo import *

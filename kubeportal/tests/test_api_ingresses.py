@@ -200,7 +200,7 @@ def test_empty_user_ingresses_list(api_client, admin_user_with_k8s):
     assert len(data['ingress_urls']) == 0
 
 def test_broken_k8s_single_ingress(api_client, admin_user_with_k8s, mocker):
-    mocker.patch('kubeportal.k8s.kubernetes_api.get_ingress', side_effect=Exception())
+    mocker.patch('kubeportal.k8s.kubernetes_api.get_namespaced_ingress', side_effect=Exception())
     apply_k8s_yml(BASE_DIR + "fixtures/ingress1.yml")
 
     try:

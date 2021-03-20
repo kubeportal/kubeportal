@@ -37,6 +37,7 @@ class IngressSerializer(serializers.Serializer):
     The API serializer for an ingress definition.
     """
     name = serializers.CharField()
+    puid = serializers.CharField(read_only=True)
     creation_timestamp = serializers.DateTimeField(read_only=True)
     tls = serializers.BooleanField()
     annotations = serializers.ListField(child=AnnotationSerializer())
@@ -52,9 +53,10 @@ class IngressRetrievalView(generics.RetrieveAPIView):
     @extend_schema(
         summary="Get ingress by its UID."
     )
-    def get(self, request, version, uid):
+    def get(self, request, version, puid):
+        namespace, name = puid.split('_')
         try:
-            ingress = api.get_ingress(uid)
+            ingress = api.get_namespaced_ingress(namespace, name)
         except Exception:
             logger.exception("Problem while fetching ingress information from Kubernetes.")
             return Response(status=504)
@@ -79,6 +81,7 @@ class IngressRetrievalView(generics.RetrieveAPIView):
 
         instance = IngressSerializer({
             'name': ingress.metadata.name,
+            'puid': ingress.metadata.namespace + '_' + ingress.metadata.name,
             'creation_timestamp': ingress.metadata.creation_timestamp,
             'tls': True if ingress.spec.tls else False,
             'annotations': annotations,
@@ -102,9 +105,9 @@ class IngressesView(generics.CreateAPIView, generics.RetrieveAPIView):
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
             ingresses = api.get_namespaced_ingresses(namespace)
-            uids = [item.metadata.uid for item in ingresses]
+            puids = [item.metadata.namespace + '_' + item.metadata.name for item in ingresses]
             instance = IngressListSerializer({
-                'ingress_urls': [reverse(viewname='ingress_retrieval', kwargs={'uid': uid}, request=request) for uid in uids]
+                'ingress_urls': [reverse(viewname='ingress_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]
             })
             return Response(instance.data)
         else:

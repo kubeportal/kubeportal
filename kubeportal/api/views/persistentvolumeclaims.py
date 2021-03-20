@@ -20,7 +20,7 @@ class PersistentVolumeClaimSerializer(serializers.Serializer):
     The API serializer for a single PVC.
     """
     name = serializers.CharField()
-    uid = serializers.CharField(read_only=True)
+    puid = serializers.CharField(read_only=True)
     creation_timestamp = serializers.DateTimeField(read_only=True)
     access_modes = serializers.ListField(
                     child=serializers.ChoiceField(
@@ -36,12 +36,13 @@ class PersistentVolumeClaimRetrievalView(generics.RetrieveAPIView):
     @extend_schema(
         summary="Get persistent volume claim by its UID."
     )
-    def get(self, request, version, uid):
-        pvc = api.get_pvc(uid)
+    def get(self, request, version, puid):
+        namespace, name = puid.split('_')
+        pvc = api.get_namespaced_pvc(namespace, name)
 
         if not request.user.has_namespace(pvc.metadata.namespace):
             logger.warning(
-                f"User '{request.user}' has no access to the namespace '{deployment.metadata.namespace}' of pvc '{pvc.metadata.uid}'. Access denied.")
+                f"User '{request.user}' has no access to the namespace '{namespace}' of pvc '{name}'. Access denied.")
             raise NotFound
 
         if pvc.status.capacity:
@@ -56,7 +57,7 @@ class PersistentVolumeClaimRetrievalView(generics.RetrieveAPIView):
 
         instance = PersistentVolumeClaimSerializer({
             'name': pvc.metadata.name,
-            'uid': pvc.metadata.uid,
+            'puid': pvc.metadata.namespace + '_' + pvc.metadata.name,
             'creation_timestamp': pvc.metadata.creation_timestamp,
             'access_modes': access_modes,
             'storage_class_name': pvc.spec.storage_class_name,
@@ -82,9 +83,9 @@ class PersistentVolumeClaimsView(generics.RetrieveAPIView, generics.CreateAPIVie
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
             pvcs = api.get_namespaced_pvcs(namespace)
-            uids = [item.metadata.uid for item in pvcs]
+            puids = [item.metadata.namespace + '_' + item.metadata.name for item in pvcs]
             instance = PersistentVolumeClaimListSerializer({
-                'persistentvolumeclaim_urls': [reverse(viewname='pvc_retrieval', kwargs={'uid': uid}, request=request) for uid in uids]\
+                'persistentvolumeclaim_urls': [reverse(viewname='pvc_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]\
             })
 
             return Response(instance.data)

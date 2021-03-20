@@ -45,11 +45,11 @@ urlpatterns = [
     path('api/<str:version>/namespaces/<str:namespace>/pods/', api_views.PodsView.as_view(), name='pods'),
     path('api/<str:version>/namespaces/<str:namespace>/services/', api_views.ServicesView.as_view(), name='services'),
 
-    path('api/<str:version>/deployments/<str:uid>/', api_views.DeploymentRetrievalView.as_view(), name='deployment_retrieval'),
-    path('api/<str:version>/ingresses/<str:uid>/', api_views.IngressRetrievalView.as_view(), name='ingress_retrieval'),
-    path('api/<str:version>/persistentvolumeclaims/<str:uid>/', api_views.PersistentVolumeClaimRetrievalView.as_view(), name='pvc_retrieval'),
-    path('api/<str:version>/pods/<str:uid>/', api_views.PodRetrievalView.as_view(), name='pod_retrieval'),
-    path('api/<str:version>/services/<str:uid>/', api_views.ServiceRetrievalView.as_view(), name='service_retrieval'),
+    path('api/<str:version>/deployments/<str:puid>/', api_views.DeploymentRetrievalView.as_view(), name='deployment_retrieval'),
+    path('api/<str:version>/ingresses/<str:puid>/', api_views.IngressRetrievalView.as_view(), name='ingress_retrieval'),
+    path('api/<str:version>/persistentvolumeclaims/<str:puid>/', api_views.PersistentVolumeClaimRetrievalView.as_view(), name='pvc_retrieval'),
+    path('api/<str:version>/pods/<str:puid>/', api_views.PodRetrievalView.as_view(), name='pod_retrieval'),
+    path('api/<str:version>/services/<str:puid>/', api_views.ServiceRetrievalView.as_view(), name='service_retrieval'),
     path('api/<str:version>/serviceaccounts/<str:uid>/', api_views.ServiceAccountRetrievalView.as_view(), name='serviceaccount_retrieval'),
 
     path('api/<str:version>/users/<int:user_id>/', api_views.UserView.as_view(), name='user'),
