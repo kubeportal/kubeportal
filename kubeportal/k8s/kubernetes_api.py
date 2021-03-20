@@ -304,7 +304,7 @@ def get_namespaced_deployment(namespace, name):
     try:
         return apps_v1.read_namespaced_deployment(name, namespace)
     except Exception as e:
-        logger.exception(f"Error while fetching deployment with uid {uid}")
+        logger.exception(f"Error while fetching deployment.")
         return None
 
 
