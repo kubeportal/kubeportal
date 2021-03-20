@@ -77,7 +77,8 @@ class IngressRetrievalView(generics.RetrieveAPIView):
         annotations = []
         if ingress.metadata.annotations:
             for k,v in ingress.metadata.annotations.items():
-                annotations.append({'key': k, 'value': v})
+                if "last-applied-configuration" not in k:
+                    annotations.append({'key': k, 'value': v})
 
         instance = IngressSerializer({
             'name': ingress.metadata.name,
