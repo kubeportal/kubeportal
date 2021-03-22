@@ -11,12 +11,40 @@ import logging
 logger = logging.getLogger('KubePortal')
 
 
+class VolumeMountSerializer(serializers.Serializer):
+    """
+    The API serializer for a container volume mount.
+    """
+    volume_name = serializers.CharField()
+    mount_path = serializers.CharField()
+    sub_path = serializers.CharField()
+
+
 class ContainerSerializer(serializers.Serializer):
     """
     The API serializer for a container.
     """
     name = serializers.CharField()
     image = serializers.CharField()
+    volume_mounts = serializers.ListField(read_only=True, child=VolumeMountSerializer())
+
+    @classmethod
+    def create_from_k8s_container(cls, k8s_container):
+        vm_list = []
+        for k8s_volumemount in k8s_container.volume_mounts:
+            vm = VolumeMountSerializer({
+                'volume_name': k8s_volumemount.name,
+                'mount_path': k8s_volumemount.mount_path,
+                'sub_path': k8s_volumemount.sub_path if k8s_volumemount.sub_path else ""
+            })
+            vm_list.append(vm.data)
+
+        instance = ContainerSerializer({
+            'image': k8s_container.image,
+            'volume_mounts': vm_list,
+            'name': k8s_container.name})
+
+        return instance
 
 
 class PodSerializer(serializers.Serializer):
@@ -33,8 +61,10 @@ class PodSerializer(serializers.Serializer):
     message = serializers.CharField(read_only=True)
     host_ip = serializers.CharField(read_only=True)
 
+
 class PodListSerializer(serializers.Serializer):
     pod_urls = serializers.ListField(read_only=True, child=serializers.URLField())
+
 
 class PodRetrievalView(generics.RetrieveAPIView):
     serializer_class = PodSerializer
@@ -50,10 +80,8 @@ class PodRetrievalView(generics.RetrieveAPIView):
             raise NotFound
         if request.user.has_namespace(namespace):
             container_instances = []
-            for container in pod.spec.containers:
-                instance = ContainerSerializer({
-                    'image': container.image,
-                    'name': container.name})
+            for k8s_container in pod.spec.containers:
+                instance = ContainerSerializer.create_from_k8s_container(k8s_container)
                 container_instances.append(instance.data)
 
             pod_instance = PodSerializer({
@@ -73,6 +101,7 @@ class PodRetrievalView(generics.RetrieveAPIView):
                 f"User '{request.user}' has no access to the namespace '{pod.metadata.namespace}' of pod '{pod.metadata.uid}'. Access denied.")
             raise NotFound
 
+
 class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -91,8 +120,9 @@ class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
             puids = [item.metadata.namespace + "_" + item.metadata.name for item in pods]
 
             instance = PodListSerializer({
-                'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]\
-            })
+                'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'puid': puid}, request=request) for puid in
+                             puids] \
+                })
             return Response(instance.data)
         else:
             raise NotFound
@@ -104,11 +134,8 @@ class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
     )
     def post(self, request, version, namespace):
         if request.user.has_namespace(namespace):
-            return Response(status=api.create_k8s_pod(  namespace,
-                                                        request.data["name"],
-                                                        request.data["containers"]))
+            return Response(status=api.create_k8s_pod(namespace,
+                                                      request.data["name"],
+                                                      request.data["containers"]))
         else:
             raise NotFound
-
-
-
