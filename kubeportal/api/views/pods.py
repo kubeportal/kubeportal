@@ -11,13 +11,21 @@ import logging
 logger = logging.getLogger('KubePortal')
 
 
+class VolumeSerializer(serializers.Serializer):
+    """
+    The API serializer for a volume.
+    """
+    name = serializers.CharField(read_only=True)
+    type = serializers.CharField(read_only=True)
+    path = serializers.CharField(read_only=True)
+
+
 class VolumeMountSerializer(serializers.Serializer):
     """
     The API serializer for a container volume mount.
     """
-    volume_name = serializers.CharField()
-    mount_path = serializers.CharField()
-    sub_path = serializers.CharField()
+    volume = VolumeSerializer(read_only=True)
+    mount_path = serializers.CharField(read_only=True)
 
 
 class ContainerSerializer(serializers.Serializer):
@@ -29,19 +37,48 @@ class ContainerSerializer(serializers.Serializer):
     volume_mounts = serializers.ListField(read_only=True, child=VolumeMountSerializer())
 
     @classmethod
-    def create_from_k8s_container(cls, k8s_container):
-        vm_list = []
-        for k8s_volumemount in k8s_container.volume_mounts:
-            vm = VolumeMountSerializer({
-                'volume_name': k8s_volumemount.name,
-                'mount_path': k8s_volumemount.mount_path,
-                'sub_path': k8s_volumemount.sub_path if k8s_volumemount.sub_path else ""
+    def create_from_k8s_container(cls, k8s_container, k8s_pod):
+        # step through pod volumes and get serialized information
+        volume_list = {}
+        for k8s_volume in k8s_pod.spec.volumes:
+            k8s_volume_data = k8s_volume.to_dict()
+            # see V1Volume definition for the idea here
+            volume_type = ""
+            for k, v in k8s_volume_data.items():
+                if v is not None and k not in ['name',]:
+                    volume_type = k
+            volume_name = k8s_volume.name
+            volume_path = ""
+            # Type-specific considerations
+            if volume_type == 'host_path':
+                volume_path = k8s_volume.host_path.path
+            elif volume_type == 'secret':
+                volume_name = k8s_volume.secret.secret_name
+            elif volume_type == 'config_map':
+                volume_name = k8s_volume.config_map.name
+            volume = VolumeSerializer({
+                'name': volume_name,
+                'type': volume_type,
+                'path': volume_path
             })
-            vm_list.append(vm.data)
+            volume_list[k8s_volume.name] = volume.data
 
-        instance = ContainerSerializer({
+        # step through volume mounts
+        volume_mount_list = []
+        for k8s_volumemount in k8s_container.volume_mounts:
+            volume = volume_list.get(k8s_volumemount.name, None)
+            if volume and k8s_volumemount.sub_path:
+                volume['path'] += k8s_volumemount.sub_path
+            vm = VolumeMountSerializer({
+                'volume': volume_list.get(k8s_volumemount.name, ""),
+                'mount_path': k8s_volumemount.mount_path,
+            })
+            volume_mount_list.append(vm.data)
+
+        # Create serialized container data
+        instance = cls({
             'image': k8s_container.image,
-            'volume_mounts': vm_list,
+            'volume_mounts': volume_mount_list,
             'name': k8s_container.name})
 
         return instance
@@ -60,6 +97,26 @@ class PodSerializer(serializers.Serializer):
     reason = serializers.CharField(read_only=True)
     message = serializers.CharField(read_only=True)
     host_ip = serializers.CharField(read_only=True)
+
+    @classmethod
+    def create_from_k8s_pod(cls, k8s_pod):
+        container_instances = []
+        for k8s_container in k8s_pod.spec.containers:
+            instance = ContainerSerializer.create_from_k8s_container(k8s_container, k8s_pod)
+            container_instances.append(instance.data)
+
+        pod_instance = cls({
+            'name': k8s_pod.metadata.name,
+            'puid': k8s_pod.metadata.namespace + "_" + k8s_pod.metadata.name,
+            'creation_timestamp': k8s_pod.metadata.creation_timestamp,
+            'start_timestamp': k8s_pod.status.start_time,
+            'phase': k8s_pod.status.phase if k8s_pod.status.phase else "",
+            'reason': k8s_pod.status.reason if k8s_pod.status.reason else "",
+            'message': k8s_pod.status.message if k8s_pod.status.message else "",
+            'host_ip': k8s_pod.status.host_ip if k8s_pod.status.host_ip else "",
+            'containers': container_instances})
+
+        return pod_instance
 
 
 class PodListSerializer(serializers.Serializer):
@@ -81,7 +138,7 @@ class PodRetrievalView(generics.RetrieveAPIView):
         if request.user.has_namespace(namespace):
             container_instances = []
             for k8s_container in pod.spec.containers:
-                instance = ContainerSerializer.create_from_k8s_container(k8s_container)
+                instance = ContainerSerializer.create_from_k8s_container(k8s_container, pod)
                 container_instances.append(instance.data)
 
             pod_instance = PodSerializer({
