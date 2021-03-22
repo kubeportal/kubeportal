@@ -33,6 +33,7 @@ class JWTSerializer(serializers.Serializer):
     access_token = serializers.CharField()
     refresh_token = serializers.CharField()
     user_url = serializers.SerializerMethodField()
+    user_approval_url = serializers.SerializerMethodField()
     news_url = serializers.SerializerMethodField()
     infos_url = serializers.SerializerMethodField()
 
@@ -41,6 +42,12 @@ class JWTSerializer(serializers.Serializer):
         uid = obj['user'].pk
         request = self.context['request']
         return reverse(viewname='user', kwargs={'user_id': uid}, request=request)
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_user_approval_url(self, obj):
+        uid = obj['user'].pk
+        request = self.context['request']
+        return reverse(viewname='user_approval', kwargs={'user_id': uid}, request=request)
 
     @extend_schema_field(OpenApiTypes.URI)
     def get_news_url(self, obj):

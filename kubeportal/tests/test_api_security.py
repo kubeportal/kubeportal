@@ -22,6 +22,7 @@ def test_api_login(api_client_anon, admin_user):
     assert data['user_url'].startswith("http")
     assert data['news_url'].startswith("http")
     assert data['infos_url'].startswith("http")
+    assert data['user_approval_url'].startswith("http")
 
 
 @pytest.mark.django_db
