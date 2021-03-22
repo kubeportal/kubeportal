@@ -82,3 +82,52 @@ def test_get_illegal_pod(api_client, admin_user):
 def test_namespace_pods_list_forbidden(api_client):
     response = api_client.get(f'/api/{settings.API_VERSION}/namespaces/kube-system/pods/')
     assert response.status_code == 404
+
+
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
+def test_pod_create(api_client, admin_user):
+    run_minikube_sync()
+    system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+    admin_user.service_account = system_namespace.service_accounts.all()[0]
+    admin_user.save()
+    old_count = len(api.get_namespaced_pods("kube-system"))
+    try:
+        response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/pods/',
+                                   {'name': 'test-pod1',
+                                    'containers': [{
+                                        'name': 'busybox',
+                                        'image': 'busybox'
+                                    }, ]
+                                    })
+        assert 201 == response.status_code
+        new_count = len(api.get_namespaced_pods("kube-system"))
+        assert old_count + 1 == new_count
+    finally:
+        api.core_v1.delete_namespaced_pod(name="test-pod1", namespace="kube-system")
+
+
+@pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
+def test_pod_double_create(api_client, admin_user):
+    run_minikube_sync()
+    system_namespace = KubernetesNamespace.objects.get(name="kube-system")
+    admin_user.service_account = system_namespace.service_accounts.all()[0]
+    admin_user.save()
+    try:
+        response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/pods/',
+                                   {'name': 'test-pod2',
+                                    'containers': [{
+                                        'name': 'busybox',
+                                        'image': 'busybox'
+                                    }, ]
+                                    })
+        assert 201 == response.status_code
+        response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/pods/',
+                                   {'name': 'test-pod2',
+                                    'containers': [{
+                                        'name': 'busybox',
+                                        'image': 'busybox'
+                                    }, ]
+                                    })
+        assert 409 == response.status_code
+    finally:
+        api.core_v1.delete_namespaced_pod(name="test-pod2", namespace="kube-system")
