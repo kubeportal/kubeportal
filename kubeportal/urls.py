@@ -4,6 +4,8 @@ from django.views.decorators.cache import cache_page
 from django.views.generic.base import RedirectView
 from oidc_provider.views import ProviderInfoView
 from dj_rest_auth import views as dj_rest_views
+from rest_framework_simplejwt.views import TokenVerifyView
+from dj_rest_auth.jwt_auth import get_refresh_view
 
 from kubeportal import views
 from kubeportal.api import views as api_views
@@ -64,6 +66,8 @@ urlpatterns = [
     path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),
     path('api/<str:version>/login_google/', views.GoogleApiLoginView.as_view(), name='api_google_login'),
+    path('api/<str:version>/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('api/<str:version>/token/refresh/', get_refresh_view().as_view(), name='token_refresh'),
 
     # frontend web auth views
     path('accounts/', include('allauth.urls')),
