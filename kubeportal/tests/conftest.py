@@ -93,17 +93,17 @@ def admin_group(admin_user):
 
 
 class ApiClient:
+    """
+    Wrapper for Python requests calls. Since the
+    library is caching header entries between calls,
+    we create a new Requests client every time.
+    """
     def __init__(self):
-        self.client = RequestsClient()
         self.csrf = None
         self.jwt = None
 
     def _all_headers(self, headers):
-        """
-        Make sure that the parameters stays "None" if
-        nothing is to set, and nothing was given by the caller.
-        """
-        if (self.jwt or self.csrf) and not headers:
+        if not headers and (self.jwt or self.csrf):
             headers = {}
         if self.jwt:
             headers["Authorization"] = "Bearer " + self.jwt
@@ -115,18 +115,22 @@ class ApiClient:
         return self.get_absolute('http://testserver' + relative_url, headers)
 
     def get_absolute(self, url, headers=None):
-        return self.client.get(url, headers=self._all_headers(headers))
+        client = RequestsClient()
+        return client.get(url, headers=self._all_headers(headers))
 
     def patch(self, relative_url, data, headers=None):
-        return self.client.patch('http://testserver' + relative_url,
+        client = RequestsClient()
+        return client.patch('http://testserver' + relative_url,
                                  json=data, headers=self._all_headers(headers))
 
     def post(self, relative_url, data=None, headers=None):
-        return self.client.post('http://testserver' + relative_url,
+        client = RequestsClient()
+        return client.post('http://testserver' + relative_url,
                                 json=data, headers=self._all_headers(headers))
 
     def options(self, relative_url, headers=None):
-        return self.client.options('http://testserver' + relative_url, headers=self._all_headers(headers))
+        client = RequestsClient()
+        return client.options('http://testserver' + relative_url, headers=self._all_headers(headers))
 
     def api_login(self, user):
         user.set_password("passwort")
@@ -138,6 +142,7 @@ class ApiClient:
         data = response.json()
         assert 'access_token' in data
         self.jwt = data['access_token']
+        self.refresh = data['refresh_token']
         return response
 
 
