@@ -26,8 +26,12 @@ class PodSerializer(serializers.Serializer):
     name = serializers.CharField()
     puid = serializers.CharField(read_only=True)
     creation_timestamp = serializers.DateTimeField(read_only=True)
+    start_timestamp = serializers.DateTimeField(read_only=True)
     containers = serializers.ListField(child=ContainerSerializer())
-
+    phase = serializers.CharField(read_only=True)
+    reason = serializers.CharField(read_only=True)
+    message = serializers.CharField(read_only=True)
+    host_ip = serializers.CharField(read_only=True)
 
 class PodListSerializer(serializers.Serializer):
     pod_urls = serializers.ListField(read_only=True, child=serializers.URLField())
@@ -56,6 +60,11 @@ class PodRetrievalView(generics.RetrieveAPIView):
                 'name': pod.metadata.name,
                 'puid': pod.metadata.namespace + "_" + pod.metadata.name,
                 'creation_timestamp': pod.metadata.creation_timestamp,
+                'start_timestamp': pod.status.start_time,
+                'phase': pod.status.phase if pod.status.phase else "",
+                'reason': pod.status.reason if pod.status.reason else "",
+                'message': pod.status.message if pod.status.message else "",
+                'host_ip': pod.status.host_ip if pod.status.host_ip else "",
                 'containers': container_instances})
 
             return Response(pod_instance.data)
