@@ -11,12 +11,77 @@ import logging
 logger = logging.getLogger('KubePortal')
 
 
+class VolumeSerializer(serializers.Serializer):
+    """
+    The API serializer for a volume.
+    """
+    name = serializers.CharField(read_only=True)
+    type = serializers.CharField(read_only=True)
+    path = serializers.CharField(read_only=True)
+
+
+class VolumeMountSerializer(serializers.Serializer):
+    """
+    The API serializer for a container volume mount.
+    """
+    volume = VolumeSerializer(read_only=True)
+    mount_path = serializers.CharField(read_only=True)
+
+
 class ContainerSerializer(serializers.Serializer):
     """
     The API serializer for a container.
     """
     name = serializers.CharField()
     image = serializers.CharField()
+    volume_mounts = serializers.ListField(read_only=True, child=VolumeMountSerializer())
+
+    @classmethod
+    def create_from_k8s_container(cls, k8s_container, k8s_pod):
+        # step through pod volumes and get serialized information
+        volume_list = {}
+        for k8s_volume in k8s_pod.spec.volumes:
+            k8s_volume_data = k8s_volume.to_dict()
+            # see V1Volume definition for the idea here
+            volume_type = ""
+            for k, v in k8s_volume_data.items():
+                if v is not None and k not in ['name',]:
+                    volume_type = k
+            volume_name = k8s_volume.name
+            volume_path = ""
+            # Type-specific considerations
+            if volume_type == 'host_path':
+                volume_path = k8s_volume.host_path.path
+            elif volume_type == 'secret':
+                volume_name = k8s_volume.secret.secret_name
+            elif volume_type == 'config_map':
+                volume_name = k8s_volume.config_map.name
+            volume = VolumeSerializer({
+                'name': volume_name,
+                'type': volume_type,
+                'path': volume_path
+            })
+            volume_list[k8s_volume.name] = volume.data
+
+        # step through volume mounts
+        volume_mount_list = []
+        for k8s_volumemount in k8s_container.volume_mounts:
+            volume = volume_list.get(k8s_volumemount.name, None)
+            if volume and k8s_volumemount.sub_path:
+                volume['path'] += k8s_volumemount.sub_path
+            vm = VolumeMountSerializer({
+                'volume': volume_list.get(k8s_volumemount.name, ""),
+                'mount_path': k8s_volumemount.mount_path,
+            })
+            volume_mount_list.append(vm.data)
+
+        # Create serialized container data
+        instance = cls({
+            'image': k8s_container.image,
+            'volume_mounts': volume_mount_list,
+            'name': k8s_container.name})
+
+        return instance
 
 
 class PodSerializer(serializers.Serializer):
@@ -26,26 +91,37 @@ class PodSerializer(serializers.Serializer):
     name = serializers.CharField()
     puid = serializers.CharField(read_only=True)
     creation_timestamp = serializers.DateTimeField(read_only=True)
+    start_timestamp = serializers.DateTimeField(read_only=True)
     containers = serializers.ListField(child=ContainerSerializer())
+    phase = serializers.CharField(read_only=True)
+    reason = serializers.CharField(read_only=True)
+    message = serializers.CharField(read_only=True)
+    host_ip = serializers.CharField(read_only=True)
 
     @classmethod
-    def to_json(cls, pod):
-        """
-        Get our stripped JSON representation of pod details.
-        """
-        stripped_pod = {'name': pod.metadata.name,
-                        'puid': pod.metadata.namespace + "_" + pod.metadata.name,
-                        'creation_timestamp': pod.metadata.creation_timestamp}
-        stripped_containers = []
-        for container in pod.spec.containers:
-            c = {'image': container.image,
-                 'name': container.name}
-            stripped_containers.append(c)
-        stripped_pod['containers'] = stripped_containers
-        return stripped_pod
+    def create_from_k8s_pod(cls, k8s_pod):
+        container_instances = []
+        for k8s_container in k8s_pod.spec.containers:
+            instance = ContainerSerializer.create_from_k8s_container(k8s_container, k8s_pod)
+            container_instances.append(instance.data)
+
+        pod_instance = cls({
+            'name': k8s_pod.metadata.name,
+            'puid': k8s_pod.metadata.namespace + "_" + k8s_pod.metadata.name,
+            'creation_timestamp': k8s_pod.metadata.creation_timestamp,
+            'start_timestamp': k8s_pod.status.start_time,
+            'phase': k8s_pod.status.phase if k8s_pod.status.phase else "",
+            'reason': k8s_pod.status.reason if k8s_pod.status.reason else "",
+            'message': k8s_pod.status.message if k8s_pod.status.message else "",
+            'host_ip': k8s_pod.status.host_ip if k8s_pod.status.host_ip else "",
+            'containers': container_instances})
+
+        return pod_instance
+
 
 class PodListSerializer(serializers.Serializer):
     pod_urls = serializers.ListField(read_only=True, child=serializers.URLField())
+
 
 class PodRetrievalView(generics.RetrieveAPIView):
     serializer_class = PodSerializer
@@ -60,16 +136,35 @@ class PodRetrievalView(generics.RetrieveAPIView):
             logger.error(f"Pod {pod_name} in namespace {namespace} not found.")
             raise NotFound
         if request.user.has_namespace(namespace):
-            return Response(PodSerializer.to_json(pod))
+            container_instances = []
+            for k8s_container in pod.spec.containers:
+                instance = ContainerSerializer.create_from_k8s_container(k8s_container, pod)
+                container_instances.append(instance.data)
+
+            pod_instance = PodSerializer({
+                'name': pod.metadata.name,
+                'puid': pod.metadata.namespace + "_" + pod.metadata.name,
+                'creation_timestamp': pod.metadata.creation_timestamp,
+                'start_timestamp': pod.status.start_time,
+                'phase': pod.status.phase if pod.status.phase else "",
+                'reason': pod.status.reason if pod.status.reason else "",
+                'message': pod.status.message if pod.status.message else "",
+                'host_ip': pod.status.host_ip if pod.status.host_ip else "",
+                'containers': container_instances})
+
+            return Response(pod_instance.data)
         else:
             logger.warning(
                 f"User '{request.user}' has no access to the namespace '{pod.metadata.namespace}' of pod '{pod.metadata.uid}'. Access denied.")
             raise NotFound
 
-class PodsView(generics.RetrieveAPIView):
+
+class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
     def get_serializer_class(self):
-        if self.request.method == "POST":
+        if self.request.method == "GET":
             return PodListSerializer
+        if self.request.method == "POST":
+            return PodSerializer
 
     @extend_schema(
         summary="Get the list of pods in a namespace.",
@@ -82,12 +177,22 @@ class PodsView(generics.RetrieveAPIView):
             puids = [item.metadata.namespace + "_" + item.metadata.name for item in pods]
 
             instance = PodListSerializer({
-                'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]\
-            })
+                'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'puid': puid}, request=request) for puid in
+                             puids] \
+                })
             return Response(instance.data)
         else:
             raise NotFound
 
-
-
-
+    @extend_schema(
+        summary="Create a deployment in a namespace.",
+        request=PodSerializer,
+        responses=None
+    )
+    def post(self, request, version, namespace):
+        if request.user.has_namespace(namespace):
+            return Response(status=api.create_k8s_pod(namespace,
+                                                      request.data["name"],
+                                                      request.data["containers"]))
+        else:
+            raise NotFound

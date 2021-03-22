@@ -13,7 +13,7 @@ import logging
 
 from kubernetes.client import V1ServiceSpec, V1Service, NetworkingV1beta1Ingress, NetworkingV1beta1IngressSpec, \
     NetworkingV1beta1IngressTLS, NetworkingV1beta1IngressRule, NetworkingV1beta1HTTPIngressPath, \
-    NetworkingV1beta1IngressBackend, NetworkingV1beta1HTTPIngressRuleValue
+    NetworkingV1beta1IngressBackend, NetworkingV1beta1HTTPIngressRuleValue, ApiException
 
 logger = logging.getLogger('KubePortal')
 
@@ -142,6 +142,27 @@ def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels
                                      )
     )
     apps_v1.create_namespaced_deployment(namespace, k8s_deployment)
+
+def create_k8s_pod(namespace: str, name: str, containers: int):
+    """
+    Create a Kubernetes pod in the cluster.
+
+    Returns a status code to be used as result:
+
+    201 - successfully created
+    409 - pod with this name already exists
+    """
+    logger.info(f"Creating Kubernetes pod '{name}'")
+    k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in containers]
+    k8s_pod = client.V1Pod(
+        metadata=client.V1ObjectMeta(name=name, namespace=namespace),
+        spec=client.V1PodSpec(containers=k8s_containers)
+    )
+    try:
+        core_v1.create_namespaced_pod(namespace, k8s_pod)
+        return 201
+    except ApiException as e:
+        return e.status
 
 
 def delete_k8s_ns(name):
