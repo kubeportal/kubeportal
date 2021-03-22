@@ -56,6 +56,8 @@ class ContainerSerializer(serializers.Serializer):
                 volume_name = k8s_volume.secret.secret_name
             elif volume_type == 'config_map':
                 volume_name = k8s_volume.config_map.name
+            elif volume_type == 'persistent_volume_claim':
+                volume_name = k8s_volume.persistent_volume_claim.claim_name
             volume = VolumeSerializer({
                 'name': volume_name,
                 'type': volume_type,
