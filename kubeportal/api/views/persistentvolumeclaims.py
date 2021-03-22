@@ -70,9 +70,9 @@ class PersistentVolumeClaimRetrievalView(generics.RetrieveAPIView):
 
 class PersistentVolumeClaimsView(generics.RetrieveAPIView, generics.CreateAPIView):
     def get_serializer_class(self):
-        if self.request.method == "GET":
-            return PersistentVolumeClaimSerializer
         if self.request.method == "POST":
+            return PersistentVolumeClaimSerializer
+        if self.request.method == "GET":
             return PersistentVolumeClaimListSerializer
 
     @extend_schema(

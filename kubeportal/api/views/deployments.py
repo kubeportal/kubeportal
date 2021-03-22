@@ -77,9 +77,9 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
 class DeploymentsView(generics.RetrieveAPIView, generics.CreateAPIView):
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return DeploymentSerializer
-        if self.request.method == "POST":
             return DeploymentListSerializer
+        if self.request.method == "POST":
+            return DeploymentSerializer
 
     @extend_schema(
         summary="Get the list of deployments in a namespace.",
