@@ -31,6 +31,8 @@ class JWTSerializer(serializers.Serializer):
     The API serializer for getting security information after successful login.
     """
     access_token = serializers.CharField()
+    access_token_verify_url = serializers.SerializerMethodField()
+    access_token_refresh_url = serializers.SerializerMethodField()
     refresh_token = serializers.CharField()
     user_url = serializers.SerializerMethodField()
     user_approval_url = serializers.SerializerMethodField()
@@ -53,6 +55,16 @@ class JWTSerializer(serializers.Serializer):
     def get_news_url(self, obj):
         request = self.context['request']
         return reverse(viewname='news', request=request)
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_access_token_verify_url(self, obj):
+        request = self.context['request']
+        return reverse(viewname='token_verify', request=request)
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_access_token_refresh_url(self, obj):
+        request = self.context['request']
+        return reverse(viewname='token_refresh', request=request)
 
     @extend_schema_field(OpenApiTypes.URI)
     def get_infos_url(self, obj):

@@ -189,7 +189,6 @@ def test_approval_groups(admin_client, admin_user, client, second_user, mailoutb
     response = client.post('/access/request/', {'selected-administrator': admin_user.username})
     assertRedirects(response, '/config/')
     second_user.refresh_from_db()
-    assert second_user.state == second_user.ACCESS_REQUESTED
     approval_url = f"/admin/kubeportal/user/{second_user.approval_id}/approve/"
     # We only check for non-special groups (all / K8s users) here, they are tested elsewhere
     group1 = PortalGroup(name="Group the user does not have, and gets")
@@ -203,6 +202,7 @@ def test_approval_groups(admin_client, admin_user, client, second_user, mailoutb
     group4.save()
     second_user.portal_groups.add(group4)
     # Perform approval with new namespace as admin
+    assert second_user.state == second_user.ACCESS_REQUESTED
     response = admin_client.post(
         approval_url, 
         {'choice': 'approve_create', 

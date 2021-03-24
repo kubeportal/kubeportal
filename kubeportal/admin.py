@@ -491,7 +491,9 @@ class PortalUserAdmin(UserAdmin):
         It will use the user model's approve()/reject() functions to validate.
         After validation, the namespaces need to be created/deleted accordingly.
         '''
+        logger.debug(f"Searching for user with approval ID {approval_id}...")
         requesting_user = get_object_or_404(User, approval_id=approval_id)
+        logger.debug(f"User {requesting_user} has approval ID {approval_id}.")
 
         context = dict(
             self.admin_site.each_context(request),
