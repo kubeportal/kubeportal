@@ -1,0 +1,97 @@
+module.exports = {
+  root: true,
+  env: {
+    node: true,
+    browser: true,
+  },
+  'extends': [
+    'plugin:vue/essential',
+    '@vue/standard'
+  ],
+  rules: {
+    'array-bracket-spacing': 1,
+    'brace-style': 1,
+    'comma-dangle': 1,
+    'camelcase': 0,
+    'comma-spacing': 1,
+    'comma-style': 1,
+    'computed-property-spacing': 1,
+    'consistent-this': 1,
+    'eol-last': 1,
+    'func-names': 0,
+    'func-style': 0,
+    'generator-star': 0,
+    'generator-star-spacing': 0,
+    'indent': 1,
+    'keyword-spacing': 0,
+    'key-spacing': 0,
+    'max-nested-callbacks': 0,
+    'new-cap': 1,
+    'new-parens': 1,
+    'no-undef': 1,
+    'no-cond-assign': 1,
+    'no-console': 0,
+    'no-constant-condition': 1,
+    'no-control-regex': 1,
+    'no-debugger': 1,
+    'no-dupe-keys': 1,
+    'no-empty': 1,
+    'no-empty-class': 1,
+    'no-ex-assign': 1,
+    'no-extra-boolean-cast': 1,
+    'no-array-constructor': 1,
+    'no-unused-vars': 0,
+    'no-inline-comments': 0,
+    'no-empty-character-class': 0,
+    'no-empty-class': 0,
+    'no-lonely-if': 0,
+    'no-mixed-spaces-and-tabs': 0,
+    'no-multiple-empty-lines': 1,
+    'no-nested-ternary': 0,
+    'no-new-object': 1,
+    'no-space-before-semi': 0,
+    'no-tabs': 0,
+    'no-empty-character-class': 0,
+    'no-spaced-func': 1,
+    'no-ternary': 0,
+    'no-trailing-spaces': 1,
+    'no-underscore-dangle': 0,
+    'no-wrap-func': 0,
+    'no-var': 1,
+    'operator-assignment': 1,
+    'object-curly-spacing': 1,
+    'padded-blocks': 1,
+    'quotes': 1,
+    'quote-props': 0,
+    'semi': 1,
+    'sort-vars': 1,
+    'spaced-comment': 1,
+    'space-before-function-paren': 1,
+    'space-after-keywords': 0,
+    'space-before-blocks': 1,
+    'spaced-inline-comment': 0,
+    'space-in-parens': 1,
+    'space-infix-ops': 1,
+    'space-return-throw-case': 0,
+    'space-unary-ops': 1,
+    'spaced-comment': 0,
+    'vue/no-unused-components': 0,
+    'vue/require-v-for-key': 1,
+    'wrap-regex': 0,
+    'no-extra-parens': 0
+  },
+  parserOptions: {
+    parser: 'babel-eslint'
+  },
+  overrides: [
+    {
+      files: [
+        '**/__tests__/*.{j,t}s?(x)',
+        '**/tests/unit/**/*.spec.{j,t}s?(x)'
+      ],
+      env: {
+        jest: true
+      }
+    }
+  ]
+}
