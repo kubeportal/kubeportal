@@ -100,7 +100,8 @@ export default {
       this.$router.push({ name: 'Home' })
     },
     open_admin () {
-      window.open(`${process.env['VUE_APP_BASE_URL']}/admin/`, '_blank')
+      // window.open(`${process.env['VUE_APP_BASE_URL']}/admin/`, '_blank')
+      window.open(`/admin/`, '_blank')
     },
     push_route (name) {
       if (this.$route.name !== name) {

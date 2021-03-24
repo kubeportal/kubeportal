@@ -1,6 +1,6 @@
 import axios from 'axios'
 import store from '../store/store.js'
-let base_url = process.env['VUE_APP_BASE_URL']
+let base_url = '' // process.env['VUE_APP_BASE_URL']
 const API_VERSION = 'v2.1.0'
 
 let config = {

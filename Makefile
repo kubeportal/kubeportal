@@ -5,16 +5,19 @@ VERSION=0.6.8
 
 # Run a Django dev server locally, together with Minikube
 # Configuration: Debug
-dev-run: minikube-start web-run
+k8s-back-run: minikube-start web-run
 
 # Run a Django dev server locally, leaving out the Minikube startup
 # This allows you to work against another cluster.
 # Configuration: Debug
-web-run: venv
+back-run: venv
 	./venv/bin/python ./manage.py migrate --configuration=Development
 	./venv/bin/python ./manage.py ensure_root --configuration=Development
 	set -o allexport; source .env; set +o allexport; \
 	./venv/bin/python ./manage.py runserver --configuration=Development
+
+front-run: npm
+	cd kubeportal/static/frontend && npm run serve
 
 # Clean temporary files
 clean: 
@@ -58,6 +61,9 @@ venv:
 	test -d venv || python3 -m venv venv
 	venv/bin/pip install -r requirements-prod.txt
 	venv/bin/pip install -r requirements-dev.txt
+
+npm:
+	cd kubeportal/static/frontend && npm install
 
 # Stops a Minikube environment
 minikube-stop: minikube-check
