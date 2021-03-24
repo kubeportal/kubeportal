@@ -5,12 +5,12 @@ VERSION=0.6.8
 
 # Run a Django dev server locally, together with Minikube
 # Configuration: Debug
-k8s-back-run: minikube-start web-run
+back-run: minikube-start django-run
 
 # Run a Django dev server locally, leaving out the Minikube startup
 # This allows you to work against another cluster.
 # Configuration: Debug
-back-run: venv
+django-run: venv
 	./venv/bin/python ./manage.py migrate --configuration=Development
 	./venv/bin/python ./manage.py ensure_root --configuration=Development
 	set -o allexport; source .env; set +o allexport; \
