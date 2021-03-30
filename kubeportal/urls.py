@@ -30,8 +30,11 @@ urlpatterns = [
 
     # frontend auth provider views
     # Note: The OpenID Connect URL is /oidc/authorize
-    path('subauthreq/<int:webapp_pk>/', cache_page(60 * 15)(views.SubAuthRequestView.as_view()), name='subauthreq'),
-    # path('subauthreq/<int:webapp_pk>/', views.SubAuthRequestView.as_view(), name='subauthreq'),
+
+    # Caching this seems to intermix user sessions in K8S dashboard
+    # Needs further investigation
+    # path('subauthreq/<int:webapp_pk>/', cache_page(60 * 15)(views.SubAuthRequestView.as_view()), name='subauthreq'),
+    path('subauthreq/<int:webapp_pk>/', views.SubAuthRequestView.as_view(), name='subauthreq'),
     path('oidc/', include('oidc_provider.urls', namespace='oidc_provider')),
     path('.well-known/openid-configuration', ProviderInfoView.as_view(), name='provider_info'),
 
