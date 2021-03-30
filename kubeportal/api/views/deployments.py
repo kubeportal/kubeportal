@@ -24,9 +24,9 @@ class PodTemplateSerializer(serializers.Serializer):
     """
     The API serializer for a pod template.
     """
-    name = serializers.CharField()
+    name = serializers.CharField(write_only=True)
     labels = serializers.ListField(child=LabelSerializer())
-    containers = serializers.ListField(child=ContainerSerializer())
+    containers = serializers.ListField(write_only=True, child=ContainerSerializer())
 
 class DeploymentListSerializer(serializers.Serializer):
     deployment_urls = serializers.ListField(child=serializers.URLField(), read_only=True)
@@ -39,8 +39,13 @@ class DeploymentSerializer(serializers.Serializer):
     puid = serializers.CharField(read_only=True)
     creation_timestamp = serializers.DateTimeField(read_only=True)
     replicas = serializers.IntegerField()
-    match_labels = serializers.ListField(write_only=True, child=LabelSerializer())
-    pod_template = PodTemplateSerializer(write_only=True)
+    available_replicas = serializers.IntegerField(read_only=True)
+    unavailable_replicas = serializers.IntegerField(read_only=True)
+    ready_replicas = serializers.IntegerField(read_only=True)
+    updated_replicas = serializers.IntegerField(read_only=True)
+    strategy = serializers.CharField(read_only=True)
+    match_labels = serializers.ListField(child=LabelSerializer())
+    pod_template = PodTemplateSerializer()
     pod_urls = serializers.ListField(read_only=True, child=serializers.URLField())
     namespace_url = serializers.URLField(read_only=True)
 
@@ -60,12 +65,37 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
                 f"User '{request.user}' has no access to the namespace '{deployment.metadata.namespace}' of deployment '{deployment.metadata.uid}'. Access denied.")
             raise NotFound
 
+        pod_template_labels = []
+        if deployment.spec.template.metadata.labels:
+            for k,v in deployment.spec.template.metadata.labels.items():
+                pod_template_labels.append(LabelSerializer({'key': k, 'value': v}))
+
+        import pdb
+        pdb.set_trace()
+
+        pod_template = PodTemplateSerializer({
+            'labels': pod_template_labels,
+        })
+
+        match_labels = []
+        if deployment.spec.selector.match_labels:
+            for k,v in deployment.spec.selector.match_labels.items():
+                match_labels.append({'key': k, 'value': v})
+
         pod_list = api.get_deployment_pods(deployment)
+
         instance = DeploymentSerializer({
             'name': deployment.metadata.name,
             'puid': deployment.metadata.namespace + '_' + deployment.metadata.name,
             'creation_timestamp': deployment.metadata.creation_timestamp,
             'replicas': deployment.spec.replicas,
+            'available_replicas': deployment.status.available_replicas or 0,
+            'unavailable_replicas': deployment.status.unavailable_replicas or 0,
+            'ready_replicas': deployment.status.ready_replicas or 0,
+            'updated_replicas': deployment.status.updated_replicas or 0,
+            'strategy': deployment.spec.strategy.type,
+            'match_labels': match_labels,
+            'pod_template': pod_template,
             'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'puid': pod.metadata.namespace + '_' + pod.metadata.name}, request=request) for pod in
                          pod_list],
             'namespace_url': reverse(viewname='namespace', kwargs={'namespace': deployment.metadata.namespace},
