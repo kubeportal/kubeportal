@@ -60,7 +60,7 @@ class ContainerSerializer(serializers.Serializer):
                 volume_name = k8s_volume.persistent_volume_claim.claim_name
             volume = VolumeSerializer({
                 'name': volume_name,
-                'type': volume_type,
+                'type': volume_type.replace('_', ' '),
                 'path': volume_path
             })
             volume_list[k8s_volume.name] = volume.data
