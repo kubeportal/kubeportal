@@ -68,10 +68,7 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
         pod_template_labels = []
         if deployment.spec.template.metadata.labels:
             for k,v in deployment.spec.template.metadata.labels.items():
-                pod_template_labels.append(LabelSerializer({'key': k, 'value': v}))
-
-        import pdb
-        pdb.set_trace()
+                pod_template_labels.append(LabelSerializer({'key': k, 'value': v}).data)
 
         pod_template = PodTemplateSerializer({
             'labels': pod_template_labels,
@@ -95,7 +92,7 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
             'updated_replicas': deployment.status.updated_replicas or 0,
             'strategy': deployment.spec.strategy.type,
             'match_labels': match_labels,
-            'pod_template': pod_template,
+            'pod_template': pod_template.data,
             'pod_urls': [reverse(viewname='pod_retrieval', kwargs={'puid': pod.metadata.namespace + '_' + pod.metadata.name}, request=request) for pod in
                          pod_list],
             'namespace_url': reverse(viewname='namespace', kwargs={'namespace': deployment.metadata.namespace},
