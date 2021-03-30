@@ -1,29 +1,9 @@
 from django.core.management.base import BaseCommand
-from colorama import init, Fore, Style
+from kubeportal.k8s import k8s_sync 
 
-import k8s_sync
-
+import logging
 
 class Command(BaseCommand):
-    ''' Synchronize database with Kubernetes API server. '''
-
-    def print_line(self, log_entry):
-        if log_entry['severity'] == 'error':
-            print(Fore.RED + log_entry['msg'])
-            print(Style.RESET_ALL, end='')
-        elif log_entry['severity'] == 'warning':
-            print(Fore.YELLOW + log_entry['msg'])
-            print(Style.RESET_ALL, end='')
-        else:
-            print(log_entry['msg'])
-
     def handle(self, *args, **option):
-        init()
+        k8s_sync.sync()
 
-        ns_logs, svca_logs = k8s_sync.sync(request=None)
-        print("Namespace synchronization:")
-        for line in ns_logs:
-            self.print_line(line)
-        print("\nService account synchronization:")
-        for line in svca_logs:
-            self.print_line(line)

@@ -22,7 +22,7 @@ from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 
 logger = logging.getLogger('KubePortal')
 
-def sync(request):
+def sync(request=None):
     '''
     Synchronizes the local shallow copy of Kubernetes data.
     Returns True on success.
@@ -32,12 +32,15 @@ def sync(request):
         res2 = KubernetesNamespace.create_missing_in_cluster()
         res3 = KubernetesServiceAccount.create_missing_in_portal()
         res4 = KubernetesServiceAccount.create_missing_in_cluster()
-        messages.info(request, "Synchronization finished.")
+        if request:
+            messages.info(request, "Synchronization finished.")
+        logger.debug("Synchronization finished.")
         return True == res1 == res2 == res3 == res4
     except client.rest.ApiException as e:
         msg = json.loads(e.body)['message']
         logger.error(
             "API server exception during synchronization: {0}".format(msg))
-        messages.error(
-            request, "Kubernetes returned an error during synchronization: {0}".format(msg))
+        if request:
+            messages.error(
+                request, "Kubernetes returned an error during synchronization: {0}".format(msg))
         return False
