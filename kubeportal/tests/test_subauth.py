@@ -57,6 +57,7 @@ def test_subauth_k8s_user(case, expected, admin_user_with_k8s, admin_client):
 
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 @pytest.mark.django_db
+@pytest.mark.skip(reason="Subauth caching disabled, since broken")
 def test_subauth_caching(admin_user_with_k8s, admin_client, mocker):
 
     spy = mocker.spy(SubAuthRequestView, 'get')
