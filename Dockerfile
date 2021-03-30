@@ -13,6 +13,8 @@ RUN apt-get update && \
 
 COPY . /code/
 
+RUN /code/manage.py collectstatic --noinput --configuration=Production
+
 ENV KUBEPORTAL_STATIC_ROOT='/code/static-collected'
 ENV KUBEPORTAL_STATICFILES_DIRS='/code/kubeportal/static'
 
