@@ -133,7 +133,7 @@ class PodRetrievalView(generics.RetrieveAPIView):
     )
     def get(self, request, version, puid):
         namespace, pod_name = puid.split('_')
-        pod = api.get_namespaced_pod(namespace, pod_name)
+        pod = api.get_namespaced_pod(namespace, pod_name, request.user)
         if not pod:
             logger.error(f"Pod {pod_name} in namespace {namespace} not found.")
             raise NotFound
@@ -175,7 +175,7 @@ class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
     )
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
-            pods = api.get_namespaced_pods(namespace)
+            pods = api.get_namespaced_pods(namespace, request.user)
             puids = [item.metadata.namespace + "_" + item.metadata.name for item in pods]
 
             instance = PodListSerializer({
@@ -195,6 +195,7 @@ class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
         if request.user.has_namespace(namespace):
             return Response(status=api.create_k8s_pod(namespace,
                                                       request.data["name"],
-                                                      request.data["containers"]))
+                                                      request.data["containers"],
+                                                      request.user))
         else:
             raise NotFound

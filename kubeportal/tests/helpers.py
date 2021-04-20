@@ -70,7 +70,7 @@ def apply_k8s_yml(path):
     assert k8s_api.is_minikube()
 
     try:
-        k8s_utils.create_from_yaml(kubernetes_api.api_client, path)
+        k8s_utils.create_from_yaml(kubernetes_api.get_portal_api_client(), path)
     except k8s_utils.FailToCreateError as e:
         if e.api_exceptions[0].reason == "Conflict":
             pass  # test namespace still exists in Minikube from another run

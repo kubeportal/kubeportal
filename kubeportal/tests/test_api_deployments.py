@@ -54,7 +54,7 @@ def test_get_illegal_deployment(api_client, admin_user):
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
     default_namespace = KubernetesNamespace.objects.get(name="default")
 
-    deployment = api.apps_v1.read_namespaced_deployment('coredns', 'kube-system')
+    deployment = api.get_portal_apps_v1().read_namespaced_deployment('coredns', 'kube-system')
 
     admin_user.service_account = default_namespace.service_accounts.all()[0]
     admin_user.save()
@@ -72,7 +72,7 @@ def test_deployment(api_client, admin_user):
     run_minikube_sync()
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
 
-    deployment = api.apps_v1.read_namespaced_deployment('coredns', 'kube-system')
+    deployment = api.get_portal_apps_v1().read_namespaced_deployment('coredns', 'kube-system')
 
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
@@ -98,7 +98,6 @@ def test_user_deployments_create(api_client, admin_user):
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
-    old_count = len(api.get_namespaced_deployments("kube-system"))
     try:
         response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/deployments/',
                                    {'name': 'test-deployment',
@@ -117,10 +116,8 @@ def test_user_deployments_create(api_client, admin_user):
                                         }, ]
                                     }})
         assert 201 == response.status_code
-        new_count = len(api.get_namespaced_deployments("kube-system"))
-        assert old_count + 1 == new_count
     finally:
-        api.apps_v1.delete_namespaced_deployment(name="test-deployment", namespace="kube-system")
+        api.get_portal_apps_v1().delete_namespaced_deployment(name="test-deployment", namespace="kube-system")
 
 
 def test_user_deployments_create_wrong_ns(api_client):

@@ -22,7 +22,7 @@ def test_user_services_create(api_client, admin_user):
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
-    old_count = len(api.get_namespaced_services("kube-system"))
+    old_count = len(api.get_namespaced_services("kube-system", admin_user))
     try:
         response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/services/', {
             'name': 'my-service',
@@ -31,10 +31,10 @@ def test_user_services_create(api_client, admin_user):
             'ports': [{'port': 8000, 'protocol': 'TCP'}]
         })
         assert 201 == response.status_code
-        new_count = len(api.get_namespaced_services("kube-system"))
+        new_count = len(api.get_namespaced_services("kube-system", admin_user))
         assert old_count + 1 == new_count
     finally:
-        api.core_v1.delete_namespaced_service(name="my-service", namespace="kube-system")
+        api.get_portal_core_v1().delete_namespaced_service(name="my-service", namespace="kube-system")
 
 
 def test_user_services_create_wrong_ns(api_client):

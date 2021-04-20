@@ -1,9 +1,7 @@
 """
     A set of functions wrapping K8S API calls.
-
     Read-only methods put exceptions into the log file and return empty results on problems.
 """
-import enum
 
 from django.conf import settings
 from kubernetes import client, config
@@ -11,30 +9,123 @@ from base64 import b64decode
 
 import logging
 
-from kubernetes.client import V1ServiceSpec, V1Service, NetworkingV1beta1Ingress, NetworkingV1beta1IngressSpec, \
-    NetworkingV1beta1IngressTLS, NetworkingV1beta1IngressRule, NetworkingV1beta1HTTPIngressPath, \
-    NetworkingV1beta1IngressBackend, NetworkingV1beta1HTTPIngressRuleValue, ApiException
-
 logger = logging.getLogger('KubePortal')
 
 HIDDEN_NAMESPACES = ['kube-system', 'kube-public']
 
-try:
-    # Production mode
-    config.load_incluster_config()
-except Exception:
+
+### Helper functions for accessing the Kubernetes API server with
+### permissions of the running portal software
+
+def get_portal_configuration():
+    """
+    Get a configuration for the Kubernetes client library.
+    The credentials of the running Kubeportal software are used. 
+
+    Returns None on error. 
+    """
     try:
-        # Dev mode
-        config.load_kube_config()
+        # Kubeportal runs as pod in Kubernetes
+        return config.load_incluster_config()
     except Exception:
-        logger.error("Could not load Kubernetes config.")
+        try:
+            # There is a ~/.kube/config file available
+            # This is the typical mode on developer machines,
+            # or when Kubeportal runs as Docker container outside of K8S
+            return config.load_kube_config()
+        except Exception:
+            # We have no user token to use, and all helpers failed
+            logger.error("Could not load Kubernetes configuration with helpers.")
+            return None
 
-api_client = client.ApiClient()
-core_v1 = client.CoreV1Api()
-rbac_v1 = client.RbacAuthorizationV1Api()
-apps_v1 = client.AppsV1Api()
-net_v1 = client.NetworkingV1beta1Api()
 
+def get_portal_api_client():
+    configuration = get_portal_configuration()
+    return client.ApiClient(configuration)
+
+
+def get_portal_core_v1():
+    api_client = get_portal_api_client()
+    return client.CoreV1Api(api_client)
+
+
+def get_portal_rbac_v1():
+    api_client = get_portal_api_client()
+    return client.RbacAuthorizationV1Api(api_client)
+
+
+def get_portal_apps_v1():
+    api_client = get_portal_api_client()
+    return client.AppsV1Api(api_client)
+
+
+def get_portal_net_v1():
+    api_client = get_portal_api_client()
+    return client.NetworkingV1beta1Api(api_client)
+
+
+### Helper functions for accessing the Kubernetes API server with
+### permissions of a given single user
+
+def get_token(kubeportal_service_account):
+    """
+    Returns the secret K8S login token for a portal user as base64-encoded string.
+    """
+    core_v1 = get_portal_core_v1()
+    service_account = core_v1.read_namespaced_service_account(
+        name=kubeportal_service_account.name,
+        namespace=kubeportal_service_account.namespace.name)
+    secret_name = service_account.secrets[0].name
+    secret = core_v1.read_namespaced_secret(
+        name=secret_name, namespace=kubeportal_service_account.namespace.name)
+    encoded_token = secret.data['token']
+    return b64decode(encoded_token).decode()
+
+
+def get_user_configuration(user):
+    """
+    Get a configuration for the Kubernetes client library.
+    The credentials of the given portal user are used. 
+
+    Returns None on error. 
+    """
+    if not user.has_access_approved():
+        logger.error("Kubernetes API configuration for user unavailable, user is not approved.")
+        return None
+    configuration = client.Configuration()
+    configuration.api_key['authorization'] = get_token(user.service_account)
+    if not settings.API_SERVER_EXTERNAL:
+        logger.error("Kubernetes API configuration for user unavailable, API_SERVER_EXTERNAL is not set.")
+        return None
+    configuration.host = settings.API_SERVER_EXTERNAL
+    return configuration
+
+
+def get_user_api_client(user):
+    configuration = get_user_configuration(user)
+    return client.ApiClient(configuration)
+
+
+def get_user_core_v1(user):
+    api_client = get_user_api_client(user)
+    return client.CoreV1Api(api_client)
+
+
+def get_user_rbac_v1(user):
+    api_client = get_user_api_client(user)
+    return client.RbacAuthorizationV1Api(api_client)
+
+
+def get_user_apps_v1(user):
+    api_client = get_user_api_client(user)
+    return client.AppsV1Api(api_client)
+
+
+def get_user_net_v1(user):
+    api_client = get_user_api_client(user)
+    return client.NetworkingV1beta1Api(api_client)
+
+# General functions
 
 def is_minikube():
     """
@@ -46,14 +137,19 @@ def is_minikube():
     except Exception:
         return False
 
+# Namespaces
 
 def create_k8s_ns(name: str):
     """
     Create the Kubernetes namespace with the given name in the cluster.
     An existing namespace with the same name leads to a no-op.
 
-    Returns the new namespace.
+    This operation is performed by portal backend admins, which may not have
+    enough permissions. It is also non-destructive, so we run it with portal permissions.
+
+    Returns the new namespace object.
     """
+    core_v1 = get_portal_core_v1()
     try:
         k8s_ns = client.V1Namespace(
             api_version="v1", kind="Namespace", metadata=client.V1ObjectMeta(name=name))
@@ -62,20 +158,52 @@ def create_k8s_ns(name: str):
     except client.rest.ApiException as e:
         # Race condition or earlier sync error - the K8S namespace is already there
         if e.status == 409:
-            logger.warning("Tried to create already existing Kubernetes namespace {}. "
-                           "Skipping the creation and using the existing one.".format(name))
+            logger.warning(
+                f"Tried to create already existing Kubernetes namespace {name}. Skipping the creation and using the existing one.")
         else:
             raise e
     return core_v1.read_namespace(name=name)
 
+
+def delete_k8s_ns(name):
+    """
+    Delete the given namespace in the cluster, but only when its Minikube.
+    """
+    if is_minikube():
+        logger.info("Deleting Kubernetes namespace '{0}'".format(name))
+        core_v1 = get_portal_core_v1()
+        core_v1.delete_namespace(name)
+    else:
+        logger.error("K8S namespace deletion not allowed in production clusters.")
+
+
+def get_namespaces():
+    """
+    Returns the list of cluster namespaces, or None on error.
+
+    This operation is performed by portal backend admins, which may not have
+    enough permissions. It is also non-destructive, so we run it with portal permissions.
+    """
+    core_v1 = get_portal_core_v1()
+    try:
+        return core_v1.list_namespace().items
+    except Exception:
+        logger.exception("Error while fetching namespaces from Kubernetes")
+        return None
+
+# Service Accounts
 
 def create_k8s_svca(namespace: str, name: str):
     """
     Create a Kubernetes service account in a namespace in the cluster.
     An existing service account with this name in this namespace leads to a no-op.
 
+    This operation is performed by portal backend admins, which may not have
+    enough permissions. It is also non-destructive, so we run it with portal permissions.
+
     Returns the new service account.
     """
+    core_v1 = get_portal_core_v1()
     try:
         k8s_svca = client.V1ServiceAccount(
             api_version="v1", kind="ServiceAccount", metadata=client.V1ObjectMeta(name=name))
@@ -90,18 +218,49 @@ def create_k8s_svca(namespace: str, name: str):
             raise e
     return core_v1.read_namespaced_service_account(namespace=namespace, name=name)
 
-def create_k8s_pvc(namespace: str, name: str, access_modes: tuple, storage_class_name: str, size: str):
+
+def delete_k8s_svca(name, namespace):
+    """
+    Delete the given service account in the given namespace in the cluster, but only when its Minikube.
+    """
+    if is_minikube():
+        core_v1 = get_portal_core_v1()
+        logger.info(f"Deleting Kubernetes service account '{namespace}:{name}'")
+        core_v1.delete_namespaced_service_account(name=name, namespace=namespace)
+    else:
+        logger.error("K8S service account deletion not allowed in production clusters")
+
+
+def get_service_accounts():
+    """
+    Returns the list of service accounts in the cluster, or None on error.
+
+    This operation is performed by portal backend admins, which may not have
+    enough permissions. It is also non-destructive, so we run it with portal permissions.
+    """
+    core_v1 = get_portal_core_v1()
+    try:
+        return core_v1.list_service_account_for_all_namespaces().items
+    except Exception:
+        logger.exception("Error while fetching service accounts from Kubernetes")
+        return None
+
+
+### Persistent Volume Claims
+
+def create_k8s_pvc(namespace: str, name: str, access_modes: tuple, storage_class_name: str, size: str, user):
     """
     Create a Kubernetes persistent volume claim in a namespace in the cluster.
     An existing pvc with this name in this namespace leads to a no-op.
 
     Returns the new pvc.
     """
+    core_v1 = get_user_core_v1(user)
     try:
         k8s_spec = client.V1PersistentVolumeClaimSpec(
-            access_modes = access_modes,
-            storage_class_name = storage_class_name,
-            resources = client.V1ResourceRequirements(requests= {'storage': size})
+            access_modes=access_modes,
+            storage_class_name=storage_class_name,
+            resources=client.V1ResourceRequirements(requests={'storage': size})
         )
         k8s_pvc = client.V1PersistentVolumeClaim(
             api_version="v1",
@@ -119,13 +278,66 @@ def create_k8s_pvc(namespace: str, name: str, access_modes: tuple, storage_class
     return core_v1.read_namespaced_persistent_volume_claim(namespace=namespace, name=name)
 
 
+def delete_k8s_pvc(name: str, namespace: str, user):
+    """
+    Delete the given pvc in the given namespace in the cluster, but only when its Minikube.
+    """
+    if is_minikube():
+        core_v1 = get_user_core_v1(user)
+        logger.info(f"Deleting Kubernetes pvc '{namespace}:{name}'")
+        core_v1.delete_namespaced_persistent_volume_claim(name=name, namespace=namespace)
+    else:
+        logger.error("K8S pvc deletion not allowed in production clusters")
 
-def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, template: dict):
+
+def get_namespaced_pvcs(namespace: str, user):
+    """
+    Get all pvcs for a specific Kubernetes namespace in the cluster.
+    """
+    core_v1 = get_user_core_v1(user)
+    try:
+        return core_v1.list_namespaced_persistent_volume_claim(namespace).items
+    except Exception as e:
+        logger.exception(f"Error while fetching persistent volume claims of namespace {namespace}")
+        return None
+
+
+def get_pvcs():
+    """
+    Returns the list of pvcs in the cluster, or None on error.
+
+    This operation is performed by portal backend admins, which may not have
+    enough permissions. It is also non-destructive, so we run it with portal permissions.
+    """
+    core_v1 = get_portal_core_v1()
+    try:
+        return core_v1.list_persistent_volume_claim_for_all_namespaces().items
+    except Exception as e:
+        logger.exception("Error while fetching list of all pvcs from Kubernetes")
+        return None
+
+
+def get_namespaced_pvc(namespace: str, name: str, user):
+    """
+    Get pvc in the cluster in a particular namespace.
+    """
+    core_v1 = get_user_core_v1(user)
+    try:
+        return core_v1.read_namespaced_persistent_volume_claim(name, namespace)
+    except Exception as e:
+        logger.exception(f"Error while fetching persistent volume claim.")
+        return None
+
+
+### Deployments
+
+def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels: dict, template: dict, user):
     """
     Create a Kubernetes deployment in the cluster.
 
     Returns the new deployment.
     """
+    apps_v1 = get_user_apps_v1(user)
     logger.info(f"Creating Kubernetes deployment '{name}'")
     k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in template["containers"]]
     k8s_labels = {item['key']: item['value'] for item in template['labels']}
@@ -143,7 +355,49 @@ def create_k8s_deployment(namespace: str, name: str, replicas: int, match_labels
     )
     apps_v1.create_namespaced_deployment(namespace, k8s_deployment)
 
-def create_k8s_pod(namespace: str, name: str, containers: int):
+
+def get_namespaced_deployments(namespace, user):
+    """
+    Get all deployments for a specific Kubernetes namespace in the cluster.
+    """
+    apps_v1 = get_user_apps_v1(user)
+    try:
+        return apps_v1.list_namespaced_deployment(namespace).items
+    except Exception as e:
+        logger.exception(f"Error while fetching deployments of namespace {namespace}")
+        return None
+
+
+def get_deployments():
+    """
+    Returns the list of deployments in the cluster, or None on error.
+
+    This operation is performed by portal backend admins, which may not have
+    enough permissions. It is also non-destructive, so we run it with portal permissions.
+    """
+    apps_v1 = get_portal_apps_v1()
+    try:
+        return apps_v1.list_deployment_for_all_namespaces().items
+    except Exception as e:
+        logger.exception("Error while fetching list of all deployments from Kubernetes")
+        return None
+
+
+def get_namespaced_deployment(namespace: str, name: str, user):
+    """
+    Get deployment in the cluster by its namespace and name.
+    """
+    apps_v1 = get_user_apps_v1(user)
+    try:
+        return apps_v1.read_namespaced_deployment(name, namespace)
+    except Exception as e:
+        logger.exception(f"Error while fetching deployment.")
+        return None
+
+
+### Pods
+
+def create_k8s_pod(namespace: str, name: str, containers: int, user):
     """
     Create a Kubernetes pod in the cluster.
 
@@ -152,6 +406,7 @@ def create_k8s_pod(namespace: str, name: str, containers: int):
     201 - successfully created
     409 - pod with this name already exists
     """
+    core_v1 = get_user_core_v1(user)
     logger.info(f"Creating Kubernetes pod '{name}'")
     k8s_containers = [client.V1Container(name=c["name"], image=c["image"]) for c in containers]
     k8s_pod = client.V1Pod(
@@ -161,84 +416,18 @@ def create_k8s_pod(namespace: str, name: str, containers: int):
     try:
         core_v1.create_namespaced_pod(namespace, k8s_pod)
         return 201
-    except ApiException as e:
+    except client.ApiException as e:
         return e.status
-
-
-def delete_k8s_ns(name):
-    """
-    Delete the given namespace in the cluster, but only when its Minikube.
-    """
-    if is_minikube():
-        logger.info("Deleting Kubernetes namespace '{0}'".format(name))
-        core_v1.delete_namespace(name)
-    else:
-        logger.error("K8S namespace deletion not allowed in production clusters")
-
-
-def delete_k8s_svca(name, namespace):
-    """
-    Delete the given service account in the given namespace in the cluster, but only when its Minikube.
-    """
-    if is_minikube():
-        logger.info(f"Deleting Kubernetes service account '{namespace}:{name}'")
-        core_v1.delete_namespaced_service_account(name=name, namespace=namespace)
-    else:
-        logger.error("K8S service account deletion not allowed in production clusters")
-
-
-def delete_k8s_pvc(name, namespace):
-    """
-    Delete the given pvc in the given namespace in the cluster, but only when its Minikube.
-    """
-    if is_minikube():
-        logger.info(f"Deleting Kubernetes pvc '{namespace}:{name}'")
-        core_v1.delete_namespaced_persistent_volume_claim(name=name, namespace=namespace)
-    else:
-        logger.error("K8S pvc deletion not allowed in production clusters")
-
-
-def get_namespaces():
-    """
-    Returns the list of cluster namespaces, or None on error.
-    """
-    try:
-        return core_v1.list_namespace().items
-    except Exception:
-        logger.exception("Error while fetching namespaces from Kubernetes")
-        return None
-
-
-def get_ingress_hosts():
-    """
-    Returns the list of host names used in ingresses accross all namespaces,
-    or None on error.
-    """
-    try:
-        ings = net_v1.list_ingress_for_all_namespaces()
-        host_list = [rule.host for ing in ings.items for rule in ing.spec.rules]
-        return host_list
-
-    except Exception:
-        logger.exception("Error while fetching all ingresses from Kubernetes")
-        return None
-
-
-def get_service_accounts():
-    """
-    Returns the list of service accounts in the cluster, or None on error.
-    """
-    try:
-        return core_v1.list_service_account_for_all_namespaces().items
-    except Exception:
-        logger.exception("Error while fetching service accounts from Kubernetes")
-        return None
 
 
 def get_pods():
     """
     Returns the list of pods in the cluster, or None on error.
+
+    This operation is performed by portal backend admins, which may not have
+    enough permissions. It is also non-destructive, so we run it with portal permissions.
     """
+    core_v1 = get_portal_core_v1()
     try:
         return core_v1.list_pod_for_all_namespaces().items
     except Exception as e:
@@ -246,17 +435,20 @@ def get_pods():
         return None
 
 
-def get_namespaced_pod(namespace, name):
+def get_namespaced_pod(namespace: str, name: str, user):
+    core_v1 = get_user_core_v1(user)
     try:
         return core_v1.read_namespaced_pod(name, namespace)
     except Exception as e:
         logger.exception(f"Error while fetching pod {namespace}:{name}")
         return None
 
-def get_namespaced_pods(namespace):
+
+def get_namespaced_pods(namespace: str, user):
     """
     Get all pods for a specific Kubernetes namespace in the cluster.
     """
+    core_v1 = get_user_core_v1(user)
     try:
         return core_v1.list_namespaced_pod(namespace).items
     except Exception as e:
@@ -264,39 +456,11 @@ def get_namespaced_pods(namespace):
         return []
 
 
-def get_ingresses():
-    """
-    Returns the list of ingresses in the cluster, or None on error.
-    """
-    try:
-        return net_v1.list_ingress_for_all_namespaces().items
-    except Exception as e:
-        logger.exception("Error while fetching list of all ingresses from Kubernetes")
-        return None
-
-
-def get_namespaced_ingress(namespace, name):
-    """
-    Get ingress in the cluster.
-    """
-    return net_v1.read_namespaced_ingress(name, namespace)
-
-
-def get_namespaced_deployments(namespace):
-    """
-    Get all deployments for a specific Kubernetes namespace in the cluster.
-    """
-    try:
-        return apps_v1.list_namespaced_deployment(namespace).items
-    except Exception as e:
-        logger.exception(f"Error while fetching deployments of namespace {namespace}")
-        return None
-
-
-def get_deployment_pods(deployment):
+def get_deployment_pods(deployment, user):
     """
     Gets a list of pod API objects belonging to a deployment API object.
     """
+    core_v1 = get_user_core_v1(user)
     ns = deployment.metadata.namespace
     selector = deployment.spec.selector  # V1LabelSelector
     selector_str = ",".join([k + '=' + v for k, v in selector.match_labels.items()])
@@ -307,190 +471,52 @@ def get_deployment_pods(deployment):
         return None
 
 
-def get_deployments():
+### Ingresses
+
+def get_ingress_hosts():
     """
-    Returns the list of deployments in the cluster, or None on error.
+    Returns the list of host names used in ingresses accross all namespaces,
+    or None on error.
     """
+    net_v1 = get_portal_net_v1()
     try:
-        return apps_v1.list_deployment_for_all_namespaces().items
-    except Exception as e:
-        logger.exception("Error while fetching list of all deployments from Kubernetes")
+        ings = net_v1.list_ingress_for_all_namespaces()
+        host_list = [rule.host for ing in ings.items for rule in ing.spec.rules]
+        return host_list
+
+    except Exception:
+        logger.exception("Error while fetching all ingresses from Kubernetes")
         return None
 
 
-def get_namespaced_deployment(namespace, name):
+def get_ingresses():
     """
-    Get deployment in the cluster by its namespace and name.
+    Returns the list of ingresses in the cluster, or None on error.
+
+    This operation is performed by portal backend admins, which may not have
+    enough permissions. It is also non-destructive, so we run it with portal permissions.
     """
+    net_v1 = get_portal_net_v1()
     try:
-        return apps_v1.read_namespaced_deployment(name, namespace)
+        return net_v1.list_ingress_for_all_namespaces().items
     except Exception as e:
-        logger.exception(f"Error while fetching deployment.")
+        logger.exception("Error while fetching list of all ingresses from Kubernetes")
         return None
 
 
-def get_services():
+def get_namespaced_ingress(namespace: str, name: str, user):
     """
-    Returns the list of services in the cluster, or None on error.
+    Get ingress in the cluster.
     """
-    try:
-        return core_v1.list_service_for_all_namespaces().items
-    except Exception as e:
-        logger.exception("Error while fetching list of all deployments from Kubernetes")
-        return None
+    net_v1 = get_user_net_v1(user)
+    return net_v1.read_namespaced_ingress(name, namespace)
 
 
-def get_namespaced_service(namespace, name):
-    """
-    Get service in the cluster.
-    """
-    try:
-        return core_v1.read_namespaced_service(name, namespace)
-    except Exception as e:
-        logger.exception(f"Error while fetching service.")
-        return None
-
-
-def get_namespaced_services(namespace):
-    """
-    Get all services for a specific Kubernetes namespace in the cluster.
-    """
-    try:
-        return core_v1.list_namespaced_service(namespace).items
-    except Exception as e:
-        logger.exception(f"Error while fetching services of namespace {namespace}")
-        return None
-
-
-def get_namespaced_pvcs(namespace):
-    """
-    Get all pvcs for a specific Kubernetes namespace in the cluster.
-    """
-    try:
-        return core_v1.list_namespaced_persistent_volume_claim(namespace).items
-    except Exception as e:
-        logger.exception(f"Error while fetching persistent volume claims of namespace {namespace}")
-        return None
-
-def get_pvcs():
-    """
-    Returns the list of pvcs in the cluster, or None on error.
-    """
-    try:
-        return core_v1.list_persistent_volume_claim_for_all_namespaces().items
-    except Exception as e:
-        logger.exception("Error while fetching list of all pvcs from Kubernetes")
-        return None
-
-def get_namespaced_pvc(namespace, name):
-    """
-    Get pvc in the cluster.
-    """
-    try:
-        return core_v1.read_namespaced_persistent_volume_claim(name, namespace)
-    except Exception as e:
-        logger.exception(f"Error while fetching persistent volume claim.")
-        return None
-
-
-
-def get_namespaced_services_json(namespace):
-    """
-    Get all services for a specific Kubernetes namespace in the cluster.
-    """
-    try:
-        services = core_v1.list_namespaced_service(namespace)
-        stripped_services = []
-        for svc in services.items:
-            if svc.spec.selector:
-                selector = [{'key': k, 'value': v} for k, v in svc.spec.selector.items()]
-            else:
-                selector = None
-            stripped_svc = {'name': svc.metadata.name,
-                            'type': svc.spec.type,
-                            'selector': selector,
-                            'creation_timestamp': svc.metadata.creation_timestamp}
-            ports = []
-            for port in svc.spec.ports:
-                ports.append({"port": port.port, "protocol": port.protocol})
-            stripped_svc["ports"] = ports
-            stripped_services.append(stripped_svc)
-        return stripped_services
-    except Exception as e:
-        logger.exception(f"Error while fetching services of namespace {namespace}")
-        return []
-
-
-def create_k8s_service(namespace: str, name: str, svc_type: str, selector: list, ports: list):
-    """
-    Create a Kubernetes service in the cluster.
-    The 'ports' parameter contains a list of dictionaries, each with the key 'port' and 'protocol'.
-    """
-    logger.info(f"Creating Kubernetes service '{name}'")
-    svc_ports = [client.V1ServicePort(name=str(p["port"]), port=p["port"], protocol=p["protocol"]) for p in ports]
-
-    svc = V1Service(
-        metadata=client.V1ObjectMeta(name=name),
-        spec=V1ServiceSpec(
-            type=svc_type,
-            selector={item['key']: item['value'] for item in selector},
-            ports=svc_ports
-        )
-    )
-    core_v1.create_namespaced_service(namespace, svc)
-
-
-def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, rules: dict):
-    """
-    Create a Kubernetes ingress in the cluster.
-
-    The Kubeportal API makes some simplifying assumptions:
-
-    - TLS is a global configuration for an Ingress.
-    - The necessary annotations come from the portal settings, not from the ingress definition.
-    """
-    logger.info(f"Creating Kubernetes ingress '{name}'")
-
-    k8s_annotations = {item['key']: item['value'] for item in annotations}
-
-    k8s_ing = NetworkingV1beta1Ingress(
-        metadata=client.V1ObjectMeta(name=name, annotations=k8s_annotations)
-    )
-
-    k8s_rules = []
-    k8s_hosts = []
-    for rule in rules:
-        host = rule["host"]
-        k8s_hosts.append(host)
-        paths = rule["paths"]
-        k8s_rule = NetworkingV1beta1IngressRule(host=host)
-        k8s_paths = []
-        for path_config in paths:
-            k8s_backend = NetworkingV1beta1IngressBackend(
-                service_name=path_config['service_name'],
-                service_port=path_config['service_port']
-            )
-            k8s_paths.append(NetworkingV1beta1HTTPIngressPath(path=path_config.get("path", None), backend=k8s_backend))
-        k8s_http = NetworkingV1beta1HTTPIngressRuleValue(
-            paths=k8s_paths
-        )
-        k8s_rule.http = k8s_http
-        k8s_rules.append(k8s_rule)
-
-    k8s_spec = NetworkingV1beta1IngressSpec(rules=k8s_rules)
-
-    if tls:
-        k8s_ing.metadata.annotations['cert-manager.io/cluster-issuer'] = settings.INGRESS_TLS_ISSUER
-        k8s_spec.tls = [NetworkingV1beta1IngressTLS(hosts=k8s_hosts, secret_name=f'{name}_tls')]
-
-    k8s_ing.spec = k8s_spec
-    net_v1.create_namespaced_ingress(namespace, k8s_ing)
-
-
-def get_namespaced_ingresses(namespace):
+def get_namespaced_ingresses(namespace: str, user):
     """
     Get all ingresses for a specific Kubernetes namespace in the cluster.
     """
+    net_v1 = get_user_net_v1(user)
     try:
         return net_v1.list_namespaced_ingress(namespace).items
     except Exception as e:
@@ -498,11 +524,12 @@ def get_namespaced_ingresses(namespace):
         return None
 
 
-def get_namespaced_ingresses_json(namespace):
+def get_namespaced_ingresses_json(namespace: str, user):
     """
     Get all ingress for a specific Kubernetes namespace in the cluster.
     Error handling is supposed to happen on the caller side.
     """
+    net_v1 = get_user_net_v1(user)
     ings = net_v1.list_namespaced_ingress(namespace)
     stripped_ings = []
     for ing in ings.items:
@@ -526,28 +553,156 @@ def get_namespaced_ingresses_json(namespace):
     return stripped_ings
 
 
-def get_token(kubeportal_service_account):
+def create_k8s_ingress(namespace: str, name: str, annotations: dict, tls: bool, rules: dict, user):
     """
-    Returns the secret K8S login token as base64-encoded string.
-    """
-    service_account = core_v1.read_namespaced_service_account(
-        name=kubeportal_service_account.name,
-        namespace=kubeportal_service_account.namespace.name)
-    secret_name = service_account.secrets[0].name
-    secret = core_v1.read_namespaced_secret(
-        name=secret_name, namespace=kubeportal_service_account.namespace.name)
-    encoded_token = secret.data['token']
-    return b64decode(encoded_token).decode()
+    Create a Kubernetes ingress in the cluster.
 
+    The Kubeportal API makes some simplifying assumptions:
+
+    - TLS is a global configuration for an Ingress.
+    - The necessary annotations come from the portal settings, not from the ingress definition.
+    """
+    net_v1 = get_user_net_v1(user)
+    logger.info(f"Creating Kubernetes ingress '{name}'")
+
+    k8s_annotations = {item['key']: item['value'] for item in annotations}
+
+    k8s_ing = client.NetworkingV1beta1Ingress(
+        metadata=client.V1ObjectMeta(name=name, annotations=k8s_annotations)
+    )
+
+    k8s_rules = []
+    k8s_hosts = []
+    for rule in rules:
+        host = rule["host"]
+        k8s_hosts.append(host)
+        paths = rule["paths"]
+        k8s_rule = client.NetworkingV1beta1IngressRule(host=host)
+        k8s_paths = []
+        for path_config in paths:
+            k8s_backend = client.NetworkingV1beta1IngressBackend(
+                service_name=path_config['service_name'],
+                service_port=path_config['service_port']
+            )
+            k8s_paths.append(
+                client.NetworkingV1beta1HTTPIngressPath(path=path_config.get("path", None), backend=k8s_backend))
+        k8s_http = client.NetworkingV1beta1HTTPIngressRuleValue(
+            paths=k8s_paths
+        )
+        k8s_rule.http = k8s_http
+        k8s_rules.append(k8s_rule)
+
+    k8s_spec = client.NetworkingV1beta1IngressSpec(rules=k8s_rules)
+
+    if tls:
+        k8s_ing.metadata.annotations['cert-manager.io/cluster-issuer'] = settings.INGRESS_TLS_ISSUER
+        k8s_spec.tls = [client.NetworkingV1beta1IngressTLS(hosts=k8s_hosts, secret_name=f'{name}_tls')]
+
+    k8s_ing.spec = k8s_spec
+    net_v1.create_namespaced_ingress(namespace, k8s_ing)
+
+
+### Services
+
+def get_services():
+    """
+    Returns the list of services in the cluster, or None on error.
+
+    This operation is performed by portal backend admins, which may not have
+    enough permissions. It is also non-destructive, so we run it with portal permissions.
+    """
+    core_v1 = get_portal_core_v1()
+    try:
+        return core_v1.list_service_for_all_namespaces().items
+    except Exception as e:
+        logger.exception("Error while fetching list of all deployments from Kubernetes")
+        return None
+
+
+def get_namespaced_service(namespace: str, name: str, user):
+    """
+    Get service in the cluster.
+    """
+    core_v1 = get_user_core_v1(user)
+    try:
+        return core_v1.read_namespaced_service(name, namespace)
+    except Exception as e:
+        logger.exception(f"Error while fetching service.")
+        return None
+
+
+def get_namespaced_services(namespace: str, user):
+    """
+    Get all services for a specific Kubernetes namespace in the cluster.
+    """
+    core_v1 = get_user_core_v1(user)
+    try:
+        return core_v1.list_namespaced_service(namespace).items
+    except Exception as e:
+        logger.exception(f"Error while fetching services of namespace {namespace}")
+        return None
+
+
+def get_namespaced_services_json(namespace: str, user):
+    """
+    Get all services for a specific Kubernetes namespace in the cluster.
+    """
+    core_v1 = get_user_core_v1(user)
+    try:
+        services = core_v1.list_namespaced_service(namespace)
+        stripped_services = []
+        for svc in services.items:
+            if svc.spec.selector:
+                selector = [{'key': k, 'value': v} for k, v in svc.spec.selector.items()]
+            else:
+                selector = None
+            stripped_svc = {'name': svc.metadata.name,
+                            'type': svc.spec.type,
+                            'selector': selector,
+                            'creation_timestamp': svc.metadata.creation_timestamp}
+            ports = []
+            for port in svc.spec.ports:
+                ports.append({"port": port.port, "protocol": port.protocol})
+            stripped_svc["ports"] = ports
+            stripped_services.append(stripped_svc)
+        return stripped_services
+    except Exception as e:
+        logger.exception(f"Error while fetching services of namespace {namespace}")
+        return []
+
+
+def create_k8s_service(namespace: str, name: str, svc_type: str, selector: list, ports: list, user):
+    """
+    Create a Kubernetes service in the cluster.
+    The 'ports' parameter contains a list of dictionaries, each with the key 'port' and 'protocol'.
+    """
+    core_v1 = get_user_core_v1(user)
+    logger.info(f"Creating Kubernetes service '{name}'")
+    svc_ports = [client.V1ServicePort(name=str(p["port"]), port=p["port"], protocol=p["protocol"]) for p in ports]
+
+    svc = client.V1Service(
+        metadata=client.V1ObjectMeta(name=name),
+        spec=client.V1ServiceSpec(
+            type=svc_type,
+            selector={item['key']: item['value'] for item in selector},
+            ports=svc_ports
+        )
+    )
+    core_v1.create_namespaced_service(namespace, svc)
+
+
+### Statistics
 
 def get_apiserver():
-    if settings.API_SERVER_EXTERNAL is None:
-        return core_v1.api_client.configuration.host
-    else:
+    if settings.API_SERVER_EXTERNAL:
         return settings.API_SERVER_EXTERNAL
+    else:
+        core_v1 = get_portal_core_v1()
+        return core_v1.api_client.configuration.host
 
 
 def get_kubernetes_version():
+    core_v1 = get_portal_core_v1()
     pods = core_v1.list_namespaced_pod("kube-system").items
     for pod in pods:
         for container in pod.spec.containers:
@@ -558,73 +713,28 @@ def get_kubernetes_version():
 
 
 def get_number_of_pods():
+    core_v1 = get_portal_core_v1()
     return len(core_v1.list_pod_for_all_namespaces().items)
 
 
 def get_number_of_nodes():
+    core_v1 = get_portal_core_v1()
     return len(core_v1.list_node().items)
 
 
 def get_number_of_cpus():
+    core_v1 = get_portal_core_v1()
     nodes = core_v1.list_node().items
     return sum([int(node.status.capacity['cpu']) for node in nodes])
 
 
 def get_memory_sum():
+    core_v1 = get_portal_core_v1()
     nodes = core_v1.list_node().items
     mems = [int(node.status.capacity['memory'][:-2]) for node in nodes]
     return sum(mems) / 1000000  # in GiBytes
 
 
 def get_number_of_volumes():
+    core_v1 = get_portal_core_v1()
     return len(core_v1.list_persistent_volume().items)
-
-
-def check_role_bindings(ns):
-    """
-    Check, and fix in case, the role bindings for this namespace in the cluster. The list of expected
-    cluster roles to be bound to comes from the application settings.
-
-    We only consider visible namespaces here, to prevent hitting special namespaces and giving them
-    (most likely unnecessary) additional role bindings
-    """
-    if not ns.visible:
-        logger.debug(f"Namespace '{ns.name}' is invisible, skipping role binding check.")
-        return
-
-    try:
-        rolebindings = rbac_v1.list_namespaced_role_binding(ns.name).items
-    except Exception as e:
-        logger.exception(f"Could not fetch role bindings for namespace {self}")
-        return False
-
-    # Get all cluster roles this namespace is currently bound to
-    clusterroles_active = [rolebinding.role_ref.name for rolebinding in rolebindings if
-                           rolebinding.role_ref.kind == 'ClusterRole']
-    logger.debug(f"Namespace '{ns.name}' is currently bound to cluster roles {clusterroles_active}")
-
-    # Check list of default cluster roles from settings
-    for clusterrole in settings.NAMESPACE_CLUSTERROLES:
-        if clusterrole not in clusterroles_active:
-            logger.info(f"Namespace '{ns.name}' is not bound to cluster role '{clusterrole}', fixing this ...")
-            create_role_binding(ns, clusterrole)
-
-    return True
-
-
-def create_role_binding(ns, clusterrole):
-    """
-    Create a role binding to the given cluster role for the given namespace in the cluster.
-    """
-    try:
-        role_ref = client.V1RoleRef(name=clusterrole, kind="ClusterRole", api_group="rbac.authorization.k8s.io")
-
-        # Subject for the cluster role are all service accounts in the namespace
-        subject = client.V1Subject(name="system:serviceaccounts:" + ns.name, kind="Group",
-                                   api_group="rbac.authorization.k8s.io")
-        metadata = client.V1ObjectMeta(name=clusterrole)
-        new_rolebinding = client.V1RoleBinding(role_ref=role_ref, metadata=metadata, subjects=[subject, ])
-
-        rbac_v1.create_namespaced_role_binding(ns.name, new_rolebinding)
-    except Exception as e:
-        logger.exception(f"Could not create role binding of namespace '{self.name}' to '{clusterrole}'")

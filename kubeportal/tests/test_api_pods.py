@@ -34,7 +34,7 @@ def test_get_pod(api_client, admin_user):
     run_minikube_sync()
 
     # Minikube system pod names differ, depending on the version
-    pods = api.get_namespaced_pods("kube-system")
+    pods = api.get_namespaced_pods("kube-system", admin_user)
     test_pod_name = None
     for k8s_pod in pods:
         if "apiserver" in k8s_pod.metadata.name:
@@ -46,7 +46,7 @@ def test_get_pod(api_client, admin_user):
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
 
-    pod = api.core_v1.read_namespaced_pod(test_pod_name, 'kube-system')
+    pod = api.get_portal_core_v1().read_namespaced_pod(test_pod_name, 'kube-system')
 
     response = api_client.get(f'/api/{settings.API_VERSION}/pods/{pod.metadata.namespace}_{pod.metadata.name}/')
     assert 200 == response.status_code
@@ -60,7 +60,7 @@ def test_get_illegal_pod(api_client, admin_user):
     run_minikube_sync()
 
     # Minikube system pod names differ, depending on the version
-    pods = api.get_namespaced_pods("kube-system")
+    pods = api.get_namespaced_pods("kube-system", admin_user)
     test_pod_name = None
     for k8s_pod in pods:
         if "apiserver" in k8s_pod.metadata.name:
@@ -73,7 +73,7 @@ def test_get_illegal_pod(api_client, admin_user):
     admin_user.service_account = default_namespace.service_accounts.all()[0]
     admin_user.save()
 
-    pod = api.core_v1.read_namespaced_pod(test_pod_name, 'kube-system')
+    pod = api.get_portal_core_v1().read_namespaced_pod(test_pod_name, 'kube-system')
 
     response = api_client.get(f'/api/{settings.API_VERSION}/pods/{pod.metadata.namespace}_{pod.metadata.name}/')
     assert 404 == response.status_code
@@ -90,7 +90,7 @@ def test_pod_create(api_client, admin_user):
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
-    old_count = len(api.get_namespaced_pods("kube-system"))
+    old_count = len(api.get_namespaced_pods("kube-system", admin_user))
     try:
         response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/pods/',
                                    {'name': 'test-pod1',
@@ -100,10 +100,10 @@ def test_pod_create(api_client, admin_user):
                                     }, ]
                                     })
         assert 201 == response.status_code
-        new_count = len(api.get_namespaced_pods("kube-system"))
+        new_count = len(api.get_namespaced_pods("kube-system", admin_user))
         assert old_count + 1 == new_count
     finally:
-        api.core_v1.delete_namespaced_pod(name="test-pod1", namespace="kube-system")
+        api.get_portal_core_v1().delete_namespaced_pod(name="test-pod1", namespace="kube-system")
 
 
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
@@ -130,4 +130,4 @@ def test_pod_double_create(api_client, admin_user):
                                     })
         assert 409 == response.status_code
     finally:
-        api.core_v1.delete_namespaced_pod(name="test-pod2", namespace="kube-system")
+        api.get_portal_core_v1().delete_namespaced_pod(name="test-pod2", namespace="kube-system")

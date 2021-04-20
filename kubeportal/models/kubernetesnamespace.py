@@ -5,8 +5,6 @@ from kubeportal.k8s import kubernetes_api as api
 import logging
 import re
 
-from kubeportal.k8s.kubernetes_api import rbac_v1
-
 logger = logging.getLogger('KubePortal')
 
 HIDDEN_NAMESPACES = ['kube-system', 'kube-public', 'kube-node-lease']
@@ -165,7 +163,7 @@ class KubernetesNamespace(models.Model):
             created_k8s_ns = api.create_k8s_ns(sanitized_name)
             self.uid = created_k8s_ns.metadata.uid
             self.save()
-            return api.check_role_bindings(self)
+            return True
         except Exception as e:
             logger.exception(f"Creation of portal namespace in cluster failed.")
             return False

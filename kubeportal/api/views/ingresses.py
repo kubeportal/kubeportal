@@ -56,7 +56,7 @@ class IngressRetrievalView(generics.RetrieveAPIView):
     def get(self, request, version, puid):
         namespace, name = puid.split('_')
         try:
-            ingress = api.get_namespaced_ingress(namespace, name)
+            ingress = api.get_namespaced_ingress(namespace, name, request.user)
         except Exception:
             logger.exception("Problem while fetching ingress information from Kubernetes.")
             return Response(status=504)
@@ -105,7 +105,7 @@ class IngressesView(generics.CreateAPIView, generics.RetrieveAPIView):
     )
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
-            ingresses = api.get_namespaced_ingresses(namespace)
+            ingresses = api.get_namespaced_ingresses(namespace, request.user)
             puids = [item.metadata.namespace + '_' + item.metadata.name for item in ingresses]
             instance = IngressListSerializer({
                 'ingress_urls': [reverse(viewname='ingress_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]
@@ -125,7 +125,8 @@ class IngressesView(generics.CreateAPIView, generics.RetrieveAPIView):
                                    request.data["name"],
                                    request.data.get("annotations", {}),
                                    request.data.get("tls", False),
-                                   request.data.get("rules", [])
+                                   request.data.get("rules", []),
+                                   request.user
                                    )
             return Response(status=201)
         else:
