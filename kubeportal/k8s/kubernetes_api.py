@@ -86,6 +86,50 @@ def get_token(kubeportal_service_account):
     encoded_token = secret.data['token']
     return b64decode(encoded_token).decode()
 
+def get_user_configuration(user):
+    """
+    Get a configuration for the Kubernetes client library.
+    The credentials of the given portal user are used. 
+
+    Returns None on error. 
+    """
+    if not user.has_access_approved():
+        logger.error("Kubernetes API configuration for user unavailable, user is not approved.")
+        return None
+    configuration = client.Configuration()
+    configuration.api_key['authorization'] = get_token(user.service_account)
+    if not settings.API_SERVER_EXTERNAL:
+        logger.error("Kubernetes API configuration for user unavailable, API_SERVER_EXTERNAL is not set.")
+        return None
+    configuration.host = settings.API_SERVER_EXTERNAL
+    return configuration
+
+
+def get_user_api_client(user):
+    configuration = get_user_configuration(user)
+    return client.ApiClient(configuration)
+
+
+def get_user_core_v1(user):
+    api_client = get_user_api_client(user)
+    return client.CoreV1Api(api_client)
+
+
+def get_user_rbac_v1(user):
+    api_client = get_user_api_client(user)
+    return client.RbacAuthorizationV1Api(api_client)
+
+
+def get_user_apps_v1(user):
+    api_client = get_user_api_client(user)
+    return client.AppsV1Api(api_client)
+
+
+def get_user_net_v1(user):
+    api_client = get_user_api_client(user)
+    return client.NetworkingV1beta1Api(api_client)
+
+# General functions
 
 def get_user_configuration(user):
     """
