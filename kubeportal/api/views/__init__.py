@@ -38,3 +38,4 @@ from .news import *
 from .namespaces import *
 from .serviceaccounts import *
 from .persistentvolumeclaims import *
+from .storageclasses import *

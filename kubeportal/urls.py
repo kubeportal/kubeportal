@@ -65,6 +65,7 @@ urlpatterns = [
     path('api/<str:version>/infos/<str:info_slug>/', api_views.InfoDetailView.as_view(), name='info_detail'),
     path('api/<str:version>/news/', api_views.NewsView.as_view(), name='news'),
     path('api/<str:version>/ingresshosts/', api_views.IngressHostsView.as_view()),
+    path('api/<str:version>/storageclasses/', api_views.StorageClassesView.as_view()),
 
     path('api/<str:version>/login/', dj_rest_views.LoginView.as_view(), name='rest_login'),
     path('api/<str:version>/logout/', dj_rest_views.LogoutView.as_view(), name='rest_logout'),

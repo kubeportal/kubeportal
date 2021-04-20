@@ -64,6 +64,11 @@ def get_portal_net_v1():
     return client.NetworkingV1beta1Api(api_client)
 
 
+def get_portal_storage_v1():
+    api_client = get_portal_api_client()
+    return client.StorageV1Api(api_client)
+
+
 ### Helper functions for accessing the Kubernetes API server with
 ### permissions of a given single user
 
@@ -326,6 +331,16 @@ def get_namespaced_pvc(namespace: str, name: str, user):
         return core_v1.read_namespaced_persistent_volume_claim(name, namespace)
     except Exception as e:
         logger.exception(f"Error while fetching persistent volume claim.")
+        return None
+
+### Storage
+
+def get_storageclasses():
+    storage_v1 = get_portal_storage_v1()
+    try:
+        return storage_v1.list_storage_class().items
+    except Exception:
+        logger.exception("Error while fetching storage classes from Kubernetes")
         return None
 
 
