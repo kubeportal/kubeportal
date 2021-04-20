@@ -38,7 +38,7 @@ class PersistentVolumeClaimRetrievalView(generics.RetrieveAPIView):
     )
     def get(self, request, version, puid):
         namespace, name = puid.split('_')
-        pvc = api.get_namespaced_pvc(namespace, name)
+        pvc = api.get_namespaced_pvc(namespace, name, request.user)
 
         if not request.user.has_namespace(pvc.metadata.namespace):
             logger.warning(
@@ -82,7 +82,7 @@ class PersistentVolumeClaimsView(generics.RetrieveAPIView, generics.CreateAPIVie
     )
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
-            pvcs = api.get_namespaced_pvcs(namespace)
+            pvcs = api.get_namespaced_pvcs(namespace, request.user)
             puids = [item.metadata.namespace + '_' + item.metadata.name for item in pvcs]
             instance = PersistentVolumeClaimListSerializer({
                 'persistentvolumeclaim_urls': [reverse(viewname='pvc_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]\
@@ -98,12 +98,16 @@ class PersistentVolumeClaimsView(generics.RetrieveAPIView, generics.CreateAPIVie
         responses=None
     )
     def post(self, request, version, namespace):
+        storage_class = request.data.get("storage_class_name", None)
+        if storage_class == '':
+            storage_class = None
         if request.user.has_namespace(namespace):
             api.create_k8s_pvc(namespace,
                                request.data["name"],
                                request.data["access_modes"],
-                               request.data.get("storage_class_name", None),
-                               request.data["size"])
+                               storage_class,
+                               request.data["size"],
+                               request.user)
             return Response(status=201)
         else:
             raise NotFound

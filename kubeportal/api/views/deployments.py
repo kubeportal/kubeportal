@@ -58,7 +58,7 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
     )
     def get(self, request, version, puid):
         namespace, name = puid.split('_')
-        deployment = api.get_namespaced_deployment(namespace, name)
+        deployment = api.get_namespaced_deployment(namespace, name, request.user)
 
         if not request.user.has_namespace(deployment.metadata.namespace):
             logger.warning(
@@ -79,7 +79,7 @@ class DeploymentRetrievalView(generics.RetrieveAPIView):
             for k,v in deployment.spec.selector.match_labels.items():
                 match_labels.append({'key': k, 'value': v})
 
-        pod_list = api.get_deployment_pods(deployment)
+        pod_list = api.get_deployment_pods(deployment, request.user)
 
         instance = DeploymentSerializer({
             'name': deployment.metadata.name,
@@ -115,7 +115,7 @@ class DeploymentsView(generics.RetrieveAPIView, generics.CreateAPIView):
     )
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
-            deployments = api.get_namespaced_deployments(namespace)
+            deployments = api.get_namespaced_deployments(namespace, request.user)
             puids = [item.metadata.namespace + '_' + item.metadata.name for item in deployments]
             instance = DeploymentListSerializer({
                 'deployment_urls': [reverse(viewname='deployment_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]\
@@ -136,7 +136,8 @@ class DeploymentsView(generics.RetrieveAPIView, generics.CreateAPIView):
                                       request.data["name"],
                                       request.data["replicas"],
                                       request.data["match_labels"],
-                                      request.data["pod_template"])
+                                      request.data["pod_template"],
+                                      request.user)
             return Response(status=201)
         else:
             raise NotFound

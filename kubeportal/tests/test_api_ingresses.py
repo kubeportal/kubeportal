@@ -27,7 +27,6 @@ def test_user_ingresses_create(api_client, admin_user):
     system_namespace = KubernetesNamespace.objects.get(name="kube-system")
     admin_user.service_account = system_namespace.service_accounts.all()[0]
     admin_user.save()
-    old_count = len(api.get_namespaced_ingresses("kube-system"))
     try:
         response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/kube-system/ingresses/',
                                    {
@@ -53,10 +52,8 @@ def test_user_ingresses_create(api_client, admin_user):
                                    })
 
         assert 201 == response.status_code
-        new_count = len(api.get_namespaced_ingresses("kube-system"))
-        assert old_count + 1 == new_count
     finally:
-        api.net_v1.delete_namespaced_ingress(name="my-ingress", namespace="kube-system")
+        api.get_portal_net_v1().delete_namespaced_ingress(name="my-ingress", namespace="kube-system")
 
 
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
@@ -108,7 +105,7 @@ def test_user_ingresses_create_empty_path(api_client, admin_user):
         assert data['rules'][0]['paths'][1]['path'] == ''
         assert data['rules'][0]['paths'][2]['path'] == '/'
     finally:
-        api.net_v1.delete_namespaced_ingress(name="my-ingress", namespace="kube-system")
+        api.get_portal_net_v1().delete_namespaced_ingress(name="my-ingress", namespace="kube-system")
 
 
 def test_user_ingresses_create_wrong_ns(api_client):
@@ -167,8 +164,8 @@ def test_user_ingresses_list(api_client, admin_user_with_k8s):
             if entry['key'] == 'x':
                 assert entry['value'] == 'y'
     finally:
-        api.net_v1.delete_namespaced_ingress("test-ingress-1", "default")
-        api.net_v1.delete_namespaced_ingress("test-ingress-2", "default")
+        api.get_portal_net_v1().delete_namespaced_ingress("test-ingress-1", "default")
+        api.get_portal_net_v1().delete_namespaced_ingress("test-ingress-2", "default")
 
 
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
@@ -183,8 +180,8 @@ def test_ingresshosts_list(api_client, admin_user_with_k8s):
         for check_host in ["visbert.demo.datexis.com", "tasty.demo.datexis.com"]:
             assert check_host in data["hosts"]
     finally:
-        api.net_v1.delete_namespaced_ingress("test-ingress-1", "default")
-        api.net_v1.delete_namespaced_ingress("test-ingress-2", "default")
+        api.get_portal_net_v1().delete_namespaced_ingress("test-ingress-1", "default")
+        api.get_portal_net_v1().delete_namespaced_ingress("test-ingress-2", "default")
 
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
 def test_empty_user_ingresses_list(api_client, admin_user_with_k8s):
@@ -218,4 +215,4 @@ def test_broken_k8s_single_ingress(api_client, admin_user_with_k8s, mocker):
         response = api_client.get(ingress_url.path)
         assert response.status_code == 504
     finally:
-        api.net_v1.delete_namespaced_ingress("test-ingress-1", "default")
+        api.get_portal_net_v1().delete_namespaced_ingress("test-ingress-1", "default")

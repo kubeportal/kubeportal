@@ -146,7 +146,7 @@ class User(AbstractUser):
         Returns a list of K8S pods for this user.
         """
         if self.service_account:
-            return kubernetes_api.get_namespaced_pods(self.service_account.namespace.name)
+            return kubernetes_api.get_namespaced_pods(self.service_account.namespace.name, self)
         else:
             logger.error(f"Cannot determine list of pods for user {self}, since she has no service account attached.")
             return []
@@ -156,7 +156,7 @@ class User(AbstractUser):
         Returns a list of K8 deployments for this user.
         """
         if self.service_account:
-            return kubernetes_api.get_namespaced_deployments(self.service_account.namespace.name)
+            return kubernetes_api.get_namespaced_deployments(self.service_account.namespace.name, self)
         else:
             logger.error(f"Cannot determine list of deployments for user {self}, since she has no service account attached.")
             return []
@@ -166,7 +166,7 @@ class User(AbstractUser):
         Returns a list of K8S services for this user.
         """
         if self.service_account:
-            return kubernetes_api.get_namespaced_services(self.service_account.namespace.name)
+            return kubernetes_api.get_namespaced_services(self.service_account.namespace.name, self)
         else:
             logger.error(f"Cannot determine list of services for user {self}, since she has no service account attached.")
             return []
@@ -176,7 +176,7 @@ class User(AbstractUser):
         Returns a list of K8S ingresses for this user.
         """
         if self.service_account:
-            return kubernetes_api.get_namespaced_ingresses(self.service_account.namespace.name)
+            return kubernetes_api.get_namespaced_ingresses(self.service_account.namespace.name, self)
         else:
             logger.error(f"Cannot determine list of ingresses for user {self}, since she has no service account attached.")
             return []

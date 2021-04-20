@@ -51,7 +51,7 @@ class ServiceRetrievalView(generics.RetrieveAPIView):
     )
     def get(self, request, version, puid):
         namespace, name = puid.split('_')
-        service = api.get_namespaced_service(namespace, name)
+        service = api.get_namespaced_service(namespace, name, request.user)
 
         if not request.user.has_namespace(service.metadata.namespace):
             logger.warning(
@@ -91,7 +91,7 @@ class ServicesView(generics.CreateAPIView, generics.RetrieveAPIView):
     )
     def get(self, request, version, namespace):
         if request.user.has_namespace(namespace):
-            services = api.get_namespaced_services(namespace)
+            services = api.get_namespaced_services(namespace, request.user)
             puids = [item.metadata.namespace + '_' + item.metadata.name for item in services]
             instance = ServiceListSerializer({
                 'service_urls': [reverse(viewname='service_retrieval', kwargs={'puid': puid}, request=request) for puid in puids]
@@ -111,7 +111,8 @@ class ServicesView(generics.CreateAPIView, generics.RetrieveAPIView):
                                    request.data["name"],
                                    request.data["type"],
                                    request.data["selector"],
-                                   request.data["ports"])
+                                   request.data["ports"], 
+                                   request.user)
             return Response(status=201)
         else:
             raise NotFound

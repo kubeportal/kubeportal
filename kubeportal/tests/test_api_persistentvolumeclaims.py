@@ -45,7 +45,7 @@ def test_pvc_list(api_client, admin_user_with_k8s):
         assert data['phase'] == 'Bound'
         assert data['size'] == '100Mi'
     finally:
-        api.core_v1.delete_namespaced_persistent_volume_claim(name="foo-pvc", namespace="default")
+        api.get_portal_core_v1().delete_namespaced_persistent_volume_claim(name="foo-pvc", namespace="default")
 
 
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
@@ -54,7 +54,7 @@ def test_pvc_create(api_client, admin_user):
     namespace = KubernetesNamespace.objects.get(name="default")
     admin_user.service_account = namespace.service_accounts.all()[0]
     admin_user.save()
-    pvcs = api.get_namespaced_pvcs("default")
+    pvcs = api.get_namespaced_pvcs("default", admin_user)
     try:
         assert len(pvcs) == 0
         response = api_client.post(f'/api/{settings.API_VERSION}/namespaces/default/persistentvolumeclaims/',
@@ -64,10 +64,10 @@ def test_pvc_create(api_client, admin_user):
                                     'size': '10Mi'
                                     })
         assert 201 == response.status_code
-        pvcs = api.get_namespaced_pvcs("default")
+        pvcs = api.get_namespaced_pvcs("default", admin_user)
         assert len(pvcs) > 0
     finally:
-        api.core_v1.delete_namespaced_persistent_volume_claim(name="test-pvc", namespace="default")
+        api.get_portal_core_v1().delete_namespaced_persistent_volume_claim(name="test-pvc", namespace="default")
 
 
 @pytest.mark.skipif(minikube_unavailable(), reason="Minikube is unavailable")
