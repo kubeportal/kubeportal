@@ -12,4 +12,8 @@ class Command(BaseCommand):
         print(f"  eMail host: {settings.EMAIL_HOST}")
         print(f"  K8S API Server: {settings.API_SERVER_EXTERNAL}")
         print(f"  K8S Ingress TLS Issuer: {settings.INGRESS_TLS_ISSUER}")
+        if settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY and settings.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET:
+            print("  Google Auth configured: False")
+        else:
+            print("  Google Auth configured: True")
 
