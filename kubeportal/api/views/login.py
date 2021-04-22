@@ -38,6 +38,7 @@ class JWTSerializer(serializers.Serializer):
     user_approval_url = serializers.SerializerMethodField()
     news_url = serializers.SerializerMethodField()
     infos_url = serializers.SerializerMethodField()
+    storageclasses_url = serializers.SerializerMethodField()
 
     @extend_schema_field(OpenApiTypes.URI)
     def get_user_url(self, obj):
@@ -70,3 +71,8 @@ class JWTSerializer(serializers.Serializer):
     def get_infos_url(self, obj):
         request = self.context['request']
         return reverse(viewname='info_overview', request=request)
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_storageclasses_url(self, obj):
+        request = self.context['request']
+        return reverse(viewname='storageclasses', request=request)

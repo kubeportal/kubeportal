@@ -51,15 +51,6 @@ class UserSerializer(serializers.ModelSerializer):
                                                               lookup_field='uid',
                                                               read_only=True,
                                                               source='k8s_accounts')
-    namespace_urls = serializers.HyperlinkedRelatedField(many=True,
-                                                         view_name='namespace',
-                                                         lookup_url_kwarg='namespace',
-                                                         lookup_field='name',
-                                                         read_only=True,
-                                                         source='k8s_namespaces')
-    namespace_names = serializers.ListField(read_only=True, 
-                                            child=serializers.CharField(),
-                                            source='k8s_namespace_names')
     k8s_token = serializers.CharField(source='token', read_only=True)
 
     class Meta:
@@ -75,8 +66,6 @@ class UserSerializer(serializers.ModelSerializer):
                   'state',
                   'all_emails',
                   'serviceaccount_urls',
-                  'namespace_urls',
-                  'namespace_names',
                   'k8s_token')
 
 
