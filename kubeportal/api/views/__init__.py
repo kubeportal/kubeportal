@@ -34,6 +34,7 @@ from .ingresshosts import *
 from .services import *
 from .webapps import *
 from .login import *
+from .login_google import *
 from .news import *
 from .namespaces import *
 from .serviceaccounts import *

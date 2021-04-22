@@ -76,3 +76,5 @@ class JWTSerializer(serializers.Serializer):
     def get_storageclasses_url(self, obj):
         request = self.context['request']
         return reverse(viewname='storageclasses', request=request)
+
+

@@ -1,4 +1,5 @@
 from django.middleware import csrf
+from django.conf import settings
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, serializers
 from rest_framework.permissions import AllowAny
@@ -13,6 +14,7 @@ class BootstrapInfoSerializer(serializers.Serializer):
     login_url = serializers.URLField()
     logout_url = serializers.URLField()
     login_google_url = serializers.URLField()
+    login_google_client_id = serializers.CharField()
     branding = serializers.CharField()
 
 
@@ -29,6 +31,7 @@ class BootstrapInfoView(generics.RetrieveAPIView):
             "login_url": reverse(viewname='rest_login', request=request),
             "logout_url": reverse(viewname='rest_logout', request=request),
             "login_google_url": reverse(viewname='api_google_login', request=request),
+            "login_google_client_id": settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY,
             'branding': get_branding()
         })
         return Response(instance.data)
