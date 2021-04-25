@@ -16,7 +16,6 @@ import logging
 from django.contrib import messages
 from kubernetes import client
 
-from kubeportal.k8s import kubernetes_api as api
 from kubeportal.models.kubernetesnamespace import KubernetesNamespace
 from kubeportal.models.kubernetesserviceaccount import KubernetesServiceAccount
 

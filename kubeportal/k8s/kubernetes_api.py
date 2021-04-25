@@ -86,23 +86,49 @@ def get_token(kubeportal_service_account):
     encoded_token = secret.data['token']
     return b64decode(encoded_token).decode()
 
+
 def get_user_configuration(user):
     """
     Get a configuration for the Kubernetes client library.
-    The credentials of the given portal user are used. 
+    The credentials of the given portal user are used,
+    access is restricted to the default namespace. 
 
     Returns None on error. 
     """
     if not user.has_access_approved():
         logger.error("Kubernetes API configuration for user unavailable, user is not approved.")
         return None
-    configuration = client.Configuration()
-    configuration.api_key['authorization'] = get_token(user.service_account)
+
     if not settings.API_SERVER_EXTERNAL:
         logger.error("Kubernetes API configuration for user unavailable, API_SERVER_EXTERNAL is not set.")
         return None
-    configuration.host = settings.API_SERVER_EXTERNAL
-    return configuration
+
+    config_data = {
+        'current-context': user.username,
+        'contexts': [{
+            'name': user.username,
+            'context': {
+                'cluster': 'thecluster',
+                'namespace': user.service_account.namespace.name,
+                'user': user.username
+            }
+        }],
+        'clusters': [{
+            'name': 'thecluster',
+            'cluster': {
+                'insecure-skip-tls-verify': True,
+                'server': settings.API_SERVER_EXTERNAL
+            }
+        }],
+        'users': [{
+            'name': user.username,
+            'user': {
+                'token': get_token(user.service_account)
+            }
+        }]
+    }
+
+    return config.load_kube_config_from_dict(config_data)
 
 
 def get_user_api_client(user):
@@ -129,50 +155,6 @@ def get_user_net_v1(user):
     api_client = get_user_api_client(user)
     return client.NetworkingV1beta1Api(api_client)
 
-# General functions
-
-def get_user_configuration(user):
-    """
-    Get a configuration for the Kubernetes client library.
-    The credentials of the given portal user are used. 
-
-    Returns None on error. 
-    """
-    if not user.has_access_approved():
-        logger.error("Kubernetes API configuration for user unavailable, user is not approved.")
-        return None
-    configuration = client.Configuration()
-    configuration.api_key['authorization'] = get_token(user.service_account)
-    if not settings.API_SERVER_EXTERNAL:
-        logger.error("Kubernetes API configuration for user unavailable, API_SERVER_EXTERNAL is not set.")
-        return None
-    configuration.host = settings.API_SERVER_EXTERNAL
-    return configuration
-
-
-def get_user_api_client(user):
-    configuration = get_user_configuration(user)
-    return client.ApiClient(configuration)
-
-
-def get_user_core_v1(user):
-    api_client = get_user_api_client(user)
-    return client.CoreV1Api(api_client)
-
-
-def get_user_rbac_v1(user):
-    api_client = get_user_api_client(user)
-    return client.RbacAuthorizationV1Api(api_client)
-
-
-def get_user_apps_v1(user):
-    api_client = get_user_api_client(user)
-    return client.AppsV1Api(api_client)
-
-
-def get_user_net_v1(user):
-    api_client = get_user_api_client(user)
-    return client.NetworkingV1beta1Api(api_client)
 
 # General functions
 
@@ -185,6 +167,7 @@ def is_minikube():
         return active_context['context']['cluster'] == 'minikube'
     except Exception:
         return False
+
 
 # Namespaces
 
@@ -239,6 +222,7 @@ def get_namespaces():
     except Exception:
         logger.exception("Error while fetching namespaces from Kubernetes")
         return None
+
 
 # Service Accounts
 
@@ -377,6 +361,7 @@ def get_namespaced_pvc(namespace: str, name: str, user):
         logger.exception(f"Error while fetching persistent volume claim.")
         return None
 
+
 ### Storage
 
 def get_storageclasses():
@@ -456,7 +441,7 @@ def get_namespaced_deployment(namespace: str, name: str, user):
 
 ### Pods
 
-def create_k8s_pod(namespace: str, name: str, containers: int, user):
+def create_k8s_pod(namespace: str, name: str, containers, user):
     """
     Create a Kubernetes pod in the cluster.
 
@@ -489,7 +474,7 @@ def get_pods():
     core_v1 = get_portal_core_v1()
     try:
         return core_v1.list_pod_for_all_namespaces().items
-    except Exception as e:
+    except Exception:
         logger.exception("Error while fetching list of all pods from Kubernetes")
         return None
 
