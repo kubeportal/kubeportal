@@ -1,5 +1,5 @@
 urllib3
-Django==2.2.20
+Django==2.2.24
 ldap3
 django-oidc-provider
 colorama
