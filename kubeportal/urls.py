@@ -54,6 +54,7 @@ urlpatterns = [
     path('api/<str:version>/ingresses/<str:puid>/', api_views.IngressRetrievalView.as_view(), name='ingress_retrieval'),
     path('api/<str:version>/persistentvolumeclaims/<str:puid>/', api_views.PersistentVolumeClaimRetrievalView.as_view(), name='pvc_retrieval'),
     path('api/<str:version>/pods/<str:puid>/', api_views.PodRetrievalView.as_view(), name='pod_retrieval'),
+    path('api/<str:version>/pods/<str:puid>/getlogs/', api_views.PodLogsView.as_view(), name='pod_logs'),
     path('api/<str:version>/services/<str:puid>/', api_views.ServiceRetrievalView.as_view(), name='service_retrieval'),
     path('api/<str:version>/serviceaccounts/<str:uid>/', api_views.ServiceAccountRetrievalView.as_view(), name='serviceaccount_retrieval'),
 

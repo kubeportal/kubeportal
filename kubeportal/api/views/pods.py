@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.http import request
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, generics
 from rest_framework.exceptions import NotFound
@@ -99,6 +101,7 @@ class PodSerializer(serializers.Serializer):
     reason = serializers.CharField(read_only=True)
     message = serializers.CharField(read_only=True)
     host_ip = serializers.CharField(read_only=True)
+    logs_url = serializers.CharField()
 
     @classmethod
     def create_from_k8s_pod(cls, k8s_pod):
@@ -107,6 +110,10 @@ class PodSerializer(serializers.Serializer):
             instance = ContainerSerializer.create_from_k8s_container(k8s_container, k8s_pod)
             container_instances.append(instance.data)
 
+        kwargs = {
+            'version': settings.API_VERSION,
+            'puid': k8s_pod.metadata.namespace + "_" + k8s_pod.metadata.name
+        }
         pod_instance = cls({
             'name': k8s_pod.metadata.name,
             'puid': k8s_pod.metadata.namespace + "_" + k8s_pod.metadata.name,
@@ -116,13 +123,15 @@ class PodSerializer(serializers.Serializer):
             'reason': k8s_pod.status.reason if k8s_pod.status.reason else "",
             'message': k8s_pod.status.message if k8s_pod.status.message else "",
             'host_ip': k8s_pod.status.host_ip if k8s_pod.status.host_ip else "",
-            'containers': container_instances})
+            'containers': container_instances,
+            'logs_url': reverse(viewname='pod_logs', kwargs=kwargs)
+            })
 
         return pod_instance
 
 
 class PodListSerializer(serializers.Serializer):
-    pod_urls = serializers.ListField(read_only=True, child=serializers.URLField())
+    pod_urls = serializers.ListField(read_only=True, child=serializers.CharField())
 
 
 class PodRetrievalView(generics.RetrieveAPIView):
@@ -143,6 +152,11 @@ class PodRetrievalView(generics.RetrieveAPIView):
                 instance = ContainerSerializer.create_from_k8s_container(k8s_container, pod)
                 container_instances.append(instance.data)
 
+            kwargs = {
+                'version': settings.API_VERSION,
+                'puid': puid
+            }
+
             pod_instance = PodSerializer({
                 'name': pod.metadata.name,
                 'puid': pod.metadata.namespace + "_" + pod.metadata.name,
@@ -152,7 +166,9 @@ class PodRetrievalView(generics.RetrieveAPIView):
                 'reason': pod.status.reason if pod.status.reason else "",
                 'message': pod.status.message if pod.status.message else "",
                 'host_ip': pod.status.host_ip if pod.status.host_ip else "",
-                'containers': container_instances})
+                'containers': container_instances,
+                'logs_url': reverse(viewname='pod_logs', kwargs=kwargs)
+                })
 
             return Response(pod_instance.data)
         else:
@@ -198,4 +214,24 @@ class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
                                                       request.data["containers"],
                                                       request.user))
         else:
+            raise NotFound
+
+class PodLogsSerializer(serializers.Serializer):
+    hits = serializers.ListField(read_only=True, child=serializers.DictField())
+class PodLogsView(generics.RetrieveAPIView):
+    serializer_class = PodSerializer
+
+    @extend_schema(
+        summary="Get pod logs by its PUID."
+    )
+    def get(self, request, version, puid):
+        namespace, pod_name = puid.split('_')
+        if request.user.has_namespace(namespace):
+            logs = [{ 'log': pod_name+' log '+str(i), 'stream': 'stdout', 'timestamp': '' } for i in range(100)]
+            pod_logs = PodLogsSerializer({'hits': logs})
+
+            return Response(pod_logs.data)
+        else:
+            logger.warning(
+                f"User '{request.user}'")
             raise NotFound

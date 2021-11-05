@@ -195,6 +195,8 @@ class Common(Configuration):
     TINYMCE_DEFAULT_CONFIG = {'statusbar': False, 'menubar': False, 'plugins': ['link', 'lists' ],
                               'toolbar': 'undo redo | cut copy paste | bold italic subscript superscript | removeformat | bullist numlist | link unlink'}
 
+    USE_ELASTIC = values.Value(True, environ_prefix='KUBEPORTAL')
+
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATABASES = {
