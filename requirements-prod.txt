@@ -19,3 +19,4 @@ drf-nested-routers
 django-silk
 django-extensions # mainly for show_urls
 drf-spectacular
+elasticsearch==7.15.2

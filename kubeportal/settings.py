@@ -195,7 +195,11 @@ class Common(Configuration):
     TINYMCE_DEFAULT_CONFIG = {'statusbar': False, 'menubar': False, 'plugins': ['link', 'lists' ],
                               'toolbar': 'undo redo | cut copy paste | bold italic subscript superscript | removeformat | bullist numlist | link unlink'}
 
-    USE_ELASTIC = values.Value(True, environ_prefix='KUBEPORTAL')
+    USE_ELASTIC = values.Value(False, environ_prefix='KUBEPORTAL')
+    ELASTIC_URL = values.Value(None, environ_prefix='KUBEPORTAL')
+    ELASTIC_USERNAME = values.Value(None, environ_prefix='KUBEPORTAL')
+    ELASTIC_PASSWORD = values.Value(None, environ_prefix='KUBEPORTAL')
+
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
