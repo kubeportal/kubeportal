@@ -3,7 +3,7 @@ from django.http import request
 from drf_spectacular.utils import extend_schema
 import elasticsearch
 from rest_framework import serializers, generics
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotAcceptable, NotFound
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from kubeportal.elastic.elastic_client import ElasticSearchClient
@@ -230,6 +230,8 @@ class PodLogsView(generics.RetrieveAPIView):
     )
     def get(self, request, version, puid, page):
         namespace, pod_name = puid.split('_')
+        if not settings.USE_ELASTIC:
+            raise NotAcceptable
         if request.user.has_namespace(namespace):
             client = ElasticSearchClient.get_client()
             logs = client.get_pod_logs(namespace, pod_name, page)
