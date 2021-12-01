@@ -170,7 +170,7 @@ class PodRetrievalView(generics.RetrieveAPIView):
                 'message': pod.status.message if pod.status.message else "",
                 'host_ip': pod.status.host_ip if pod.status.host_ip else "",
                 'containers': container_instances,
-                'logs_url': reverse(viewname='pod_logs', kwargs=kwargs).replace('/0/', '/{page}/') # page replacement for frontend
+                'logs_url': reverse(viewname='pod_logs', kwargs=kwargs, request=request).replace('/0/', '/{page}/') # page replacement for frontend
                 })
 
             return Response(pod_instance.data)

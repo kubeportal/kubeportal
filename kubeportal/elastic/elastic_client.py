@@ -23,7 +23,7 @@ class ElasticSearchClient():
         if settings.USE_ELASTIC:
             if ElasticSearchClient.__instance == None:
                 ElasticSearchClient()
-            return ElasticSearchClient.__instance.client
+            return ElasticSearchClient.__instance
         else:
             return None
 
@@ -49,6 +49,6 @@ class ElasticSearchClient():
         }
         result = self.client.search(index='fluentd.demo-*', body=body)
 
-        hits = result['hits']['hits']
+        hits = result['hits']['hits'][::-1]
         return hits
 
