@@ -78,15 +78,18 @@ class ElasticSearchClient():
         scroll_id = page['_scroll_id']
         hits = page['hits']['hits']
         txt_file = open( file_name + '.txt', 'a')
-        txt_file.write(hits['log'])
+        for hit in hits:
+            txt_file.write(hit['_source']['log'])
+
         while len(hits):
             page = self.client.scroll(scroll_id=scroll_id, scroll=keep_alive)
             scroll_id = page['_scroll_id']
             hits = page['hits']['hits']
-            txt_file.write(hits['log'])
+            for hit in hits:
+                txt_file.write(hit['_source']['log'])
         txt_file.close()
  
         with ZipFile( file_name + '.zip','w') as zip:
             zip.write( file_name + '.txt')
-        file_path = os.path.realpath(file_name) 
-        return file_path, file_name
+        file_path = os.path.realpath(file_name + '.zip') 
+        return file_path, file_name + '.zip'
