@@ -1,12 +1,14 @@
 from django.conf import settings
-from django.http import request
+from django.http import request, response
+from django.http.response import HttpResponse
 from drf_spectacular.utils import extend_schema
-import elasticsearch
 from rest_framework import serializers, generics
 from rest_framework.exceptions import NotAcceptable, NotFound
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from kubeportal.elastic.elastic_client import ElasticSearchClient
+from django.core.servers.basehttp import FileWrapper
+
 
 from kubeportal.k8s import kubernetes_api as api
 
@@ -230,13 +232,39 @@ class PodLogsView(generics.RetrieveAPIView):
     )
     def get(self, request, version, puid, page):
         namespace, pod_name = puid.split('_')
+        namespace, pod_name = 'cankurtaran', 'log-server-v5'
         if not settings.USE_ELASTIC:
             raise NotAcceptable
-        if request.user.has_namespace(namespace):
+        if True or request.user.has_namespace(namespace):
             client = ElasticSearchClient.get_client()
             logs = client.get_pod_logs(namespace, pod_name, page)
             pod_logs = PodLogsSerializer({'hits': logs, 'page_number': page + 1})
             return Response(pod_logs.data)
+        else:
+            logger.warning(
+                f"User '{request.user}' has no access to the namespace '{namespace}'. Access denied."
+            )
+            raise NotFound
+
+class PodLogsZipView(generics.RetrieveAPIView):
+    serializer_class = PodSerializer
+
+    @extend_schema(
+        summary="Get pod logs by its PUID."
+    )
+    def get(self, request, version, puid, page):
+        namespace, pod_name = puid.split('_')
+        namespace, pod_name = 'cankurtaran', 'log-server-v5'
+        if not settings.USE_ELASTIC:
+            raise NotAcceptable
+        if True or request.user.has_namespace(namespace):
+            client = ElasticSearchClient.get_client()
+            file_path, file_name  = client.create_logs_zip(namespace, pod_name, page)
+            with open(file_path, 'rb') as zip_file:
+                response = HttpResponse(FileWrapper(zip_file), content_type='application/zip')
+                response['Content-Disposition'] = 'attachment; filename="%s"' % file_name
+                zip_file.close()
+                return response
         else:
             logger.warning(
                 f"User '{request.user}' has no access to the namespace '{namespace}'. Access denied."

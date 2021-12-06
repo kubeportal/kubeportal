@@ -1,5 +1,7 @@
 import elasticsearch as es
 from django.conf import settings
+from zipfile import ZipFile
+import os
 
 class ElasticSearchClient():
     '''
@@ -52,3 +54,39 @@ class ElasticSearchClient():
         hits = result['hits']['hits'][::-1]
         return hits
 
+    def create_logs_zip(self, namespace, pod_name, size=100, keep_alive='2m'):
+        '''
+        '''
+        must_match_query = [ {'match': {'kubernetes.pod_name': pod}} for pod in pod_name.split('-') ]
+        must_match_query.append({'match': { 'kubernetes.namespace_name': namespace} })
+        body = {
+            'query' : {
+                'bool': {
+                    'must': must_match_query
+                }, 
+            },
+            'size': size,
+            '_source': ['log'],
+            'sort': {
+                '@timestamp': 'desc',
+            }
+        }
+
+
+        file_name = f'tmp_{pod_name}_{namespace}'
+        page = self.client.search(index='fluentd.demo-*', body=body, scroll=keep_alive, size=size )
+        scroll_id = page['_scroll_id']
+        hits = page['hits']['hits']
+        txt_file = open( file_name + '.txt', 'a')
+        txt_file.write(hits['log'])
+        while len(hits):
+            page = self.client.scroll(scroll_id=scroll_id, scroll=keep_alive)
+            scroll_id = page['_scroll_id']
+            hits = page['hits']['hits']
+            txt_file.write(hits['log'])
+        txt_file.close()
+ 
+        with ZipFile( file_name + '.zip','w') as zip:
+            zip.write( file_name + '.txt')
+        file_path = os.path.realpath(file_name) 
+        return file_path, file_name
