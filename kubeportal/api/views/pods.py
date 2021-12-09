@@ -225,6 +225,7 @@ class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
 class PodLogsSerializer(serializers.Serializer):
     hits = serializers.ListField(read_only=True, child=serializers.DictField())
     page_number = serializers.IntegerField()
+    total = serializers.DictField()
 class PodLogsView(generics.RetrieveAPIView):
     serializer_class = PodSerializer
 
@@ -233,13 +234,12 @@ class PodLogsView(generics.RetrieveAPIView):
     )
     def get(self, request, version, puid, page):
         namespace, pod_name = puid.split('_')
-        namespace, pod_name = 'cankurtaran', 'log-server-v5'
         if not settings.USE_ELASTIC:
             raise NotAcceptable
-        if True or request.user.has_namespace(namespace):
+        if request.user.has_namespace(namespace):
             client = ElasticSearchClient.get_client()
-            logs = client.get_pod_logs(namespace, pod_name, page)
-            pod_logs = PodLogsSerializer({'hits': logs, 'page_number': page + 1})
+            logs, total = client.get_pod_logs(namespace, pod_name, page)
+            pod_logs = PodLogsSerializer({'hits': logs, 'page_number': page + 1, 'total': total })
             return Response(pod_logs.data)
         else:
             logger.warning(
@@ -251,14 +251,13 @@ class PodLogsZipView(generics.RetrieveAPIView):
     serializer_class = PodSerializer
 
     @extend_schema(
-        summary="Get pod logs by its PUID."
+        summary="Returns zipped pod logs by its PUID."
     )
     def get(self, request, version, puid):
         namespace, pod_name = puid.split('_')
-        namespace, pod_name = 'cankurtaran', 'log-server-v5'
         if not settings.USE_ELASTIC:
             raise NotAcceptable
-        if True or request.user.has_namespace(namespace):
+        if request.user.has_namespace(namespace):
             client = ElasticSearchClient.get_client()
             file_path, file_name  = client.create_logs_zip(namespace, pod_name)
             with open(file_path, 'rb') as zip_file:
