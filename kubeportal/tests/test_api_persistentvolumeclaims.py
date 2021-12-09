@@ -31,8 +31,12 @@ def test_pvc_list(api_client, admin_user_with_k8s):
         data = json.loads(response.content)
         pvc_url = urlparse(data['persistentvolumeclaim_urls'][0])
 
+        pending_count = 0
         pending = True
         while pending:
+            pending_count += 1
+            if pending_count > 100:
+                assert False, "Waiting for pending PVC took too long."
             response = api_client.get(pvc_url.path)
             assert 200 == response.status_code
             data = json.loads(response.content)
