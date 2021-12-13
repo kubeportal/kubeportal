@@ -157,12 +157,6 @@ class PodRetrievalView(generics.RetrieveAPIView):
                 instance = ContainerSerializer.create_from_k8s_container(k8s_container, pod)
                 container_instances.append(instance.data)
 
-            kwargs = {
-                'version': settings.API_VERSION,
-                'puid': puid,
-                'page': 0
-            }
-
             pod_instance = PodSerializer({
                 'name': pod.metadata.name,
                 'puid': pod.metadata.namespace + "_" + pod.metadata.name,
@@ -173,7 +167,7 @@ class PodRetrievalView(generics.RetrieveAPIView):
                 'message': pod.status.message if pod.status.message else "",
                 'host_ip': pod.status.host_ip if pod.status.host_ip else "",
                 'containers': container_instances,
-                'logs_url': reverse(viewname='pod_logs', kwargs=kwargs, request=request).replace('/0/', '/{page}/') # page replacement for frontend
+                'logs_url': reverse(viewname='pod_logs', kwargs={ 'version': settings.API_VERSION, 'puid': puid }, request=request)
                 })
 
             return Response(pod_instance.data)
@@ -224,7 +218,6 @@ class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
 
 class PodLogsSerializer(serializers.Serializer):
     hits = serializers.ListField(read_only=True, child=serializers.DictField())
-    page_number = serializers.IntegerField()
     total = serializers.DictField()
 class PodLogsView(generics.RetrieveAPIView):
     serializer_class = PodSerializer
@@ -232,39 +225,27 @@ class PodLogsView(generics.RetrieveAPIView):
     @extend_schema(
         summary="Get pod logs by its PUID."
     )
-    def get(self, request, version, puid, page):
-        namespace, pod_name = puid.split('_')
-        if not settings.USE_ELASTIC:
-            raise NotAcceptable
-        if request.user.has_namespace(namespace):
-            client = ElasticSearchClient.get_client()
-            logs, total = client.get_pod_logs(namespace, pod_name, page)
-            pod_logs = PodLogsSerializer({'hits': logs, 'page_number': page + 1, 'total': total })
-            return Response(pod_logs.data)
-        else:
-            logger.warning(
-                f"User '{request.user}' has no access to the namespace '{namespace}'. Access denied."
-            )
-            raise NotFound
-
-class PodLogsZipView(generics.RetrieveAPIView):
-    serializer_class = PodSerializer
-
-    @extend_schema(
-        summary="Returns zipped pod logs by its PUID."
-    )
     def get(self, request, version, puid):
         namespace, pod_name = puid.split('_')
         if not settings.USE_ELASTIC:
             raise NotAcceptable
         if request.user.has_namespace(namespace):
             client = ElasticSearchClient.get_client()
-            file_path, file_name  = client.create_logs_zip(namespace, pod_name)
-            with open(file_path, 'rb') as zip_file:
-                response = HttpResponse(FileWrapper(zip_file), content_type='application/zip')
-                response['Content-Disposition'] = 'attachment; filename="%s"' % file_name
-                zip_file.close()
-                return response
+            if 'page' in request.GET:
+                '''
+                Pagination of logs
+                '''
+                page = request.GET['page']
+                logs, total = client.get_pod_logs(namespace, pod_name, page)
+                pod_logs = PodLogsSerializer({'hits': logs, 'total': total })
+                return Response(pod_logs.data)
+            else:
+                file_path, file_name  = client.create_logs_zip(namespace, pod_name)
+                with open(file_path, 'rb') as zip_file:
+                    response = HttpResponse(FileWrapper(zip_file), content_type='application/zip')
+                    response['Content-Disposition'] = 'attachment; filename="%s"' % file_name
+                    zip_file.close()
+                    return response
         else:
             logger.warning(
                 f"User '{request.user}' has no access to the namespace '{namespace}'. Access denied."

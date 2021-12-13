@@ -22,6 +22,7 @@ class ElasticSearchClient():
 
     @staticmethod
     def get_client():
+
         if settings.USE_ELASTIC:
             if ElasticSearchClient.__instance == None:
                 ElasticSearchClient()
@@ -50,6 +51,8 @@ class ElasticSearchClient():
             }
         }
         result = self.client.search(index='fluentd.demo-*', body=body)
+        import pdb
+        pdb.set_trace()
         # val = result['hits']['total']['value']
         # relation = result['hits']['total']['relation']
         hits = result['hits']['hits'][::-1]
