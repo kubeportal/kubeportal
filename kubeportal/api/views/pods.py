@@ -235,7 +235,7 @@ class PodLogsView(generics.RetrieveAPIView):
                 '''
                 Pagination of logs
                 '''
-                page = request.GET['page']
+                page = int(request.GET['page'])
                 logs, total = client.get_pod_logs(namespace, pod_name, page)
                 pod_logs = PodLogsSerializer({'hits': logs, 'total': total })
                 return Response(pod_logs.data)

@@ -2,6 +2,7 @@ import elasticsearch as es
 from django.conf import settings
 from zipfile import ZipFile
 import os
+from datetime import datetime
 
 class ElasticSearchClient():
     '''
@@ -50,11 +51,7 @@ class ElasticSearchClient():
                 '@timestamp': 'desc',
             }
         }
-        result = self.client.search(index='fluentd.demo-*', body=body)
-        import pdb
-        pdb.set_trace()
-        # val = result['hits']['total']['value']
-        # relation = result['hits']['total']['relation']
+        result = self.client.search(index=settings.ELASTIC_INDEX, body=body)
         hits = result['hits']['hits'][::-1]
         return hits, result['hits']['total']
 
@@ -79,8 +76,8 @@ class ElasticSearchClient():
         }
 
 
-        file_name = f'tmp_{pod_name}_{namespace}'
-        page = self.client.search(index='fluentd.demo-*', body=body, scroll=keep_alive, size=size )
+        file_name = f'tmp_{pod_name}_{namespace}_{datetime.now()}'
+        page = self.client.search(index=settings.ELASTIC_INDEX, body=body, scroll=keep_alive, size=size )
         scroll_id = page['_scroll_id']
         hits = page['hits']['hits']
 
