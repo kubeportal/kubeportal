@@ -82,4 +82,5 @@ KUBEPORTAL_USE_ELASTIC                Boolean value whether or not to use elasti
 KUBEPORTAL_ELASTIC_URL                The host address and port of the elastic interface.
 KUBEPORTAL_ELASTIC_USERNAME           Username to authenticate user in elastic.
 KUBEPORTAL_ELASTIC_PASSWORD           Password to authenticate user in elastic.
+KUBEPORTAL_ELASTIC_INDEX              The index in which elastic queries.
 ===================================== ============================================================================
