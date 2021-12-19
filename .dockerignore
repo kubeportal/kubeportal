@@ -7,3 +7,9 @@ Makefile
 venv
 kubeportal/tests
 kubeportal/__pycache__
+kubeportal/static/frontend/dist
+kubeportal/static/frontend/node_modules
+codecov.yaml
+pytest.ini
+requirements-dev.txt
+

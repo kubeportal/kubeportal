@@ -1,5 +1,5 @@
 from django.conf.urls import include
-from django.urls import path
+from django.urls import path, re_path
 from django.views.decorators.cache import cache_page
 from django.views.generic.base import RedirectView
 from oidc_provider.views import ProviderInfoView
@@ -14,15 +14,19 @@ from kubeportal.admin import admin_site
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 urlpatterns = [
+    # classic frontend web views
+    path('classic/', RedirectView.as_view(query_string=True, url='/accounts/login/'), name='index'),
+    path('classic/config/', views.ConfigView.as_view(), name='config'),
+    path('classic/stats/', views.StatsView.as_view(), name='stats'),
+    path('classic/config/download/', views.ConfigDownloadView.as_view(content_type='text/plain'), name='config_download'),
+    path('classic/welcome/', views.WelcomeView.as_view(), name="welcome"),
+    path('classic/settings/', views.SettingsView.as_view(), name="settings"),
+    path('classic/settings/update', views.SettingsView.update_settings, name="update_settings"),
+    path('classic/access/request/', views.AccessRequestView.as_view(), name="access_request"),
+    path('classic/accounts/', include('allauth.urls')),
+
     # frontend web views
-    path('', RedirectView.as_view(query_string=True, url='/accounts/login/'), name='index'),
-    path('config/', views.ConfigView.as_view(), name='config'),
-    path('stats/', views.StatsView.as_view(), name='stats'),
-    path('config/download/', views.ConfigDownloadView.as_view(content_type='text/plain'), name='config_download'),
-    path('welcome/', views.WelcomeView.as_view(), name="welcome"),
-    path('settings/', views.SettingsView.as_view(), name="settings"),
-    path('settings/update', views.SettingsView.update_settings, name="update_settings"),
-    path('access/request/', views.AccessRequestView.as_view(), name="access_request"),
+    re_path(r'^.*$', views.VueView.as_view(), name='vue'),    
 
     # backend web views
     path('admin/', admin_site.urls),
@@ -74,8 +78,6 @@ urlpatterns = [
     path('api/<str:version>/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('api/<str:version>/token/refresh/', get_refresh_view().as_view(), name='token_refresh'),
 
-    # frontend web auth views
-    path('accounts/', include('allauth.urls')),
 
     path('silk/', include('silk.urls', namespace='silk'))
 ]
