@@ -199,6 +199,7 @@ class Common(Configuration):
     ELASTIC_URL = values.Value(None, environ_prefix='KUBEPORTAL')
     ELASTIC_USERNAME = values.Value(None, environ_prefix='KUBEPORTAL')
     ELASTIC_PASSWORD = values.Value(None, environ_prefix='KUBEPORTAL')
+    ELASTIC_INDEX = values.Value(None, environ_prefix='KUBEPORTAL')
 
 
 class Development(Common):
