@@ -1,14 +1,34 @@
-{% extends "vue-base.html" %}
-{% block html %}
-<!doctype html>
-<html {% block html_tag_attributes %}{{ block.super }}{% endblock %}>
-    <head>
-        {% block head %}{{ block.super }}{% endblock %}
-        <!-- html-webpack-inject will inject head assets below -->
-    <link href="http://127.0.0.1:8086/js/app.js" rel="preload" as="script"><link href="http://127.0.0.1:8086/js/chunk-vendors.js" rel="preload" as="script"></head>
-    <body {% block body_tag_attributes %}{{ block.super }}{% endblock %}>
-        {% block body %}{{ block.super }}{% endblock %}
-        <!-- html-webpack-inject will inject body assets below -->
-    <script type="text/javascript" src="http://127.0.0.1:8086/js/chunk-vendors.js"></script><script type="text/javascript" src="http://127.0.0.1:8086/js/app.js"></script></body>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="http://127.0.0.1:8086/favicon.ico">
+    <title>Data Science Cluster</title>
+    <link rel="stylesheet" href="./robotofont.css">
+  <link href="http://127.0.0.1:8086/js/app.js" rel="preload" as="script"><link href="http://127.0.0.1:8086/js/chunk-vendors.js" rel="preload" as="script"></head>
+  <body>
+    <noscript>
+      <strong>We're sorry but this webpage doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+  <script type="text/javascript" src="http://127.0.0.1:8086/js/chunk-vendors.js"></script><script type="text/javascript" src="http://127.0.0.1:8086/js/app.js"></script></body>
 </html>
-{% endblock %}
+
+<style>
+  html {
+    font-size: 0.95rem;
+    --font-family-monospace: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+  }
+  @media (max-device-width : 600px) {
+    html {
+      font-size: 0.8rem;
+        min-width: 360px
+    }
+  }
+  .v-data-table > .v-data-table__wrapper > table > tbody > tr > td {
+      font-size: 0.95rem;
+  }
+</style>
