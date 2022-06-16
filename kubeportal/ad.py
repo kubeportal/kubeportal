@@ -41,14 +41,14 @@ class ActiveDirectoryBackend():
             messages.error(request, 'Active Directory login failed, invalid credentials.')
             return None
 
-        # lookup user attributes by searching for the UPN
+        # lookup user attributes 
         ctx = server.info.other['defaultNamingContext'][0]
         # first name, last name, display name, email, alternative email
         attributes = ['givenName', 'sn', 'mail', 'proxyAddresses']
-        res = conn.search(ctx, '(userPrincipalName={})'.format(upn),
+        res = conn.search(ctx, '(sAMAccountName={})'.format(username),
                           attributes=attributes)
 
-        if res:
+        if res and len(conn.entries)>0:
             entries = conn.entries[0]
             defaults = {}
             defaults['first_name'] = entries['givenName'].value if entries['givenName'] else ""
