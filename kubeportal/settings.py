@@ -148,16 +148,20 @@ class Common(Configuration):
             'SCOPE': ['profile', 'email'],
         }
 
-    LOGIN_URL = '/'
-    LOGIN_REDIRECT_URL = '/welcome/'
-    LOGOUT_REDIRECT_URL = '/'
+    LOGIN_URL = '/classic/'
+    LOGIN_REDIRECT_URL = '/classic/welcome/'
+    LOGOUT_REDIRECT_URL = '/classic/'
     STATIC_URL = '/static/'
 
     USE_I18N = True
     USE_L10N = True
     USE_TZ = True
 
-    ALLOWED_URLS = values.ListValue(["http://localhost:8000", "http://127.0.0.1:8000", "http://testserver"], environ_prefix='KUBEPORTAL')
+    ALLOWED_URLS = values.ListValue(["http://localhost:8000", 
+                                     "http://127.0.0.1:8000", 
+                                     "http://testserver",
+                                     "http://localhost:8086",
+                                     "http://127.0.0.1:8086"], environ_prefix='KUBEPORTAL')
     ALLOWED_URLS.setup('ALLOWED_URLS')
     ALLOWED_HOSTS = [urlparse(url).netloc.split(":")[0] for url in ALLOWED_URLS.value]
 
@@ -194,6 +198,13 @@ class Common(Configuration):
 
     TINYMCE_DEFAULT_CONFIG = {'statusbar': False, 'menubar': False, 'plugins': ['link', 'lists' ],
                               'toolbar': 'undo redo | cut copy paste | bold italic subscript superscript | removeformat | bullist numlist | link unlink'}
+
+    USE_ELASTIC = values.BooleanValue(False, environ_prefix='KUBEPORTAL')
+    ELASTIC_URL = values.Value(None, environ_prefix='KUBEPORTAL')
+    ELASTIC_USERNAME = values.Value(None, environ_prefix='KUBEPORTAL')
+    ELASTIC_PASSWORD = values.Value(None, environ_prefix='KUBEPORTAL')
+    ELASTIC_INDEX = values.Value(None, environ_prefix='KUBEPORTAL')
+
 
 class Development(Common):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

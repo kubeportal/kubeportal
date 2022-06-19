@@ -1,8 +1,15 @@
+from django.conf import settings
+from django.http import request, response
+from django.http.response import HttpResponse
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers, generics
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotAcceptable, NotFound
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from kubeportal.elastic.elastic_client import ElasticSearchClient
+from wsgiref.util import FileWrapper
+
+
 
 from kubeportal.k8s import kubernetes_api as api
 
@@ -99,6 +106,7 @@ class PodSerializer(serializers.Serializer):
     reason = serializers.CharField(read_only=True)
     message = serializers.CharField(read_only=True)
     host_ip = serializers.CharField(read_only=True)
+    logs_url = serializers.CharField()
 
     @classmethod
     def create_from_k8s_pod(cls, k8s_pod):
@@ -107,6 +115,10 @@ class PodSerializer(serializers.Serializer):
             instance = ContainerSerializer.create_from_k8s_container(k8s_container, k8s_pod)
             container_instances.append(instance.data)
 
+        kwargs = {
+            'version': settings.API_VERSION,
+            'puid': k8s_pod.metadata.namespace + "_" + k8s_pod.metadata.name
+        }
         pod_instance = cls({
             'name': k8s_pod.metadata.name,
             'puid': k8s_pod.metadata.namespace + "_" + k8s_pod.metadata.name,
@@ -116,13 +128,15 @@ class PodSerializer(serializers.Serializer):
             'reason': k8s_pod.status.reason if k8s_pod.status.reason else "",
             'message': k8s_pod.status.message if k8s_pod.status.message else "",
             'host_ip': k8s_pod.status.host_ip if k8s_pod.status.host_ip else "",
-            'containers': container_instances})
+            'containers': container_instances,
+            'logs_url': reverse(viewname='pod_logs', kwargs=kwargs)
+            })
 
         return pod_instance
 
 
 class PodListSerializer(serializers.Serializer):
-    pod_urls = serializers.ListField(read_only=True, child=serializers.URLField())
+    pod_urls = serializers.ListField(read_only=True, child=serializers.CharField())
 
 
 class PodRetrievalView(generics.RetrieveAPIView):
@@ -152,7 +166,9 @@ class PodRetrievalView(generics.RetrieveAPIView):
                 'reason': pod.status.reason if pod.status.reason else "",
                 'message': pod.status.message if pod.status.message else "",
                 'host_ip': pod.status.host_ip if pod.status.host_ip else "",
-                'containers': container_instances})
+                'containers': container_instances,
+                'logs_url': reverse(viewname='pod_logs', kwargs={ 'version': settings.API_VERSION, 'puid': puid }, request=request)
+                })
 
             return Response(pod_instance.data)
         else:
@@ -198,4 +214,40 @@ class PodsView(generics.RetrieveAPIView, generics.CreateAPIView):
                                                       request.data["containers"],
                                                       request.user))
         else:
+            raise NotFound
+
+class PodLogsSerializer(serializers.Serializer):
+    hits = serializers.ListField(read_only=True, child=serializers.DictField())
+    total = serializers.DictField()
+class PodLogsView(generics.RetrieveAPIView):
+    serializer_class = PodSerializer
+
+    @extend_schema(
+        summary="Get pod logs by its PUID."
+    )
+    def get(self, request, version, puid):
+        namespace, pod_name = puid.split('_')
+        if not settings.USE_ELASTIC:
+            raise NotAcceptable
+        if request.user.has_namespace(namespace):
+            client = ElasticSearchClient.get_client()
+            if 'page' in request.GET:
+                '''
+                Pagination of logs
+                '''
+                page = int(request.GET['page'])
+                logs, total = client.get_pod_logs(namespace, pod_name, page)
+                pod_logs = PodLogsSerializer({'hits': logs, 'total': total })
+                return Response(pod_logs.data)
+            else:
+                file_path, file_name  = client.create_logs_zip(namespace, pod_name)
+                with open(file_path, 'rb') as zip_file:
+                    response = HttpResponse(FileWrapper(zip_file), content_type='application/zip')
+                    response['Content-Disposition'] = 'attachment; filename="%s"' % file_name
+                    zip_file.close()
+                    return response
+        else:
+            logger.warning(
+                f"User '{request.user}' has no access to the namespace '{namespace}'. Access denied."
+            )
             raise NotFound

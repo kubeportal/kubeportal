@@ -184,3 +184,5 @@ class ConfigView(LoginRequiredMixin, TemplateView):
             User.objects.filter(is_staff=True))
         return context
 
+class VueView(TemplateView):
+    template_name = "vue-index.html"

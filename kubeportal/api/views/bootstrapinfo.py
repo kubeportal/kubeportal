@@ -16,6 +16,7 @@ class BootstrapInfoSerializer(serializers.Serializer):
     login_google_url = serializers.URLField()
     login_google_client_id = serializers.CharField()
     branding = serializers.CharField()
+    use_elastic = serializers.BooleanField()
 
 
 class BootstrapInfoView(generics.RetrieveAPIView):
@@ -32,6 +33,7 @@ class BootstrapInfoView(generics.RetrieveAPIView):
             "logout_url": reverse(viewname='rest_logout', request=request),
             "login_google_url": reverse(viewname='api_google_login', request=request),
             "login_google_client_id": settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY,
-            'branding': get_branding()
+            "branding": get_branding(),
+            "use_elastic": settings.USE_ELASTIC
         })
         return Response(instance.data)
