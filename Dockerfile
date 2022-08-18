@@ -7,7 +7,7 @@ COPY requirements-prod.txt /tmp/
 RUN apt-get update && \
     apt-get install -y vim sqlite3 postgresql-client gcc make libc-dev musl-dev libffi-dev libssl-dev libpcre3-dev && \
     pip install --no-cache-dir -r /tmp/requirements-prod.txt uwsgi && \
-    pip install --no-cache-dir psycopg2 && \   
+    pip install --no-cache-dir "psycopg2>=2.8,<2.9" && \   
     mkdir /code/ && \
     mkdir /data/
 
